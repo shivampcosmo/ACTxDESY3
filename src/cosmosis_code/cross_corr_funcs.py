@@ -15,7 +15,7 @@ from colossus.halo import mass_defs
 from colossus.halo import concentration
 import copy
 import itertools
-sys.path.insert(0, '../helper/')
+sys.path.insert(0, '../../helper/')
 import mycosmo as cosmodef
 import LSS_funcs as hmf
 import plot_funcs as pf

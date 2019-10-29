@@ -5,7 +5,6 @@ sys.path.insert(0, '../')
 import numpy as np
 import copy
 import pdb
-import call_pipe as fp
 import ast
 import scipy as sp
 import scipy.interpolate as interpolate
