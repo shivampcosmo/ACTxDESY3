@@ -262,7 +262,7 @@ def execute(block, config):
         other_params_dict_bin['Clgg_measured'] = \
             clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0]
         other_params_dict_bin['ell_measured'] = clf['ell']
-        # other_params_dict['nbar'] = block[sec_name,'nbar--' + str(binv)]
+        other_params_dict['nbar'] = block[sec_name,'nbar--' + str(binv)]
 
         if other_params_dict_bin['do_vary_cosmo']:
             del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
@@ -273,6 +273,7 @@ def execute(block, config):
         block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
         block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']
         block[sec_save_name, 'theory_Clyy'] = DV_fid.Cl_dict['yy']['total']
+        block[sec_save_name, 'nbar_Clgg_bin_' + str(binv)] = block[sec_name,'nbar--' + str(binv)]
 
         block[sec_save_name, 'theory_Clgg1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['1h']
         block[sec_save_name, 'theory_Clgy1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['1h']

@@ -35,9 +35,9 @@ def get_theory_terms(block, ell_data, stat_type, bins_array, sec_savename = "sav
             Cl_gg =  block.get_double_array_1d(sec_savename,'theory_Clgg_bin_' + str(bin_j) + '_' + str(bin_j))
             Cl_gg_temp = intspline(ell_array, Cl_gg)
             Cl_gg_f = Cl_gg_temp(ell_data[j])
-
+            one_nbar =  1./(block[sec_save_name, 'nbar_Clgg_bin_' + str(bin_j)])
             if len(Cl_theory_rdata) == 0:
-                Cl_theory_rdata = Cl_gg_f
+                Cl_theory_rdata = Cl_gg_f 
             else:
                 Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gg_f))
 
@@ -60,10 +60,11 @@ def get_theory_terms(block, ell_data, stat_type, bins_array, sec_savename = "sav
             Cl_gg = block.get_double_array_1d(sec_savename,'theory_Clgg_bin_' + str(bin_j) + '_' + str(bin_j))
             Cl_gg_temp = intspline(ell_array, Cl_gg)
             Cl_gg_f = Cl_gg_temp(ell_data[j])
+            one_nbar =  1./(block[sec_save_name, 'nbar_Clgg_bin_' + str(bin_j)])
             if len(Cl_theory_rdata) == 0:
-                Cl_theory_rdata = Cl_gg_f
+                Cl_theory_rdata = Cl_gg_f 
             else:
-                Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gg_f))
+                Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gg_f ))
 
         for j in range(nbins):
             bin_j = bins_array[j]

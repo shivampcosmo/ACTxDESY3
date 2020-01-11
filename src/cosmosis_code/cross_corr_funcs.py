@@ -840,6 +840,21 @@ class Powerspec:
         self.ng_array = np.exp(ng_interp(self.z_array))
         self.dchi_dz_array = (const.c.to(u.km / u.s)).value / (hmf.get_Hz(self.z_array, cosmo_params['Om0']))
 
+        ng_zarray_source = other_params['ng_zarray_source']
+        ng_value_source = other_params['ng_value_source']
+        ng_interp_source = interpolate.interp1d(ng_zarray_source, np.log(ng_value_source + 1e-40), fill_value='extrapolate')
+        self.ng_array_source = np.exp(ng_interp_source(self.z_array))
+
+        chi_lmat = np.tile(self.chi_array.reshape(len(self.z_array), 1), (1, len(self.z_array)))
+        chi_smat = np.tile(self.chi_array.reshape(1, len(self.z_array)), (len(self.z_array), 1))
+        num = chi_smat - chi_lmat
+        ind_lzero = np.where(num <= 0)
+        num[ind_lzero] = 0
+        ng_array_source_rep = np.tile(self.ng_array_source.reshape(1, len(self.z_array)), (len(self.z_array), 1))
+        int_sourcez = sp.integrate.simps(ng_array_source_rep * (num / chi_smat), self.z_array)
+        coeff_ints = 3 * (100 ** 2) * cosmo_params['Om0'] / (2. * ((3 * 10 ** 5) ** 2))
+        self.Wk_array = coeff_ints * self.chi_array * (1. + self.z_array) * int_sourcez
+
         if 'pkzlin_interp' not in other_params.keys():
             if self.verbose:
                 print('getting pkzlin interp')
@@ -850,6 +865,8 @@ class Powerspec:
         self.add_beam_to_theory = other_params['add_beam_to_theory']
         self.beam_fwhm_arcmin = other_params['beam_fwhm_arcmin']
         # pdb.set_trace()
+
+
 
     # get spherical harmonic transform of the galaxy distribution, eq 18 of Makiya et al
     def get_ug_l_zM(self, l):
@@ -898,6 +915,22 @@ class Powerspec:
         val = sp.integrate.simps(toint, self.M_array)
         return val
 
+    # get spherical harmonic transform of the matter distribution
+    def get_uk_l_zM(self, l):
+        k_array = (l + 1. / 2.) / self.chi_array
+        if self.use_only_halos:
+            ukzm_mat = np.ones((self.nz, self.nm))
+        else:
+            ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+
+        coeff_mat = np.tile((self.Wk_array / self.chi_array ** 2).reshape(self.nz, 1),(1, self.nm))
+
+        return coeff_mat * ukzm_mat
+
+    # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
+    def get_bk_l_z(self, l):
+        return self.Wk_array / self.chi_array ** 2
+
     def collect_ug(self, l_array, return_dict):
         for l in l_array:
             return_dict[round(l, 1)] = self.get_ug_l_zM(l)
@@ -905,6 +938,10 @@ class Powerspec:
     def collect_uy(self, l_array, return_dict):
         for l in l_array:
             return_dict[round(l, 1)] = self.get_uy_l_zM(l)
+
+    def collect_uk(self, l_array, return_dict):
+        for l in l_array:
+            return_dict[round(l, 1)] = self.get_uk_l_zM(l)
 
     # 1-halo term of Cl galaxy-galaxy, eq 10 of Makiya et al
     def get_Cl_gg_1h(self, l, ugl_zM_dict):
@@ -971,6 +1008,51 @@ class Powerspec:
         bgl_z_dict[l] = bgl_z
         byl_z_dict[l] = byl_z
         toint_z = (byl_z * bgl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+        val = sp.integrate.simps(toint_z, self.z_array)
+        return val
+
+    def get_Cl_yk_1h(self, l, ukl_zM_dict, uyl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+        uyl_zM = uyl_zM_dict[round(l, 1)]
+
+        toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+
+        val = sp.integrate.simps(toint_z, self.z_array)
+
+        return val
+
+    def get_Cl_yk_2h(self, l, uyl_zM_dict):
+        k_array = (l + 1. / 2.) / self.chi_array
+        byl_z = self.get_by_l_z(l, uyl_zM_dict)
+        bkl_z = self.get_bk_l_z(l)
+        bkl_z_dict[l] = bkl_z
+        byl_z_dict[l] = byl_z
+        toint_z = (byl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+        val = sp.integrate.simps(toint_z, self.z_array)
+        return val
+
+
+    def get_Cl_kk_1h(self, l, ukl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+
+        toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+
+        val = sp.integrate.simps(toint_z, self.z_array)
+
+        return val
+
+    def get_Cl_kk_2h(self, l):
+        k_array = (l + 1. / 2.) / self.chi_array
+        bkl_z = self.get_bk_l_z(l)
+        toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
             self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
         val = sp.integrate.simps(toint_z, self.z_array)
         return val
@@ -1089,20 +1171,30 @@ class Powerspec:
             Cl_yg = Cl_yg * Bl
         return Cl_yg
 
+    def get_Cl_yk_beamed(self, l_array, Cl_yk):
+        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+            Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
+            Cl_yk = Cl_yk * Bl
+        return Cl_yk
+
     # See Makiya paper
-    def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict):
+    def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict, ukl_zM_dict):
         nl = len(l_array_all)
 
-        ul_g_mat, ul_y_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm))
+        ul_g_mat, ul_y_mat, ul_k_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm))
         for j in range(nl):
             ul_g_mat[j, :, :] = ugl_zM_dict[round(l_array_all[j], 1)]
             ul_y_mat[j, :, :] = uyl_zM_dict[round(l_array_all[j], 1)]
+            ul_k_mat[j, :, :] = ukl_zM_dict[round(l_array_all[j], 1)]
 
         u_ABCD_dict = {}
         if 'g' in [A, B, C, D]:
             u_ABCD_dict['g'] = ul_g_mat
         if 'y' in [A, B, C, D]:
             u_ABCD_dict['y'] = ul_y_mat
+        if 'k' in [A, B, C, D]:
+            u_ABCD_dict['k'] = ul_k_mat
 
         uAl1_uBl1 = u_ABCD_dict[A] * u_ABCD_dict[B]
         uCl2_uDl2 = u_ABCD_dict[C] * u_ABCD_dict[D]
@@ -1155,9 +1247,11 @@ class DataVec:
         self.fsky_yy = other_params['fsky_yy']
         # self.fsky_yg = np.sqrt(self.fsky_gg * self.fsky_yy)
         self.fsky_yg = other_params['fsky_yg']
+        self.fsky_yk = other_params['fsky_yk']
+        self.fsky_kk = other_params['fsky_kk']
 
 
-        self.fsky = {'gg': self.fsky_gg, 'yy': self.fsky_yy, 'yg': self.fsky_yg, 'gy': self.fsky_yg}
+        self.fsky = {'gg': self.fsky_gg, 'yy': self.fsky_yy, 'yg': self.fsky_yg, 'gy': self.fsky_yg, 'yk': self.fsky_yk, 'ky': self.fsky_yk, 'kk':self.fsky_kk}
 
         ti = time.time()
         if self.verbose:
@@ -1241,26 +1335,55 @@ class DataVec:
             for process in processes:
                 process.join()
             print('That took {} seconds'.format(time.time() - starttime))
+
+
+            ukl_zM_dict = manager.dict()
+
+            if self.verbose:
+                print('getting ukl matrix for each z and M')
+            starttime = time.time()
+            processes = []
+
+            if other_params['num_pool'] is None:
+                for j in range(len(l_array)):
+                    p = multiprocessing.Process(target=self.PS.collect_uk, args=([l_array[j]], ukl_zM_dict))
+                    processes.append(p)
+                    p.start()
+            else:
+                npool = other_params['num_pool']
+                l_array_split = np.array_split(l_array, npool)
+                for j in range(npool):
+                    p = multiprocessing.Process(target=self.PS.collect_uk, args=(l_array_split[j], ukl_zM_dict))
+                    processes.append(p)
+                    p.start()
+
+            for process in processes:
+                process.join()
+            print('That took {} seconds'.format(time.time() - starttime))
+
+
         else:
             if self.verbose:
                 print('getting uyl and ugl matrix')
                 ti = time.time()
-            ugl_zM_dict, uyl_zM_dict = {}, {}
+            ugl_zM_dict, uyl_zM_dict, ukl_zM_dict = {}, {}, {}
             for j in range(len(l_array)):
                 ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
                 uyl_zM_dict[round(l_array[j], 1)] = self.PS.get_uy_l_zM(l_array[j])
+                ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j])
 
             if self.verbose:
                 print('that took ', time.time() - ti, 'seconds')
 
         self.ugl_zM_dict = ugl_zM_dict
         self.uyl_zM_dict = uyl_zM_dict
-        #
+        self.ukl_zM_dict = ukl_zM_dict
+
         # print len(ugl_zM_dict.keys()), np.sort(np.array(ugl_zM_dict.keys()))
         # print len(uyl_zM_dict.keys()), np.sort(np.array(uyl_zM_dict.keys()))
 
-        global bgl_z_dict, byl_z_dict
-        bgl_z_dict, byl_z_dict = {}, {}
+        global bgl_z_dict, byl_z_dict, bkl_z_dict
+        bgl_z_dict, byl_z_dict, bkl_z_dict = {}, {}, {}
 
         if self.verbose:
             print('getting Cl arrays for gg, gy and yy')
@@ -1268,6 +1391,9 @@ class DataVec:
         Cl_gg_1h_array, Cl_gg_2h_array, Cl_yg_1h_array, Cl_yg_2h_array, Cl_yy_1h_array, Cl_yy_2h_array = np.zeros(
             len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(
             len(l_array)), np.zeros(len(l_array))
+        Cl_kk_1h_array, Cl_kk_2h_array, Cl_yk_1h_array, Cl_yk_2h_array = np.zeros(
+            len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
+
         for j in range(len(l_array)):
 
             if self.verbose:
@@ -1283,6 +1409,13 @@ class DataVec:
             Cl_yg_1h_array[j] = self.PS.get_Cl_yg_1h(l_array[j], self.ugl_zM_dict, self.uyl_zM_dict)
             Cl_yg_2h_array[j] = self.PS.get_Cl_yg_2h(l_array[j], self.uyl_zM_dict)
 
+            Cl_yk_1h_array[j] = self.PS.get_Cl_yk_1h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
+            Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.uyl_zM_dict)
+
+            Cl_kk_1h_array[j] = self.PS.get_Cl_kk_1h(l_array[j], self.ukl_zM_dict)
+            Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j])
+
+
         if self.verbose:
             print('That took {} seconds'.format(time.time() - starttime))
 
@@ -1290,6 +1423,9 @@ class DataVec:
 
         Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
         Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
+
+        Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
+        Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
 
         if self.PS.fmis > 0:
             Cl_yg_total = self.PS.get_Cl_yg_miscentered(l_array, Cl_yg_1h_array + Cl_yg_2h_array)
@@ -1299,7 +1435,10 @@ class DataVec:
         self.Cl_dict = {'gg': {'1h': Cl_gg_1h_array, '2h': Cl_gg_2h_array, 'total': Cl_gg_1h_array + Cl_gg_2h_array},
                         'yy': {'1h': Cl_yy_1h_array, '2h': Cl_yy_2h_array, 'total': Cl_yy_1h_array + Cl_yy_2h_array},
                         'yg': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
-                        'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total}}
+                        'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
+                        'kk': {'1h': Cl_kk_1h_array, '2h': Cl_kk_2h_array, 'total': Cl_kk_1h_array + Cl_kk_2h_array},
+                        'yk': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
+                        'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array}}
 
         self.stats_analyze = other_params['stats_analyze']
         stats_analyze_pairs = []
@@ -1318,24 +1457,34 @@ class DataVec:
         self.stats_analyze_pairs_all = stats_analyze_pairs_all
 
         if other_params['noise_Cl_filename'] is not None:
-            # pdb.set_trace()
+
             self.noise_yy_Cl_file = np.loadtxt(other_params['noise_Cl_filename'])
-            if 'S4' in other_params['noise_Cl_filename'].split('/')[1]:
+            if 'S4' in other_params['noise_Cl_filename'].split('/'):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 2]
                 log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
                                                               fill_value='extrapolate')
-            if ('SO' in other_params['noise_Cl_filename'].split('/')[1]) or (
-                    'Planck' in other_params['noise_Cl_filename'].split('/')[1]):
+            if ('SO' in other_params['noise_Cl_filename'].split('/')) or (
+                    'Planck' in other_params['noise_Cl_filename'].split('/')):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 1]
                 log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
                                                               fill_value='extrapolate')
-
+            # pdb.set_trace()
             self.Cl_noise_yy_l_array = np.exp(log_Cl_noise_yy_interp(np.log(self.l_array_survey)))
             self.Cl_noise_gg_l_array = (1. / other_params['nbar']) * np.ones(self.nl_survey)
+            self.Cl_noise_kk_l_array = (other_params['noise_kappa']) * np.ones(self.nl_survey)
         else:
-            self.Cl_noise_yy_l_array = other_params['Clyy_measured'] - self.Cl_dict['yy']['total']
-            self.Cl_noise_gg_l_array = other_params['Clgg_measured'] - self.Cl_dict['gg']['total']
             self.ell_measured = other_params['ell_measured']
+            if len(self.Cl_dict['yy']['total']) == len(self.ell_measured):
+                self.Cl_noise_yy_l_array = other_params['Clyy_measured'] - self.Cl_dict['yy']['total']
+                self.Cl_noise_gg_l_array = other_params['Clgg_measured'] - self.Cl_dict['gg']['total']
+            else:
+                Cl_yy_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clyy_measured'], fill_value=0.0,
+                                                       bounds_error=False)
+                self.Cl_noise_yy_l_array = Cl_yy_interp(np.log(self.l_array)) - self.Cl_dict['yy']['total']
+                Cl_gg_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clgg_measured'], fill_value=0.0,
+                                                       bounds_error=False)
+                self.Cl_noise_gg_l_array = Cl_gg_interp(np.log(self.l_array)) - self.Cl_dict['gg']['total']
+
 
         del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
@@ -1367,6 +1516,8 @@ class DataVec:
                     Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_yy_l_array
                 elif stat == 'gg':
                     Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_gg_l_array
+                elif stat == 'kk':
+                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_kk_l_array
                 else:
                     Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey]
 
@@ -1395,7 +1546,7 @@ class DataVec:
                 val_NG = np.zeros((nl, nl))
             else:
                 T_l_ABCD = self.PS.get_T_ABCD_l_array(self.l_array_survey, A, B, C, D, self.ugl_zM_dict,
-                                                      self.uyl_zM_dict)
+                                                      self.uyl_zM_dict,self.ukl_zM_dict)
                 fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
                 # pdb.set_trace()
                 # fsky_j = np.min(np.array([self.fsky[A + B] , self.fsky[C + D]]))

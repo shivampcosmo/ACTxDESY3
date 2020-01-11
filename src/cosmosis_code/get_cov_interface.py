@@ -24,6 +24,8 @@ def get_value(section, value, config_run, config_def):
         val = config_def[section][value]
     return val
 
+
+
 def QR_inverse(matrix):
     _Q,_R = np.linalg.qr(matrix)
     return np.dot(_Q,np.linalg.inv(_R.T))
@@ -166,13 +168,26 @@ def read_ini(ini_file, ini_def=None, twopt_file=None):
     other_params_dict['x_array'] = np.logspace(np.log10(other_params_dict['xmin']), np.log10(other_params_dict['xmax']),
                                                other_params_dict['num_x'])
 
-    clf = pk.load(open(twopt_file, 'rb'))
-    ell_data = clf['ell']
-    lmin = (ell_data - (ell_data[1] - ell_data[0]) / 2.)[0]
-    lmax = (ell_data + (ell_data[1] - ell_data[0]) / 2.)[-1]
-    l_array_all = np.linspace(lmin, lmax, len(ell_data) + 1)
-    other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
-    other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
+
+
+    if twopt_file is None:
+        if other_params_dict['larray_spacing'] == 'log':
+            l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
+                                      other_params_dict['num_l'])
+
+        if other_params_dict['larray_spacing'] == 'lin':
+            l_array_all = np.linspace((other_params_dict['lmin']), (other_params_dict['lmax']),
+                                      other_params_dict['num_l'])
+        other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
+        other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
+    else:
+        clf = pk.load(open(twopt_file, 'rb'))
+        ell_data = clf['ell']
+        lmin = (ell_data - (ell_data[1] - ell_data[0]) / 2.)[0]
+        lmax = (ell_data + (ell_data[1] - ell_data[0]) / 2.)[-1]
+        l_array_all = np.linspace(lmin, lmax, len(ell_data) + 1)
+        other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
+        other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
     other_params_dict['ng_zarray'] = np.linspace(0.1, 2.0, 100)
     other_params_dict['ng_value'] = np.ones(len(other_params_dict['ng_zarray'])) / sp.integrate.simps(
         np.ones(len(other_params_dict['ng_zarray'])), other_params_dict['ng_zarray'])
@@ -201,17 +216,23 @@ def setup(options):
     params_file = options.get_string(option_section, "params_file")
     params_def_file = options.get_string(option_section, "params_def_file")
     twopt_file = options.get_string(option_section, 'twopt_file')
-    ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file,
-                        twopt_file=twopt_file)
-    bins_numbers = ast.literal_eval(options.get_string(option_section, "bins_numbers", default='[1,2,3,4,5]'))
+    # ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file,
+    #                     twopt_file=twopt_file)
+    ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file)
+
+    z_edges = ast.literal_eval(options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
+    bins_numbers = ast.literal_eval(options.get_string(option_section, "bins_numbers", default='[ 1,2,3,4,5,6 ]'))
+
     sec_name = options.get_string(option_section, "sec_name", default='get_cov')
     sec_save_name = options.get_string(option_section, "sec_save_name", default='save_get_cov')
     save_cov_fname = options.get_string(option_section, "save_cov_fname")
-    return ini_info, bins_numbers, twopt_file, sec_name, sec_save_name, save_cov_fname
+    save_block_fname = options.get_string(option_section, "save_block_fname")
+
+    return ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname
 
 
 def execute(block, config):
-    ini_info, bins_numbers, twopt_file, sec_name, sec_save_name, save_cov_fname = config
+    ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname = config
     clf = pk.load(open(twopt_file, 'rb'))
 
     other_params_dict = ini_info['other_params_dict']
@@ -225,8 +246,8 @@ def execute(block, config):
     cov_fid_NG = np.zeros((nstats * nl * nbins, nstats * nl * nbins))
     Cl_vec = np.zeros(nstats * nl * nbins)
     Cl_vec_data = np.zeros(nstats * nl * nbins)
-    zmin_array = [0.15,0.3,0.45,0.6,0.75]
-    zmax_array = [0.3, 0.45, 0.6, 0.75, 0.9]
+    zmin_array = np.array(z_edges)[:-1]
+    zmax_array = np.array(z_edges)[1:]
     ell_all = []
 
     for binv in bins_numbers:
@@ -260,35 +281,47 @@ def execute(block, config):
 
         other_params_dict_bin['ng_zarray'] = block['nz_lens', 'z']
         other_params_dict_bin['ng_value'] = block['nz_lens', 'bin_' + str(binv)]
+        other_params_dict_bin['ng_zarray_source'] = block['nz_source', 'z']
+        other_params_dict_bin['ng_value_source'] = block['nz_source', 'bin_' + str(binv)]
         other_params_dict_bin['cosmo_fid'] = cosmo_params_dict_bin
         other_params_dict_bin['hod_fid'] = hod_params_dict_bin
         other_params_dict_bin['pressure_fid'] = pressure_params_dict_bin
 
-        other_params_dict_bin['Clyy_measured'] = clf[('ymap', 'ymap')][('y', 'y')]['true'][0]
-        other_params_dict_bin['Clgg_measured'] = \
-            clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0]
-        other_params_dict_bin['ell_measured'] = clf['ell']
+        # other_params_dict_bin['Clyy_measured'] = clf[('ymap', 'ymap')][('y', 'y')]['true'][0]
+        # other_params_dict_bin['Clgg_measured'] = \
+        #     clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0]
+        # other_params_dict_bin['ell_measured'] = clf['ell']
         nbar_bin = block[sec_name,'nbar--' + str(binv)]
-        other_params_dict['nbar'] = nbar_bin
+        other_params_dict_bin['nbar'] = nbar_bin
+        other_params_dict_bin['noise_kappa'] = block[sec_name,'noisek--' + str(binv)]
 
 
         if other_params_dict_bin['do_vary_cosmo']:
             del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                 'bm_array'], other_params_dict_bin['halo_conc_mdef']
 
+        # import pdb;pdb.set_trace()
         DV_fid = DataVec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
 
         block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
         block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']
+        block[sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['total']
+        block[sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['total']
         block[sec_save_name, 'theory_Clyy'] = DV_fid.Cl_dict['yy']['total']
 
+        block[sec_save_name, 'theory_Clkk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['1h']
+        block[sec_save_name, 'theory_Clky1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['1h']
         block[sec_save_name, 'theory_Clgg1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['1h']
         block[sec_save_name, 'theory_Clgy1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['1h']
         block[sec_save_name, 'theory_Clyy1h'] = DV_fid.Cl_dict['yy']['1h']
 
+        block[sec_save_name, 'theory_Clkk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['2h']
+        block[sec_save_name, 'theory_Clky2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['2h']
         block[sec_save_name, 'theory_Clgg2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['2h']
         block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
         block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
+
+        block[sec_save_name, 'theory_ell'] = DV_fid.l_array
 
         stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
         cov_fid_dict_G = DV_fid.get_cov_G()
@@ -296,6 +329,16 @@ def execute(block, config):
 
         j1 = 0
         for stats in other_params_dict['stats_analyze']:
+
+            if stats == 'kk':
+                block[sec_save_name, 'covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+                    'kk' + '_' + 'kk']
+                block[sec_save_name, 'covNG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+                    'kk' + '_' + 'kk']
+                block[sec_save_name, 'cov_total_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+                                                                                                 'kk' + '_' + 'kk'] + \
+                                                                                             cov_fid_dict_NG[
+                                                                                                 'kk' + '_' + 'kk']
 
             if stats == 'gg':
                 block[sec_save_name, 'covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
@@ -306,13 +349,24 @@ def execute(block, config):
                                                                                                  'gg' + '_' + 'gg'] + \
                                                                                              cov_fid_dict_NG[
                                                                                                  'gg' + '_' + 'gg']
-                Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
-                    clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
-                Cl_gg_data_bin =  clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
-                cov_gg_bin = cov_fid_dict_G['gg' + '_' + 'gg'] + cov_fid_dict_NG['gg' + '_' + 'gg']
-                inv_cov_bin = QR_inverse(cov_gg_bin)
-                snr_bin = np.sqrt(np.dot(np.array([Cl_gg_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gg_data_bin]).T)))
-                print 'SNR gg bin:' + str(binv) + ', ' + str(zmin_array[binv-1]) + '<z<' + str(zmax_array[binv-1]) + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
+
+                # Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
+                #     clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
+                # Cl_gg_data_bin =  clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
+                # cov_gg_bin = cov_fid_dict_G['gg' + '_' + 'gg'] + cov_fid_dict_NG['gg' + '_' + 'gg']
+                # inv_cov_bin = QR_inverse(cov_gg_bin)
+                # snr_bin = np.sqrt(np.dot(np.array([Cl_gg_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gg_data_bin]).T)))
+                # print 'SNR gg bin:' + str(binv) + ', ' + str(zmin_array[binv-1]) + '<z<' + str(zmax_array[binv-1]) + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
+
+            if stats == 'ky':
+                block[sec_save_name, 'covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+                    'ky' + '_' + 'ky']
+                block[sec_save_name, 'covNG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+                    'ky' + '_' + 'ky']
+                block[sec_save_name, 'cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+                                                                                                 'ky' + '_' + 'ky'] + \
+                                                                                             cov_fid_dict_NG[
+                                                                                                 'ky' + '_' + 'ky']
 
             if stats == 'gy':
                 block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
@@ -323,13 +377,13 @@ def execute(block, config):
                                                                                                  'gy' + '_' + 'gy'] + \
                                                                                              cov_fid_dict_NG[
                                                                                                  'gy' + '_' + 'gy']
-                Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
-                clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
-                Cl_gy_data_bin =  clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
-                cov_gy_bin = cov_fid_dict_G['gy' + '_' + 'gy'] + cov_fid_dict_NG['gy' + '_' + 'gy']
-                inv_cov_bin = QR_inverse(cov_gy_bin)
-                snr_bin = np.sqrt(np.dot(np.array([Cl_gy_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gy_data_bin]).T)))
-                print 'SNR gy bin:' + str(binv) + ', ' + str(zmin_array[binv-1]) + '<z<' + str(zmax_array[binv-1]) + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
+                # Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
+                # clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
+                # Cl_gy_data_bin =  clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
+                # cov_gy_bin = cov_fid_dict_G['gy' + '_' + 'gy'] + cov_fid_dict_NG['gy' + '_' + 'gy']
+                # inv_cov_bin = QR_inverse(cov_gy_bin)
+                # snr_bin = np.sqrt(np.dot(np.array([Cl_gy_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gy_data_bin]).T)))
+                # print 'SNR gy bin:' + str(binv) + ', ' + str(zmin_array[binv-1]) + '<z<' + str(zmax_array[binv-1]) + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
 
             if stats == 'yy':
                 block[sec_save_name, 'covG_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy']
@@ -374,7 +428,15 @@ def execute(block, config):
     savecov = {'cov_total':cov_fid, 'cov_G':cov_fid_G, 'cov_NG':cov_fid_NG, 'mean':Cl_vec_data,'ell_all':ell_all}
     pk.dump(savecov,open(save_cov_fname,'wb'))
 
-    # pdb.set_trace()
+    out_dict = {}
+    all_keys = block.keys()
+    for key in all_keys:
+        out_dict[key[1]] = block[key]
+
+    np.savez(save_block_fname, **out_dict)
+    pdb.set_trace()
+
+
 
     return 0
 
