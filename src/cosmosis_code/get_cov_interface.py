@@ -1,7 +1,7 @@
 import sys, os
 from cosmosis.datablock import names, option_section, BlockError
-
-sys.path.insert(0, '../../helper/')
+sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
+# sys.path.insert(0, '../../helper/')
 # sys.path.insert(0, '../')
 import numpy as np
 import copy

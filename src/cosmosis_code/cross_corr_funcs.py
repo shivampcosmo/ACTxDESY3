@@ -15,7 +15,8 @@ from colossus.halo import mass_defs
 from colossus.halo import concentration
 import copy
 import itertools
-sys.path.insert(0, '../../helper/')
+sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
+# sys.path.insert(0, '../../helper/')
 import mycosmo as cosmodef
 import LSS_funcs as hmf
 import plot_funcs as pf
@@ -320,7 +321,7 @@ class Pressure:
 
         if M200c_mat is None:
             if self.verbose:
-                print ('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
+                print 'changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12'
                 ti = time.time()
 
             halo_conc_Delta = np.zeros(M_mat_Delta.shape)
