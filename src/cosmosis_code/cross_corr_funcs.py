@@ -321,11 +321,8 @@ class Pressure:
 
         if M200c_mat is None:
             if self.verbose:
-<<<<<<< HEAD
+
                 print('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
-=======
-                print ('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
->>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
                 ti = time.time()
 
             halo_conc_Delta = np.zeros(M_mat_Delta.shape)
