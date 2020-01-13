@@ -321,7 +321,7 @@ class Pressure:
 
         if M200c_mat is None:
             if self.verbose:
-                print 'changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12'
+                print('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
                 ti = time.time()
 
             halo_conc_Delta = np.zeros(M_mat_Delta.shape)
@@ -495,7 +495,7 @@ class Pressure:
             num_rpi = 20
 
         rpi_array = np.linspace(rpi_min, rpi_max, num_rpi)
-        for ri in xrange(0, len(rperp_array)):
+        for ri in range(len(rperp_array)):
             x_array = np.sqrt(rperp_array[ri] ** 2. + rpi_array ** 2.)
             y3d = self.get_y3d(M_mat, x_array, z_array, R_mat, M200c_mat=M200c_mat)
 
@@ -1396,7 +1396,6 @@ class DataVec:
             len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
 
         for j in range(len(l_array)):
-
             if self.verbose:
                 if np.mod(j, 40) == 0:
                     print(j)

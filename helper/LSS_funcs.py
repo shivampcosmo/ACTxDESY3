@@ -27,7 +27,7 @@ def get_Dcom_array(zarray, Omega_m):
     Omega_L = 1. - Omega_m
     c = 3 * 10 ** 5
     Dcom_array = np.zeros(len(zarray))
-    for j in xrange(len(zarray)):
+    for j in range(len(zarray)):
         zf = zarray[j]
         res1 = sp.integrate.quad(lambda z: (c / 100) * (1 / (np.sqrt(Omega_L + Omega_m * ((1 + z) ** 3)))), 0, zf)
         Dcom = res1[0]
@@ -47,7 +47,7 @@ def get_Dang_com_array(zarray, Omega_m):
     Omega_L = 1. - Omega_m
     c = 3 * 10 ** 5
     Dang_com_array = np.zeros(len(zarray))
-    for j in xrange(len(zarray)):
+    for j in range(len(zarray)):
         zf = zarray[j]
         res1 = sp.integrate.quad(lambda z: (c / 100) * (1 / (np.sqrt(Omega_L + Omega_m * ((1 + z) ** 3)))), 0, zf)
         Dcom = res1[0]
@@ -172,7 +172,7 @@ def sigRz0(R, karr, Pklinz0, window='gauss'):
 
 def get_sigmz0_array(Marr, karr, Pklinz0, rhom=get_rhom(), window='tophat'):
     sigmarr = np.zeros(len(Marr))
-    for i in xrange(len(Marr)):
+    for i in range(len(Marr)):
         M = Marr[i]
         sigmarr[i] = sigmz0(M, karr, Pklinz0, rhom, window)
 
@@ -201,14 +201,14 @@ def dndm(Marr, z_mean, karr, Pklinz0, fnm='st', rhom=get_rhom(), Deltac=1.686, A
     pi = np.pi
     dndmarr = np.zeros(len(Marr))
     if fnm == 'st':
-        for i in xrange(len(Marr)):
+        for i in range(len(Marr)):
             M = Marr[i]
             sigmh = sigmz0(M, karr, Pklinz0, rhom, window='tophat')
             nuval = deltac / sigmh
             dndmarr[i] = fst(nuval, p, q)
 
     if fnm == 'mice':
-        for i in xrange(len(Marr)):
+        for i in range(len(Marr)):
             M = Marr[i]
             sigmh = sigmz0(M, karr, Pklinz0, rhom, window='tophat')
             dndmarr[i] = fmice(sigmh, z_mean, A0, a0, b0, c0, A0pow, a0pow, b0pow, c0pow)
@@ -260,13 +260,13 @@ def get_local_lag_bias_array(Marrh, z_mean, karr, Pklinz0, fnm='mice', orders=No
     b2Larr = np.zeros(len(Marrh))
     b3Larr = np.zeros(len(Marrh))
     if fnm == 'mice':
-        for i in xrange(len(Marrh)):
+        for i in range(len(Marrh)):
             Mh = Marrh[i]
             b1Larr[i] = bnLmice(Mh, 1, z_mean, karr, Pklinz0)
             b2Larr[i] = bnLmice(Mh, 2, z_mean, karr, Pklinz0)
             b3Larr[i] = bnLmice(Mh, 3, z_mean, karr, Pklinz0)
     if fnm == 'st':
-        for i in xrange(len(Marrh)):
+        for i in range(len(Marrh)):
             Mh = Marrh[i]
             b1Larr[i] = bnLst(Mh, 1, z_mean, karr, Pklinz0)
             b2Larr[i] = bnLst(Mh, 2, z_mean, karr, Pklinz0)
@@ -625,7 +625,7 @@ def P2hm_th(k, karr, Marr, dndmarr, b1Larr, b2Larr, b3Larr, z_mean, Pk_halofit, 
     bkmarrh = np.zeros(len(Marr))
     jh = np.where(karr == k)[0]
 
-    for i in xrange(len(Marr_h)):
+    for i in range(len(Marr_h)):
         Mh = Marr[i]
 
         sigmh = sigmarr[i]
@@ -661,8 +661,8 @@ def P2hh_th(k, karr, Marr, dndmarr, b1Larr, b2Larr, b3Larr, z_mean, Pk_halofit, 
     bkmarrh = np.zeros(len(Marr))
 
     PXXNL = np.zeros((len(Marr), len(Marr)))
-    for i1 in xrange(len(Marr)):
-        for i2 in xrange(len(Marr)):
+    for i1 in range(len(Marr)):
+        for i2 in range(len(Marr)):
             Mh1 = Marr[i1]
             Mh2 = Marr[i2]
 
@@ -740,8 +740,8 @@ def get_Cl_limber(l, zarray, nzbin1, nzbin2, Pkarrz_interp_object, Hz_array, Dco
 
 def get_corr(cov):
     corr = np.zeros(cov.shape)
-    for ii in xrange(0,cov.shape[0]):
-        for jj in xrange(0,cov.shape[1]):
+    for ii in range(cov.shape[0]):
+        for jj in range(cov.shape[1]):
             corr[ii,jj] = cov[ii,jj]/np.sqrt(cov[ii,ii]*cov[jj,jj])
     return corr
 

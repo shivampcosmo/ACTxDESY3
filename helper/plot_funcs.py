@@ -32,14 +32,14 @@ def get_ellipse(cov, contour_levels=[1]):
     all_sigma_list = np.array([1, 2, 3])
     all_alpha_list = np.array([1.52, 2.48, 3.44])
     alpha_list = np.zeros(len(contour_levels))
-    for ii in xrange(0, len(contour_levels)):
+    for ii in range(len(contour_levels)):
         match = np.where(all_sigma_list == contour_levels[ii])[0]
         alpha_list[ii] = all_alpha_list[match]
 
     num_points = 5000
     rot_points = np.zeros((len(alpha_list), 2, 2 * num_points))
 
-    for ai in xrange(0, len(alpha_list)):
+    for ai in range(len(alpha_list)):
         alpha = alpha_list[ai]
         alphasquare = alpha ** 2.
 
@@ -73,7 +73,7 @@ def get_ellipse(cov, contour_levels=[1]):
 
         # Rotation matrix
         rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-        for pi in xrange(0, 2 * num_points):
+        for pi in range(2 * num_points):
             rot_points[ai, :, pi] = np.dot(rot_matrix, points[:, pi])
 
     return rot_points
@@ -112,7 +112,7 @@ def plot_contours(F_mat_wpriors_input, fid_values_input, param_labels_input, sig
 
     # Determine plot limits
     param_ranges = []
-    for parami in xrange(0, nparam):
+    for parami in range(nparam):
         varparami = param_cov[parami, parami]
         param_ranges.append((fid_values[parami] - max_sd * np.sqrt(varparami),
                              fid_values[parami] + max_sd * np.sqrt(varparami)))
@@ -122,13 +122,13 @@ def plot_contours(F_mat_wpriors_input, fid_values_input, param_labels_input, sig
     # fig.subplots_adjust(hspace = 0., wspace = 0.)
 
     # rows
-    for parami in xrange(0, nparam):
+    for parami in range(nparam):
         # cols
-        for paramj in xrange(0, nparam):
+        for paramj in range(nparam):
             # ellipses on lower triangle
             if parami > paramj:
                 points = get_points_from_cov(param_cov, [parami, paramj], sigma_levels)
-                for ii in xrange(0, len(sigma_levels)):
+                for ii in range(len(sigma_levels)):
                     ax[parami, paramj].plot(points[ii, 1, :] + fid_values[paramj],
                                             points[ii, 0, :] + fid_values[parami], lw=2)
                     ax[parami, paramj].set_xlim((param_ranges[paramj][0], param_ranges[paramj][1]))
@@ -480,7 +480,7 @@ def plot_wtheta(l_array, Cl_dict, theta_min, theta_max, ntheta, save_suffix, plo
     if cov_wtheta_G_dict is not None:
         if 'gy_gy' in cov_wtheta_G_dict.keys():
             sigG_gy_array = np.sqrt(np.diag(cov_wtheta_G_dict['gy_gy']))
-            print 'snr = ', np.sqrt(np.dot(np.dot(wtheta_yg, np.linalg.inv(cov_wtheta_G_dict['gy_gy'])), wtheta_yg.T))
+            print('snr = ', np.sqrt(np.dot(np.dot(wtheta_yg, np.linalg.inv(cov_wtheta_G_dict['gy_gy'])), wtheta_yg.T)))
             # pdb.set_trace()
             ax.errorbar(x_array, wtheta_yg, sigG_gy_array, color='black', marker='', linestyle='-',
                         label=r'Total')
@@ -563,7 +563,7 @@ def plot_wtheta(l_array, Cl_dict, theta_min, theta_max, ntheta, save_suffix, plo
 
 
 def plot_fishermat(F_mat, plot_dir='./', save_suffix='', save_plots=False):
-    print 'Fmat : ', F_mat
+    print('Fmat : ', F_mat)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     fmat = ax.imshow(F_mat)
@@ -607,7 +607,7 @@ def plot_Ptheta_samples(x_array, Ptheta_mat, Ptheta_fid, plot_dir='./', percenti
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(Ptheta_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Ptheta_mat, percentiles[1], axis=0)
@@ -651,7 +651,7 @@ def plot_Pr_samples(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles=None, do
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(Pr_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_mat, percentiles[1], axis=0)
@@ -696,7 +696,7 @@ def plot_wthetay_samples(theta_array, wthetayg_mat, wthetayg_fid, plot_dir='./',
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -745,7 +745,7 @@ def plot_w_yg_rp_samples_w_errorbars(w_yg_params_dict, w_yg_data_dict, plot_dir=
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -799,7 +799,7 @@ def plot_w_yg_rp_samples_w_errorbars_relative(w_yg_params_dict, w_yg_data_dict, 
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -1041,12 +1041,12 @@ def plot_Pr_samples_relative(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles
     nsamples, numx = Pr_mat.shape
 
     Pr_relative_mat = np.zeros((nsamples, numx))
-    for ii in xrange(0, nsamples):
+    for ii in range(nsamples):
         Pr_relative_mat[ii, :] = Pr_mat[ii, :] / Pr_fid[0][0]
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
 
     Pr_low = np.percentile(Pr_relative_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_relative_mat, percentiles[1], axis=0)
@@ -1086,13 +1086,13 @@ def plot_Pr_samples_relative(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles
 def plot_YM_relation_samples(M_array, integratedY_mat, YM_fid, do_split_params_massbins, split_mass_bins_min=None,
                              plot_dir='./', save_suffix='', save_plots=False, xlim=None, do_samples=True,
                              percentiles=None, ylim=None):
-    print "xlim = ", xlim
+    print("xlim = ", xlim)
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     nsamples, numM = integratedY_mat.shape
 
     if percentiles is None:
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
     YM_low = np.percentile(integratedY_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_mat, percentiles[1], axis=0)
 
@@ -1156,14 +1156,14 @@ def plot_YM_relation_relative(M_array, integratedY_mat, YM_fid, do_split_params_
                               percentiles=None, labels=None):
     nsamples, numM = integratedY_mat.shape
     integratedY_relative_mat = np.zeros((nsamples, numM))
-    for ii in xrange(0, nsamples):
+    for ii in range(nsamples):
         integratedY_relative_mat[ii, :] = integratedY_mat[ii, :] / YM_fid
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
     if (percentiles == None):
         percentiles = [16., 84.]
-    print "percentiles = ", percentiles
+    print("percentiles = ", percentiles)
     YM_low = np.percentile(integratedY_relative_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_relative_mat, percentiles[1], axis=0)
     # pdb.set_trace()
@@ -1330,9 +1330,9 @@ def plot_chi2_samples(chi2_samples, chi2_params_array):
     fig, ax = plt.subplots(2, 2, figsize=(12, 12))
 
     # rows
-    for parami in xrange(0, 2):
+    for parami in range(2):
         # cols
-        for paramj in xrange(0, 2):
+        for paramj in range(2):
             # ellipses on lower triangle
 
             ax_handle = ax[parami, paramj]
