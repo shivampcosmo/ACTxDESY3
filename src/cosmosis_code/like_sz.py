@@ -180,7 +180,7 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full,
         cov_obs_comp_h = np.copy(cov_obs_comp)
 
         if len(bins_array) > 1:
-            print 'zeroing the covariance between z bins'
+            print ('zeroing the covariance between z bins')
 
             if stat_type == 'gg_gy':
                 z1_0 = []
@@ -229,7 +229,7 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full,
     if no_cov_gg_gy:
         bins_n_array = np.arange(len(bins_array)) + 1
         cov_obs_comp_hf = np.copy(cov_obs_comp)
-        print 'zeroing the covariance between gg and gy'
+        print ('zeroing the covariance between gg and gy')
         if stat_type == 'gg_gy':
             z1_0 = []
             for ji in range(len(bins_array)):

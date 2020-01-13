@@ -480,7 +480,11 @@ def plot_wtheta(l_array, Cl_dict, theta_min, theta_max, ntheta, save_suffix, plo
     if cov_wtheta_G_dict is not None:
         if 'gy_gy' in cov_wtheta_G_dict.keys():
             sigG_gy_array = np.sqrt(np.diag(cov_wtheta_G_dict['gy_gy']))
+<<<<<<< HEAD
             print('snr = ', np.sqrt(np.dot(np.dot(wtheta_yg, np.linalg.inv(cov_wtheta_G_dict['gy_gy'])), wtheta_yg.T)))
+=======
+            print ('snr = '), np.sqrt(np.dot(np.dot(wtheta_yg, np.linalg.inv(cov_wtheta_G_dict['gy_gy'])), wtheta_yg.T))
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
             # pdb.set_trace()
             ax.errorbar(x_array, wtheta_yg, sigG_gy_array, color='black', marker='', linestyle='-',
                         label=r'Total')
@@ -563,7 +567,11 @@ def plot_wtheta(l_array, Cl_dict, theta_min, theta_max, ntheta, save_suffix, plo
 
 
 def plot_fishermat(F_mat, plot_dir='./', save_suffix='', save_plots=False):
+<<<<<<< HEAD
     print('Fmat : ', F_mat)
+=======
+    print ('Fmat : '), F_mat
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     fmat = ax.imshow(F_mat)
@@ -607,7 +615,11 @@ def plot_Ptheta_samples(x_array, Ptheta_mat, Ptheta_fid, plot_dir='./', percenti
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(Ptheta_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Ptheta_mat, percentiles[1], axis=0)
@@ -651,7 +663,11 @@ def plot_Pr_samples(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles=None, do
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(Pr_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_mat, percentiles[1], axis=0)
@@ -696,7 +712,11 @@ def plot_wthetay_samples(theta_array, wthetayg_mat, wthetayg_fid, plot_dir='./',
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -745,7 +765,11 @@ def plot_w_yg_rp_samples_w_errorbars(w_yg_params_dict, w_yg_data_dict, plot_dir=
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -799,7 +823,11 @@ def plot_w_yg_rp_samples_w_errorbars_relative(w_yg_params_dict, w_yg_data_dict, 
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -1046,7 +1074,11 @@ def plot_Pr_samples_relative(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
 
     Pr_low = np.percentile(Pr_relative_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_relative_mat, percentiles[1], axis=0)
@@ -1086,13 +1118,21 @@ def plot_Pr_samples_relative(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles
 def plot_YM_relation_samples(M_array, integratedY_mat, YM_fid, do_split_params_massbins, split_mass_bins_min=None,
                              plot_dir='./', save_suffix='', save_plots=False, xlim=None, do_samples=True,
                              percentiles=None, ylim=None):
+<<<<<<< HEAD
     print("xlim = ", xlim)
+=======
+    print ("xlim = "), xlim
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     nsamples, numM = integratedY_mat.shape
 
     if percentiles is None:
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
     YM_low = np.percentile(integratedY_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_mat, percentiles[1], axis=0)
 
@@ -1163,7 +1203,11 @@ def plot_YM_relation_relative(M_array, integratedY_mat, YM_fid, do_split_params_
 
     if (percentiles == None):
         percentiles = [16., 84.]
+<<<<<<< HEAD
     print("percentiles = ", percentiles)
+=======
+    print ("percentiles = "), percentiles
+>>>>>>> e0b7b0547eae9320d43a4df3c9fa0d1863f59066
     YM_low = np.percentile(integratedY_relative_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_relative_mat, percentiles[1], axis=0)
     # pdb.set_trace()
