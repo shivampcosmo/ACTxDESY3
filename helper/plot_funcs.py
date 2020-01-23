@@ -568,7 +568,6 @@ def plot_fishermat(F_mat, plot_dir='./', save_suffix='', save_plots=False):
 
     print('Fmat : ', F_mat)
 
-
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     fmat = ax.imshow(F_mat)
     fig.colorbar(fmat, ax=ax)
@@ -1185,7 +1184,7 @@ def plot_YM_relation_relative(M_array, integratedY_mat, YM_fid, do_split_params_
         percentiles = [16., 84.]
 
     print("percentiles = ", percentiles)
-
+    
     YM_low = np.percentile(integratedY_relative_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_relative_mat, percentiles[1], axis=0)
     # pdb.set_trace()
