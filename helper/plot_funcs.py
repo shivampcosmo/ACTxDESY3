@@ -659,6 +659,7 @@ def plot_Pr_samples(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles=None, do
 
     print("percentiles = ", percentiles)
 
+
     Pr_low = np.percentile(Pr_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_mat, percentiles[1], axis=0)
     ax.fill_between(x_array, Pr_low, Pr_high, color='blue', alpha=0.4, label=r'${\rm Forecast}$')
@@ -704,6 +705,7 @@ def plot_wthetay_samples(theta_array, wthetayg_mat, wthetayg_fid, plot_dir='./',
         percentiles = [16., 84.]
 
     print("percentiles = ", percentiles)
+
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -754,6 +756,7 @@ def plot_w_yg_rp_samples_w_errorbars(w_yg_params_dict, w_yg_data_dict, plot_dir=
         percentiles = [16., 84.]
 
     print("percentiles = ", percentiles)
+
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -809,6 +812,7 @@ def plot_w_yg_rp_samples_w_errorbars_relative(w_yg_params_dict, w_yg_data_dict, 
         percentiles = [16., 84.]
 
     print("percentiles = ", percentiles)
+
 
     Pr_low = np.percentile(wthetayg_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(wthetayg_mat, percentiles[1], axis=0)
@@ -1058,6 +1062,7 @@ def plot_Pr_samples_relative(x_array, Pr_mat, Pr_fid, plot_dir='./', percentiles
 
     print("percentiles = ", percentiles)
 
+
     Pr_low = np.percentile(Pr_relative_mat, percentiles[0], axis=0)
     Pr_high = np.percentile(Pr_relative_mat, percentiles[1], axis=0)
     ax.fill_between(x_array, Pr_low, Pr_high, color='blue', alpha=0.4, label=r'${\rm Halos}$')
@@ -1104,7 +1109,9 @@ def plot_YM_relation_samples(M_array, integratedY_mat, YM_fid, do_split_params_m
 
     if percentiles is None:
         percentiles = [16., 84.]
+
     print("percentiles = ", percentiles)
+
     YM_low = np.percentile(integratedY_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_mat, percentiles[1], axis=0)
 
@@ -1177,6 +1184,7 @@ def plot_YM_relation_relative(M_array, integratedY_mat, YM_fid, do_split_params_
         percentiles = [16., 84.]
 
     print("percentiles = ", percentiles)
+    
     YM_low = np.percentile(integratedY_relative_mat, percentiles[0], axis=0)
     YM_high = np.percentile(integratedY_relative_mat, percentiles[1], axis=0)
     # pdb.set_trace()
