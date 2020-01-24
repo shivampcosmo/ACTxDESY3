@@ -227,7 +227,7 @@ def setup(options):
     sec_save_name = options.get_string(option_section, "sec_save_name", default='save_get_cov')
     save_cov_fname = options.get_string(option_section, "save_cov_fname")
     save_block_fname = options.get_string(option_section, "save_block_fname")
-    save_real_space_cov = options.get_string(option_section, "save_real_space_cov")
+    save_real_space_cov = options.get_bool(option_section, "save_real_space_cov")
 
     return ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname,save_real_space_cov
 
@@ -434,6 +434,7 @@ def execute(block, config):
                                                                               ntheta, l_array_full,
                                                                               cov_G_diag_lfull)
                     block[sec_save_name, 'real_covG_gty_gty_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+                    pdb.set_trace()
 
             if stats == 'gy':
                 block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
