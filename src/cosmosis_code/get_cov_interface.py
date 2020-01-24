@@ -1,6 +1,5 @@
 import sys, os
 from cosmosis.datablock import names, option_section, BlockError
-
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 # sys.path.insert(0, '../../helper/')
 # sys.path.insert(0, '../')
@@ -229,7 +228,7 @@ def setup(options):
     save_block_fname = options.get_string(option_section, "save_block_fname")
     save_real_space_cov = options.get_bool(option_section, "save_real_space_cov")
 
-    return ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname,save_real_space_cov
+    return ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov
 
 
 def execute(block, config):
@@ -323,7 +322,15 @@ def execute(block, config):
         block[sec_save_name, 'theory_Clgk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['2h']
         block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
         block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
-
+        if other_params_dict_bin['derivative']:
+            block[sec_save_name, 'theory_Clkk1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['kk']['1h']
+            block[sec_save_name, 'theory_Clky1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['ky']['1h']
+            block[sec_save_name, 'theory_Clgg1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['gg']['1h']
+            block[sec_save_name, 'theory_Clgy1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['gy']['1h']
+            block[sec_save_name, 'theory_Clkg1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['kg']['1h']
+            block[sec_save_name, 'theory_Clyy1h_dM'] = DV_fid.Cl_dM_dict['yy']['1h']
+            
+            
         block[sec_save_name, 'theory_ell'] = DV_fid.l_array
 
         stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
