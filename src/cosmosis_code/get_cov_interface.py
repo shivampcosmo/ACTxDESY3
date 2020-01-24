@@ -1,5 +1,6 @@
 import sys, os
 from cosmosis.datablock import names, option_section, BlockError
+
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 # sys.path.insert(0, '../../helper/')
 # sys.path.insert(0, '../')
@@ -25,10 +26,10 @@ def get_value(section, value, config_run, config_def):
     return val
 
 
-
 def QR_inverse(matrix):
-    _Q,_R = np.linalg.qr(matrix)
-    return np.dot(_Q,np.linalg.inv(_R.T))
+    _Q, _R = np.linalg.qr(matrix)
+    return np.dot(_Q, np.linalg.inv(_R.T))
+
 
 def read_ini(ini_file, ini_def=None, twopt_file=None):
     config_run = ConfigObj(ini_file, unrepr=True)
@@ -168,8 +169,6 @@ def read_ini(ini_file, ini_def=None, twopt_file=None):
     other_params_dict['x_array'] = np.logspace(np.log10(other_params_dict['xmin']), np.log10(other_params_dict['xmax']),
                                                other_params_dict['num_x'])
 
-
-
     if twopt_file is None:
         if other_params_dict['larray_spacing'] == 'log':
             l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
@@ -220,7 +219,8 @@ def setup(options):
     #                     twopt_file=twopt_file)
     ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file)
 
-    z_edges = ast.literal_eval(options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
+    z_edges = ast.literal_eval(
+        options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
     bins_numbers = ast.literal_eval(options.get_string(option_section, "bins_numbers", default='[ 1,2,3,4,5,6 ]'))
 
     sec_name = options.get_string(option_section, "sec_name", default='get_cov')
@@ -291,10 +291,9 @@ def execute(block, config):
         # other_params_dict_bin['Clgg_measured'] = \
         #     clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0]
         # other_params_dict_bin['ell_measured'] = clf['ell']
-        nbar_bin = block[sec_name,'nbar--' + str(binv)]
+        nbar_bin = block[sec_name, 'nbar--' + str(binv)]
         other_params_dict_bin['nbar'] = nbar_bin
-        other_params_dict_bin['noise_kappa'] = block[sec_name,'noisek--' + str(binv)]
-
+        other_params_dict_bin['noise_kappa'] = block[sec_name, 'noisek--' + str(binv)]
 
         if other_params_dict_bin['do_vary_cosmo']:
             del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
@@ -331,6 +330,8 @@ def execute(block, config):
         block[sec_save_name, 'theory_max'] = theta_max
         block[sec_save_name, 'ntheta'] = ntheta
 
+        # import pdb; pdb.set_trace()
+
         j1 = 0
         for stats in other_params_dict['stats_analyze']:
 
@@ -345,13 +346,15 @@ def execute(block, config):
                                                                                                  'kk' + '_' + 'kk']
 
                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
-                                                         np.log(DV_fid.dl_array * np.diag(cov_fid_dict_G['kk' + '_' + 'kk'])),
+                                                         np.log(DV_fid.dl_array * np.diag(
+                                                             cov_fid_dict_G['kk' + '_' + 'kk'])),
                                                          fill_value=-100.0, bounds_error=False)
 
-                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)), 500000)
+                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)),
+                                               500000)
                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
                 l_array_full = l_array_full_all[1:]
-                
+
                 # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full)))) / dl_array_full
                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
 
@@ -361,7 +364,6 @@ def execute(block, config):
                 block[sec_save_name, 'real_covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
                 block[sec_save_name, 'theory_theta_rad'] = theta_array
                 # import pdb; pdb.set_trace()
-
 
             if stats == 'gg':
                 block[sec_save_name, 'covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
@@ -465,13 +467,27 @@ def execute(block, config):
                 # snr_bin = np.sqrt(np.dot(np.array([Cl_gy_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gy_data_bin]).T)))
                 # print 'SNR gy bin:' + str(binv) + ', ' + str(zmin_array[binv-1]) + '<z<' + str(zmax_array[binv-1]) + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
 
-            if stats == 'yy':
+            if binv == 1:
                 block[sec_save_name, 'covG_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy']
                 block[sec_save_name, 'covNG_yy_yy'] = cov_fid_dict_NG['yy' + '_' + 'yy']
                 block[sec_save_name, 'cov_total_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy'] + cov_fid_dict_NG[
                     'yy' + '_' + 'yy']
-
-
+                # cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
+                #                                          np.log(DV_fid.dl_array * np.diag(
+                #                                              cov_fid_dict_G['yy' + '_' + 'yy'])),
+                #                                          fill_value=-100.0, bounds_error=False)
+                #
+                # l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)),
+                #                                500000)
+                # dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+                # l_array_full = l_array_full_all[1:]
+                #
+                # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+                #
+                # theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+                #                                                           ntheta, l_array_full,
+                #                                                           cov_G_diag_lfull)
+                # block[sec_save_name, 'real_covG_yy_yy'] = cov_G_theta_j1j2
 
             Cl_vec[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = DV_fid.Cl_dict[stats]['total']
 
@@ -503,12 +519,12 @@ def execute(block, config):
         block[sec_save_name, 'data_Clgy_bin_' + str(binv) + '_' + str(binv)] = \
             clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
         block[sec_save_name, 'data_Clgg_bin_' + str(binv) + '_' + str(binv)] = \
-            clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
+            clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1. / nbar_bin
 
     block[sec_save_name, 'ell'] = clf['ell']
     block[sec_save_name, 'theory_dv'] = Cl_vec
-    savecov = {'cov_total':cov_fid, 'cov_G':cov_fid_G, 'cov_NG':cov_fid_NG, 'mean':Cl_vec_data,'ell_all':ell_all}
-    pk.dump(savecov,open(save_cov_fname,'wb'))
+    savecov = {'cov_total': cov_fid, 'cov_G': cov_fid_G, 'cov_NG': cov_fid_NG, 'mean': Cl_vec_data, 'ell_all': ell_all}
+    pk.dump(savecov, open(save_cov_fname, 'wb'))
 
     out_dict = {}
     all_keys = block.keys()
@@ -517,8 +533,6 @@ def execute(block, config):
 
     np.savez(save_block_fname, **out_dict)
     pdb.set_trace()
-
-
 
     return 0
 

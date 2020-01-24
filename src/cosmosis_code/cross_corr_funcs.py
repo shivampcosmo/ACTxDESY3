@@ -586,6 +586,10 @@ class general_hm:
         self.use_multiprocess = other_params['use_multiprocess']
 
         self.verbose = other_params['verbose']
+        H0 = 100. * (u.km / (u.s * u.Mpc))
+        G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
+        self.rho_m_bar = ((cosmo_params['Om0'] * 3 * (H0**2)/(8*np.pi*G_new)).to(u.M_sun/(u.Mpc**3))).value
+        # import pdb; pdb.set_trace()
 
     # Get the interpolated object of linear power spectrum at given cosmology
     def get_Pklin_zk_interp(self):
@@ -620,6 +624,7 @@ class general_hm:
                                                                               q_out='dndlnM')
 
             bm_array_Mz[j, :] = bias.haloBias(M_array, self.z_array[j], model=self.bias_model, mdef=mdef)
+            # import pdb;pdb.set_trace()
 
         return dndm_array_Mz, bm_array_Mz
 
@@ -675,6 +680,7 @@ class Powerspec:
 
         self.nm, self.nz = len(self.M_array), len(self.z_array)
         M_mat_mdef = np.tile(self.M_array.reshape(1, self.nm), (self.nz, 1))
+        self.M_mat = M_mat_mdef
 
         if hod_params['hod_type'] == 'Halos':
             self.use_only_halos = True
@@ -858,6 +864,9 @@ class Powerspec:
         int_sourcez = sp.integrate.simps(ng_array_source_rep * (num / chi_smat), self.z_array)
         coeff_ints = 3 * (100 ** 2) * cosmo_params['Om0'] / (2. * ((3 * 10 ** 5) ** 2))
         self.Wk_array = coeff_ints * self.chi_array * (1. + self.z_array) * int_sourcez
+        H0 = 100. * (u.km / (u.s * u.Mpc))
+        G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
+        self.rho_m_bar = ((cosmo_params['Om0'] * 3 * (H0**2)/(8*np.pi*G_new)).to(u.M_sun/(u.Mpc**3))).value
 
         if 'pkzlin_interp' not in other_params.keys():
             if self.verbose:
@@ -928,18 +937,27 @@ class Powerspec:
     # get spherical harmonic transform of the matter distribution
     def get_uk_l_zM(self, l):
         k_array = (l + 1. / 2.) / self.chi_array
-        if self.use_only_halos:
-            ukzm_mat = np.ones((self.nz, self.nm))
-        else:
-            ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
-
+        # if self.use_only_halos:
+        #     ukzm_mat = np.ones((self.nz, self.nm))
+        # else:
+        #     ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+        ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+        uk_mat_normed = ukzm_mat * self.M_mat / self.rho_m_bar
         coeff_mat = np.tile((self.Wk_array / self.chi_array ** 2).reshape(self.nz, 1),(1, self.nm))
 
-        return coeff_mat * ukzm_mat
+        return coeff_mat * uk_mat_normed
 
-    # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
-    def get_bk_l_z(self, l):
+    # # get spherical harmonic transform of the effective shear bias
+    def get_bk_l_z(self, l, ukl_zM_dict):
         return self.Wk_array / self.chi_array ** 2
+
+    # get spherical harmonic transform of the effective shear bias
+    # def get_bk_l_z(self, l, ukl_zM_dict):
+    #     ukl_zM = ukl_zM_dict[round(l, 1)]
+    #     toint = ukl_zM * self.dndm_array * self.bm_array
+    #     val = sp.integrate.simps(toint, self.M_array)
+    #     # import pdb; pdb.set_trace()
+    #     return val
 
     def collect_ug(self, l_array, return_dict):
         for l in l_array:
@@ -1026,23 +1044,50 @@ class Powerspec:
         ukl_zM = ukl_zM_dict[round(l, 1)]
         uyl_zM = uyl_zM_dict[round(l, 1)]
 
-        toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (uyl_zM * ukl_zM) * self.dndm_array
 
         val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
 
         val = sp.integrate.simps(toint_z, self.z_array)
 
         return val
 
-    def get_Cl_yk_2h(self, l, uyl_zM_dict):
+    def get_Cl_yk_2h(self, l, ukl_zM_dict, uyl_zM_dict):
         k_array = (l + 1. / 2.) / self.chi_array
         byl_z = self.get_by_l_z(l, uyl_zM_dict)
-        bkl_z = self.get_bk_l_z(l)
+        bkl_z = self.get_bk_l_z(l, ukl_zM_dict)
         bkl_z_dict[l] = bkl_z
         byl_z_dict[l] = byl_z
         toint_z = (byl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
+        val = sp.integrate.simps(toint_z, self.z_array)
+        return val
+
+
+    def get_Cl_kg_1h(self, l, ukl_zM_dict, ugl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+        ugl_zM = ugl_zM_dict[round(l, 1)]
+
+        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (ugl_zM * ukl_zM) * self.dndm_array
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+
+        val = sp.integrate.simps(toint_z, self.z_array)
+
+        return val
+
+    def get_Cl_kg_2h(self, l, ukl_zM_dict):
+        k_array = (l + 1. / 2.) / self.chi_array
+        bgl_z = self.get_bg_l_z(l)
+        bkl_z = self.get_bk_l_z(l, ukl_zM_dict)
+        # bkl_z_dict[l] = bkl_z
+        # bgl_z_dict[l] = bgl_z
+        toint_z = (bgl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
         val = sp.integrate.simps(toint_z, self.z_array)
         return val
 
@@ -1050,20 +1095,24 @@ class Powerspec:
     def get_Cl_kk_1h(self, l, ukl_zM_dict):
         ukl_zM = ukl_zM_dict[round(l, 1)]
 
-        toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        # toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (ukl_zM * ukl_zM) * self.dndm_array
 
         val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+        # toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
 
         val = sp.integrate.simps(toint_z, self.z_array)
 
         return val
 
-    def get_Cl_kk_2h(self, l):
+    def get_Cl_kk_2h(self, l, ukl_zM_dict):
         k_array = (l + 1. / 2.) / self.chi_array
-        bkl_z = self.get_bk_l_z(l)
+        bkl_z = self.get_bk_l_z(l, ukl_zM_dict)
+        # toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+        #     self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
         toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
         val = sp.integrate.simps(toint_z, self.z_array)
         return val
 
@@ -1410,6 +1459,7 @@ class DataVec:
             len(l_array)), np.zeros(len(l_array))
         Cl_kk_1h_array, Cl_kk_2h_array, Cl_yk_1h_array, Cl_yk_2h_array = np.zeros(
             len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
+        Cl_kg_1h_array, Cl_kg_2h_array = np.zeros(len(l_array)), np.zeros(len(l_array))
 
         for j in range(len(l_array)):
             if self.verbose:
@@ -1426,11 +1476,13 @@ class DataVec:
             Cl_yg_2h_array[j] = self.PS.get_Cl_yg_2h(l_array[j], self.uyl_zM_dict)
 
             Cl_yk_1h_array[j] = self.PS.get_Cl_yk_1h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
-            Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.uyl_zM_dict)
+            Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
 
             Cl_kk_1h_array[j] = self.PS.get_Cl_kk_1h(l_array[j], self.ukl_zM_dict)
-            Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j])
+            Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j], self.ukl_zM_dict)
 
+            Cl_kg_1h_array[j] = self.PS.get_Cl_kg_1h(l_array[j], self.ukl_zM_dict, self.ugl_zM_dict)
+            Cl_kg_2h_array[j] = self.PS.get_Cl_kg_2h(l_array[j], self.ukl_zM_dict)
 
         if self.verbose:
             print('That took {} seconds'.format(time.time() - starttime))
@@ -1457,7 +1509,9 @@ class DataVec:
                         'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
                         'kk': {'1h': Cl_kk_1h_array, '2h': Cl_kk_2h_array, 'total': Cl_kk_1h_array + Cl_kk_2h_array},
                         'yk': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
-                        'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array}}
+                        'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
+                        'kg': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array},
+                        'gk': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array}}
 
         self.stats_analyze = other_params['stats_analyze']
         stats_analyze_pairs = []
