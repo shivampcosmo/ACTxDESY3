@@ -305,6 +305,7 @@ def execute(block, config):
 
         block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
         block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']
+        block[sec_save_name, 'theory_Clgk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['total']
         block[sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['total']
         block[sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['total']
         block[sec_save_name, 'theory_Clyy'] = DV_fid.Cl_dict['yy']['total']
@@ -312,12 +313,14 @@ def execute(block, config):
         block[sec_save_name, 'theory_Clkk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['1h']
         block[sec_save_name, 'theory_Clky1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['1h']
         block[sec_save_name, 'theory_Clgg1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['1h']
+        block[sec_save_name, 'theory_Clgk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['1h']
         block[sec_save_name, 'theory_Clgy1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['1h']
         block[sec_save_name, 'theory_Clyy1h'] = DV_fid.Cl_dict['yy']['1h']
 
         block[sec_save_name, 'theory_Clkk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['2h']
         block[sec_save_name, 'theory_Clky2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['2h']
         block[sec_save_name, 'theory_Clgg2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['2h']
+        block[sec_save_name, 'theory_Clgk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['2h']
         block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
         block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
 
@@ -434,7 +437,7 @@ def execute(block, config):
                                                                               ntheta, l_array_full,
                                                                               cov_G_diag_lfull)
                     block[sec_save_name, 'real_covG_gty_gty_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-                    pdb.set_trace()
+                    # pdb.set_trace()
 
             if stats == 'gy':
                 block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
