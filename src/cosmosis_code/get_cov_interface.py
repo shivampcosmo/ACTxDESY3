@@ -565,6 +565,7 @@ def execute(block, config):
             clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1. / nbar_bin
 
     block[sec_save_name, 'ell'] = clf['ell']
+    block[sec_save_name, 'M_array'] = other_params_dict['M_array']
     block[sec_save_name, 'theory_dv'] = Cl_vec
     savecov = {'cov_total': cov_fid, 'cov_G': cov_fid_G, 'cov_NG': cov_fid_NG, 'mean': Cl_vec_data, 'ell_all': ell_all}
     pk.dump(savecov, open(save_cov_fname, 'wb'))
@@ -575,8 +576,9 @@ def execute(block, config):
         out_dict[key[1]] = block[key]
 
     np.savez(save_block_fname, **out_dict)
-    pdb.set_trace()
-
+    
+    #pdb.set_trace()
+    
     return 0
 
 
