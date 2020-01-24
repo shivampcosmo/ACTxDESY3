@@ -323,6 +323,8 @@ class Pressure:
             if self.verbose:
 
                 print('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
+
+
                 ti = time.time()
 
             halo_conc_Delta = np.zeros(M_mat_Delta.shape)
@@ -907,6 +909,12 @@ class Powerspec:
         # val = sp.integrate.romb(x_mat2_y3d_mat * np.sin(temp_mat) / temp_mat,
         #                         self.x_array[1] - self.x_array[0])
         val = sp.integrate.simps(x_mat2_y3d_mat * np.sin(temp_mat) / temp_mat,self.x_array)
+
+        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+            Bl = np.exp(-1. * l * (l + 1) * (sig_beam ** 2) / 2.)
+            val = val * Bl
+
         return coeff_mat_y * val
 
         # get spherical harmonic transform of the effective hot gas bias, eq 16 of Makiya et al
@@ -1180,6 +1188,13 @@ class Powerspec:
             Cl_yk = Cl_yk * Bl
         return Cl_yk
 
+    def get_Cl_yy_beamed(self, l_array, Cl_yy):
+        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+            Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
+            Cl_yy = Cl_yy * (Bl**2)
+        return Cl_yy
+
     # See Makiya paper
     def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict, ukl_zM_dict):
         nl = len(l_array_all)
@@ -1422,11 +1437,14 @@ class DataVec:
 
         self.bgl_z_dict, self.byl_z_dict = bgl_z_dict, byl_z_dict
 
-        Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
-        Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
+        # Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
+        # Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
 
-        Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
-        Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
+        # Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
+        # Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
+
+        # Cl_yy_1h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_1h_array)
+        # Cl_yy_2h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_2h_array)
 
         if self.PS.fmis > 0:
             Cl_yg_total = self.PS.get_Cl_yg_miscentered(l_array, Cl_yg_1h_array + Cl_yg_2h_array)
@@ -1486,7 +1504,7 @@ class DataVec:
                                                        bounds_error=False)
                 self.Cl_noise_gg_l_array = Cl_gg_interp(np.log(self.l_array)) - self.Cl_dict['gg']['total']
 
-
+        # import pdb; pdb.set_trace()
         del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
     def get_Cl_vector(self):
@@ -1622,6 +1640,54 @@ class DataVec:
         l_mat = np.tile(l_array.reshape(1, 1, nl), (ntheta, ntheta, 1))
 
         integrand = (l_mat ** 2) * (J0_ltheta_binned_mat1 * J0_ltheta_binned_mat2) * cov_diag_mat
+        cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
+
+        # integrand2 = (l_mat ** 2) * (J0_ltheta_mat1 * J0_ltheta_mat2)  * cov_diag_mat
+        # cov_wtheta2 = (1. / (2 * np.pi) ** 2) * sp.integrate.simps(integrand2, l_array)
+
+        # pdb.set_trace()
+
+        return theta_array_rad, cov_wtheta
+
+
+    def get_covdiag_gammat(self, theta_min, theta_max, ntheta, l_array, cov_diag):
+        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
+        dtheta_array = (theta_array_all[1:] - theta_array_all[:-1]) / 2.
+        theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+        theta_plus_array = theta_array + dtheta_array / 2.
+        theta_minus_array = theta_array - dtheta_array / 2.
+        ntheta = len(theta_array)
+        nl = len(l_array)
+
+        theta_array_rad = theta_array * (np.pi / 180.) * (1. / 60.)
+        dtheta_array_rad = dtheta_array * (np.pi / 180.) * (1. / 60.)
+        thetaplus_array_rad = theta_plus_array * (np.pi / 180.) * (1. / 60.)
+        thetaminus_array_rad = theta_minus_array * (np.pi / 180.) * (1. / 60.)
+
+        # l_theta = (np.tile(l_array.reshape(1, nl), (ntheta, 1))) * (np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl)))
+        # J0_ltheta = sp.special.jv(0,l_theta)
+        # J0_ltheta_mat1 = np.tile(J0_ltheta.reshape(ntheta, 1, nl), (1, ntheta, 1))
+        # J0_ltheta_mat2 = np.tile(J0_ltheta.reshape( 1,ntheta, nl), (ntheta,1,  1))
+
+        l_mat = np.tile(l_array.reshape(1, nl), (ntheta, 1))
+        theta_mat = np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl))
+        dtheta_mat = np.tile(dtheta_array_rad.reshape(ntheta, 1), (1, nl))
+        thetaplus_mat = np.tile(thetaplus_array_rad.reshape(ntheta, 1), (1, nl))
+        thetaminus_mat = np.tile(thetaminus_array_rad.reshape(ntheta, 1), (1, nl))
+        l_thetaplus = l_mat * thetaplus_mat
+        l_thetaminus = l_mat * thetaminus_mat
+        J3_ltheta_plus = sp.special.jv(3, l_thetaplus)
+        J3_ltheta_minus = sp.special.jv(3, l_thetaminus)
+        J2_ltheta_binned = (1. / (l_mat * theta_mat * dtheta_mat)) * (
+                thetaplus_mat * J3_ltheta_plus - thetaminus_mat * J3_ltheta_minus)
+
+        J2_ltheta_binned_mat1 = np.tile(J2_ltheta_binned.reshape(ntheta, 1, nl), (1, ntheta, 1))
+        J2_ltheta_binned_mat2 = np.tile(J2_ltheta_binned.reshape(1, ntheta, nl), (ntheta, 1, 1))
+
+        cov_diag_mat = np.tile(cov_diag.reshape(1, 1, nl), (ntheta, ntheta, 1))
+        l_mat = np.tile(l_array.reshape(1, 1, nl), (ntheta, ntheta, 1))
+
+        integrand = (l_mat ** 2) * (J2_ltheta_binned_mat1 * J2_ltheta_binned_mat2) * cov_diag_mat
         cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
 
         # integrand2 = (l_mat ** 2) * (J0_ltheta_mat1 * J0_ltheta_mat2)  * cov_diag_mat

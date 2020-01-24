@@ -23,7 +23,7 @@ def get_wprp_gt(rp, karr, Pkarr):
 out_dict = np.load('/global/project/projectdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_desy1.npz')
 theta_min = 2.5
 theta_max = 250.
-ntheta = 20
+ntheta = 21
 # import pdb; pdb.set_trace()
 
 l_array = out_dict['theory_ell']
@@ -32,6 +32,7 @@ theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
 theta_array_rad = theta_array * (np.pi / 180.) * (1. / 60.)
 # l_array_full = np.logspace(0, 4.1, 50000)
 l_array_full = np.linspace(0.1,20000, 500000)
+# import pdb; pdb.set_trace()
 
 wtheta_yg_dict = {'theta_rad':theta_array_rad, 'theta_arcmin':theta_array}
 wtheta_gg_dict = {'theta_rad':theta_array_rad, 'theta_arcmin':theta_array}
@@ -94,7 +95,7 @@ for jb in range(4):
     inv_cov_bin = QR_inverse(cov_ky_ky)
     Cl_ky_bin = Cl_ky_1h_array + Cl_ky_2h_array
     snr_bin = np.sqrt(np.dot(np.array([Cl_ky_bin]), np.dot(inv_cov_bin, np.array([Cl_ky_bin]).T)))
-    print 'SNR ky bin:' + str(binv)  + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
+    print('SNR ky bin:' + str(binv)  + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma')
     # import pdb; pdb.set_trace()
 
     Cl_ky_1h_interp = interpolate.interp1d(np.log(l_array), np.log(Cl_ky_1h_array), fill_value='extrapolate',
@@ -128,7 +129,7 @@ for jb in range(4):
     inv_cov_bin = QR_inverse(cov_kk_kk)
     Cl_kk_bin = Cl_kk_1h_array + Cl_kk_2h_array
     snr_bin = np.sqrt(np.dot(np.array([Cl_kk_bin]), np.dot(inv_cov_bin, np.array([Cl_kk_bin]).T)))
-    print 'SNR kk bin:' + str(binv)  + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma'
+    print('SNR kk bin:' + str(binv)  + '=' + str(np.round(snr_bin[0][0],2)) + ' sigma')
     # import pdb; pdb.set_trace()
 
     Cl_kk_1h_interp = interpolate.interp1d(np.log(l_array), np.log(Cl_kk_1h_array), fill_value='extrapolate',

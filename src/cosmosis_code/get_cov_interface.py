@@ -326,6 +326,10 @@ def execute(block, config):
         stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
         cov_fid_dict_G = DV_fid.get_cov_G()
         cov_fid_dict_NG = DV_fid.get_cov_NG()
+        theta_min, theta_max, ntheta = 2.5, 250, 21
+        block[sec_save_name, 'theory_min'] = theta_min
+        block[sec_save_name, 'theory_max'] = theta_max
+        block[sec_save_name, 'ntheta'] = ntheta
 
         j1 = 0
         for stats in other_params_dict['stats_analyze']:
@@ -340,6 +344,25 @@ def execute(block, config):
                                                                                              cov_fid_dict_NG[
                                                                                                  'kk' + '_' + 'kk']
 
+                cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
+                                                         np.log(DV_fid.dl_array * np.diag(cov_fid_dict_G['kk' + '_' + 'kk'])),
+                                                         fill_value=-100.0, bounds_error=False)
+
+                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)), 500000)
+                dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+                l_array_full = l_array_full_all[1:]
+                
+                # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full)))) / dl_array_full
+                cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+
+                theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+                                                                          ntheta, l_array_full,
+                                                                          cov_G_diag_lfull)
+                block[sec_save_name, 'real_covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+                block[sec_save_name, 'theory_theta_rad'] = theta_array
+                # import pdb; pdb.set_trace()
+
+
             if stats == 'gg':
                 block[sec_save_name, 'covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
                     'gg' + '_' + 'gg']
@@ -349,6 +372,23 @@ def execute(block, config):
                                                                                                  'gg' + '_' + 'gg'] + \
                                                                                              cov_fid_dict_NG[
                                                                                                  'gg' + '_' + 'gg']
+
+                cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
+                                                         np.log(DV_fid.dl_array * np.diag(
+                                                             cov_fid_dict_G['gg' + '_' + 'gg'])),
+                                                         fill_value=-100.0, bounds_error=False)
+
+                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)),
+                                               500000)
+                dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+                l_array_full = l_array_full_all[1:]
+
+                cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+
+                theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+                                                                          ntheta, l_array_full,
+                                                                          cov_G_diag_lfull)
+                block[sec_save_name, 'real_covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
 
                 # Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
                 #     clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['true'][0] - 1./nbar_bin
@@ -368,6 +408,28 @@ def execute(block, config):
                                                                                              cov_fid_dict_NG[
                                                                                                  'ky' + '_' + 'ky']
 
+                cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
+                                                         np.log(DV_fid.dl_array * np.diag(
+                                                             cov_fid_dict_G['ky' + '_' + 'ky'])),
+                                                         fill_value=-100.0, bounds_error=False)
+
+                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)),
+                                               500000)
+                dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+                l_array_full = l_array_full_all[1:]
+
+                cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+
+                theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+                                                                          ntheta, l_array_full,
+                                                                          cov_G_diag_lfull)
+                block[sec_save_name, 'real_covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+
+                theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_gammat(theta_min, theta_max,
+                                                                          ntheta, l_array_full,
+                                                                          cov_G_diag_lfull)
+                block[sec_save_name, 'real_covG_gty_gty_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+
             if stats == 'gy':
                 block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
                     'gy' + '_' + 'gy']
@@ -377,6 +439,24 @@ def execute(block, config):
                                                                                                  'gy' + '_' + 'gy'] + \
                                                                                              cov_fid_dict_NG[
                                                                                                  'gy' + '_' + 'gy']
+
+                cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array),
+                                                         np.log(DV_fid.dl_array * np.diag(
+                                                             cov_fid_dict_G['gy' + '_' + 'gy'])),
+                                                         fill_value=-100.0, bounds_error=False)
+
+                l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array)), np.log10(np.max(DV_fid.l_array)),
+                                               500000)
+                dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+                l_array_full = l_array_full_all[1:]
+
+                cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+
+                theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+                                                                          ntheta, l_array_full,
+                                                                          cov_G_diag_lfull)
+                block[sec_save_name, 'real_covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+
                 # Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
                 # clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
                 # Cl_gy_data_bin =  clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['true'][0]
@@ -390,6 +470,8 @@ def execute(block, config):
                 block[sec_save_name, 'covNG_yy_yy'] = cov_fid_dict_NG['yy' + '_' + 'yy']
                 block[sec_save_name, 'cov_total_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy'] + cov_fid_dict_NG[
                     'yy' + '_' + 'yy']
+
+
 
             Cl_vec[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = DV_fid.Cl_dict[stats]['total']
 
