@@ -20,7 +20,8 @@ def save_Cls(block, sec_name,save_plot_dir):
         os.mkdir(save_plot_dir)
     
     M = block[sec_name, 'M_array']
-    print (M)
+    z = block[sec_name, 'z_array']
+   
     nbins_lens = block['nz_lens', 'nbin']
     nbins_source = block['nz_source', 'nbin']
     ell = block[sec_name, 'theory_ell']
@@ -47,7 +48,15 @@ def save_Cls(block, sec_name,save_plot_dir):
         out.close()
     except:
         pass
-
+    try:
+        out = open(save_plot_dir+'/z','w')
+        out.write('# z \n')
+        for l in range(len(z)):
+            out.write('{0}\n'.format((1.015**j)*z[l]))
+        out.close()
+    except:
+        pass
+    
     try:
         out = open(save_plot_dir+'/M','w')
         out.write('# Mass\n')
@@ -119,9 +128,9 @@ def save_Cls(block, sec_name,save_plot_dir):
     
     
     
-    
-    
-    # DMASS SAVING ****************
+    '''
+    it saves the derivatives of the Cl wrt Mass or redshift.
+    '''
     
     try:
         for i in range(nbins_source):
@@ -211,6 +220,100 @@ def save_Cls(block, sec_name,save_plot_dir):
     
   
     
+    
+    
+    
+    
+    
+    try:
+        for i in range(nbins_source):
+            #for j in range(nbins_source):
+                j=i
+                out = open(save_plot_dir+'/Cl_kk_dz_{0}_{1}'.format(i+1,j+1),'w')
+                
+                for l in range(len(ell)):
+                    st = ''
+                    
+                    for m in range(len(z)):
+                
+                        Cl = block[sec_name, 'theory_Clkk1h_dz_bin_' + str(i+1) + '_' + str(j+1)][m,l]
+                        
+                        st+='{0}  '.format(Cl)
+                    out.write('{0}  \n'.format(st))
+                out.close()
+    except:
+        pass
+    
+    
+    
+    
+    for i in range(nbins_source):
+            #for j in range(nbins_source):
+                j=i
+                out = open(save_plot_dir+'/Cl_ky_dz_{0}_{1}'.format(i+1,j+1),'w')
+              
+                for l in range(len(ell)):
+                    st = ''
+                    for m in range(len(z)):
+                        Cl = block[sec_name, 'theory_Clky1h_dz_bin_' + str(i+1) + '_' + str(j+1)][m,l]
+                        st+='{0}   '.format(Cl)
+                    out.write('{0}  \n'.format(st))
+                out.close()
+    #except:
+    #    pass
+    try:
+        for i in range(nbins_lens):
+            #for j in range(nbins_source):
+                j=i
+                out = open(save_plot_dir+'/Cl_gg_dz_{0}_{1}'.format(i+1,j+1),'w')
+                
+                for l in range(len(ell)):
+                    st = ''
+                    for m in range(len(z)):
+                        Cl = block[sec_name, 'theory_Clgg1h_dz_bin_' + str(i+1) + '_' + str(j+1)][m,l]
+                        st+='{0}   '.format(Cl)
+                    out.write('{0}  \n'.format(st))
+                out.close()
+    except:
+        pass
+    
+    
+    try:
+        for i in range(nbins_lens):
+            #for j in range(nbins_source):
+                j=i
+                out = open(save_plot_dir+'/Cl_gy_dz_{0}_{1}'.format(i+1,j+1),'w')
+                
+                for l in range(len(ell)):
+                    st = ''
+                    for m in range(len(z)):
+                        Cl = block[sec_name, 'theory_Clgy1h_dz_bin_' + str(i+1) + '_' + str(j+1)][m,l]
+                        st+='{0}   '.format(Cl)
+                    out.write('{0}  \n'.format(st))
+                out.close()
+    except:
+        pass
+    
+    
+    
+    try:
+        
+ 
+                out = open(save_plot_dir+'/Cl_yy_dz','w')
+                
+                for l in range(len(ell)):
+                    st = ''
+                    for m in range(len(z)):
+                        Cl = block[sec_name, 'theory_Clyy1h_dz'][m,l]
+                        st+='{0}   '.format(Cl)
+                    out.write('{0}  \n'.format(st))
+                out.close()
+    except:
+        pass
+    
+  
+
+
 
 def setup(options):
    

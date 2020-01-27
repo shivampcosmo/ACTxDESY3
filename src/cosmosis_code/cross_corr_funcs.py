@@ -1286,7 +1286,108 @@ class Powerspec:
 
     # derivatives (eq 24-25 of Makiya). *****************************************
     
-    # 1-halo term eq 25 of Makiya et al
+    # 1-halo term of eq 24 of Makiya et al (derivative wrt ln z)
+    def get_Cl_gg_dz_1h(self, l, ugl_zM_dict):
+        
+        if self.use_only_halos:
+            val = 0
+            denominator=1.
+        else:
+            ugl_zM = ugl_zM_dict[round(l, 1)]
+            toint_M = (ugl_zM ** 2) * self.dndm_array * self.M_mat_cond_inbin
+            val_z = sp.integrate.simps(toint_M, self.M_array)
+            toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+            denominator = sp.integrate.simps(toint_z, self.z_array)
+            val =  toint_z*self.z_array
+        return val/denominator
+    
+
+    def get_Cl_yy_dz_1h(self, l, uyl_zM_dict):
+
+        uyl_zM = uyl_zM_dict[round(l, 1)]
+        toint_M = (uyl_zM ** 2) * self.dndm_array
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+        denominator = sp.integrate.simps(toint_z, self.z_array)
+        val = toint_z* self.z_array
+        return val/denominator
+
+
+
+    def get_Cl_yg_dz_1h(self, l, ugl_zM_dict, uyl_zM_dict):
+        # uyl_zM = self.uyl_zM_dict[l]
+        # ugl_zM = self.get_ug_l_zM(l)
+
+        ugl_zM = ugl_zM_dict[round(l, 1)]
+        uyl_zM = uyl_zM_dict[round(l, 1)]
+
+        toint_M = (uyl_zM * ugl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+
+        denominator = sp.integrate.simps(toint_z, self.z_array)
+        val = toint_z*self.z_array
+
+        return val/denominator
+
+
+    def get_Cl_yk_dz_1h(self, l, ukl_zM_dict, uyl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+        uyl_zM = uyl_zM_dict[round(l, 1)]
+
+        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (uyl_zM * ukl_zM) * self.dndm_array
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+
+        denominator = sp.integrate.simps(toint_z, self.z_array)
+        val = toint_z*self.z_array
+
+        return val/denominator
+
+
+    def get_Cl_kg_dz_1h(self, l, ukl_zM_dict, ugl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+        ugl_zM = ugl_zM_dict[round(l, 1)]
+
+        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (ugl_zM * ukl_zM) * self.dndm_array
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+
+        denominator = sp.integrate.simps(toint_z, self.z_array)
+        val = toint_z*self.z_array
+
+        return val/denominator
+
+
+    def get_Cl_kk_dz_1h(self, l, ukl_zM_dict):
+        ukl_zM = ukl_zM_dict[round(l, 1)]
+
+        # toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+        toint_M = (ukl_zM * ukl_zM) * self.dndm_array
+
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        # toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+
+        denominator = sp.integrate.simps(toint_z, self.z_array)
+        val = toint_z* self.z_array
+
+        return val/denominator
+
+
+    
+    
+    
+    
+    
+    
+    
+    # 1-halo term eq 25 of Makiya et al (derivative wrt ln M)
     
     def get_Cl_gg_dM_1h(self, l, ugl_zM_dict):
         if self.use_only_halos:
@@ -1607,8 +1708,10 @@ class DataVec:
             Cl_kk_dM_1h_array, Cl_yk_dM_1h_array, Cl_kg_dM_1h_array,  =  np.zeros((nm,len(l_array))), np.zeros((nm,len(l_array))), np.zeros((nm,len(l_array)))
             
             
-        
+            Cl_gg_dz_1h_array, Cl_yg_dz_1h_array,  Cl_yy_dz_1h_array =  np.zeros((nz,len(l_array))), np.zeros((nz,len(l_array))), np.zeros((nz,len(l_array)))
+            Cl_kk_dz_1h_array, Cl_yk_dz_1h_array, Cl_kg_dz_1h_array,  =  np.zeros((nz,len(l_array))), np.zeros((nz,len(l_array))), np.zeros((nz,len(l_array)))
 
+            
         Cl_gg_1h_array, Cl_gg_2h_array, Cl_yg_1h_array, Cl_yg_2h_array, Cl_yy_1h_array, Cl_yy_2h_array = np.zeros(
             len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(
             len(l_array)), np.zeros(len(l_array))
@@ -1621,7 +1724,13 @@ class DataVec:
                 if np.mod(j, 40) == 0:
                     print(j)
             if other_params['derivative']:
-                
+    
+                Cl_gg_dz_1h_array[:,j] = self.PS.get_Cl_gg_dz_1h(l_array[j], self.ugl_zM_dict)
+                Cl_yg_dz_1h_array[:,j] = self.PS.get_Cl_yg_dz_1h(l_array[j], self.ugl_zM_dict,self.uyl_zM_dict)
+                Cl_yy_dz_1h_array[:,j] = self.PS.get_Cl_yy_dz_1h(l_array[j], self.uyl_zM_dict)
+                Cl_kk_dz_1h_array[:,j] = self.PS.get_Cl_kk_dz_1h(l_array[j], self.ukl_zM_dict)
+                Cl_yk_dz_1h_array[:,j] = self.PS.get_Cl_yk_dz_1h(l_array[j], self.ukl_zM_dict,self.uyl_zM_dict) 
+                Cl_kg_dz_1h_array[:,j] = self.PS.get_Cl_kg_dz_1h(l_array[j], self.ukl_zM_dict,self.ugl_zM_dict) 
                 
                 Cl_gg_dM_1h_array[:,j] = self.PS.get_Cl_gg_dM_1h(l_array[j], self.ugl_zM_dict)
                 Cl_yg_dM_1h_array[:,j] = self.PS.get_Cl_yg_dM_1h(l_array[j], self.ugl_zM_dict,self.uyl_zM_dict)
@@ -1683,6 +1792,13 @@ class DataVec:
                                    'kk': {'1h': Cl_kk_dM_1h_array},
                                    'kg': {'1h': Cl_kg_dM_1h_array},
                                    'ky': {'1h': Cl_yk_dM_1h_array}}
+                
+                self.Cl_dz_dict = {'gg': {'1h': Cl_gg_dz_1h_array},
+                                   'yy': {'1h': Cl_yy_dz_1h_array},
+                                   'gy': {'1h': Cl_yg_dz_1h_array},
+                                   'kk': {'1h': Cl_kk_dz_1h_array},
+                                   'kg': {'1h': Cl_kg_dz_1h_array},
+                                   'ky': {'1h': Cl_yk_dz_1h_array}}
         self.stats_analyze = other_params['stats_analyze']
         stats_analyze_pairs = []
 

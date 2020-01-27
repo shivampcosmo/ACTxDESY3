@@ -331,6 +331,15 @@ def execute(block, config):
             block[sec_save_name, 'theory_Clyy1h_dM'] = DV_fid.Cl_dM_dict['yy']['1h']
             
             
+            
+        if other_params_dict_bin['derivative']:
+            block[sec_save_name, 'theory_Clkk1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['kk']['1h']
+            block[sec_save_name, 'theory_Clky1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['ky']['1h']
+            block[sec_save_name, 'theory_Clgg1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['gg']['1h']
+            block[sec_save_name, 'theory_Clgy1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['gy']['1h']
+            block[sec_save_name, 'theory_Clkg1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['kg']['1h']
+            block[sec_save_name, 'theory_Clyy1h_dz'] = DV_fid.Cl_dz_dict['yy']['1h']
+
         block[sec_save_name, 'theory_ell'] = DV_fid.l_array
 
         stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
@@ -566,6 +575,7 @@ def execute(block, config):
 
     block[sec_save_name, 'ell'] = clf['ell']
     block[sec_save_name, 'M_array'] = other_params_dict['M_array']
+    block[sec_save_name, 'z_array'] = other_params_dict['z_array']
     block[sec_save_name, 'theory_dv'] = Cl_vec
     savecov = {'cov_total': cov_fid, 'cov_G': cov_fid_G, 'cov_NG': cov_fid_NG, 'mean': Cl_vec_data, 'ell_all': ell_all}
     pk.dump(savecov, open(save_cov_fname, 'wb'))
