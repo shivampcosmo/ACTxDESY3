@@ -87,7 +87,7 @@ function execute(block,config) result(status)
 	TYPE(cosmology) :: cosi
 	TYPE(tables) :: lut
 	!CosmoSIS supplies double precision - need to convert
-	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu,bth
+	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu,bth,mute
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:), umh(:),mah(:),z_out1(:)
 	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),massh(:,:),bt_out(:,:)
 	real(8) :: Halo_as, halo_eta0
@@ -230,35 +230,58 @@ function execute(block,config) result(status)
     !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_463",um_out(463,:,:))
     !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_999",um_out(999,:,:))
     !status = datablock_put_double_array_1d(block,nl_power, "Mh",massh([0,1,4,9,20,45,99,214,463,999]))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,0),   "k_h", k_out, "um_0",um_out(:,:,0))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,1),   "k_h", k_out, "um_1",um_out(:,:,1))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,4),   "k_h", k_out, "um_4",um_out(:,:,4))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,9),   "k_h", k_out, "um_9",um_out(:,:,9))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,20),  "k_h", k_out,"um_20",um_out(:,:,20))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,45),  "k_h", k_out,"um_45",um_out(:,:,45))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,99),  "k_h", k_out,"um_99",um_out(:,:,99))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,214), "k_h", k_out, "um_214",um_out(:,:,214))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,463), "k_h", k_out, "um_463",um_out(:,:,463))
-    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,999), "k_h", k_out, "um_999",um_out(:,:,999))
+
     
-    ALLOCATE(z_out1(10))
-    z_out1(0) = ztab(0) 
-    z_out1(1) = ztab(1) 
-    z_out1(2) = ztab(4) 
-    z_out1(3) = ztab(9) 
-    z_out1(4)= ztab(20)
-    z_out1(5)= ztab(45)
-    z_out1(6)= ztab(99)
-    z_out1(7)= ztab(214)
-    z_out1(8)= ztab(463)
-    z_out1(9)= ztab(999)
-    status = datablock_put_double_array_1d(block,nl_power, "z_mead",z_out1)
+  
     
-    
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,1),  "k_h", k_out, "um_1",um_out(:,:,1))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,5),  "k_h", k_out, "um_5",um_out(:,:,5))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,10), "k_h", k_out, "um_10",um_out(:,:, 10))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,15), "k_h", k_out, "um_15",um_out(:,:, 15))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,20), "k_h", k_out, "um_20",um_out(:,:, 20))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,25), "k_h", k_out, "um_25",um_out(:,:, 25))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,30), "k_h", k_out, "um_30",um_out(:,:, 30))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,35), "k_h", k_out, "um_35",um_out(:,:, 35))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,40), "k_h", k_out, "um_40",um_out(:,:, 40))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,45), "k_h", k_out, "um_45",um_out(:,:, 45))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,50), "k_h", k_out, "um_50",um_out(:,:, 50))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,55), "k_h", k_out, "um_55",um_out(:,:, 55))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,60), "k_h", k_out, "um_60",um_out(:,:, 60))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,65), "k_h", k_out, "um_65",um_out(:,:, 65))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,70), "k_h", k_out, "um_70",um_out(:,:, 70))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,75), "k_h", k_out, "um_75",um_out(:,:, 75))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,80), "k_h", k_out, "um_80",um_out(:,:, 80))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,85), "k_h", k_out, "um_85",um_out(:,:, 85))
+   status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,90), "k_h", k_out, "um_90",um_out(:,:, 90))
+
+!
+ !ALLOCATE(z_out1(19))
+ !z_out1(0) = ztab(1)
+ !z_out1(1) = ztab(5)
+ !z_out1(2) = ztab(10)
+ !z_out1(3) = ztab(15)
+ !z_out1(4)=  ztab(20)
+ !z_out1(5)=  ztab(25)
+ !z_out1(6)=  ztab(30)
+ !z_out1(7)=  ztab(35)
+ !z_out1(8)=  ztab(40)
+ !z_out1(9)=  ztab(45)
+ !z_out1(10)= ztab(50)
+ !z_out1(11)= ztab(55)
+ !z_out1(12)= ztab(60)
+ !z_out1(13)= ztab(65)
+ !z_out1(14)= ztab(70)
+ !z_out1(15)= ztab(75)
+ !z_out1(16)= ztab(80)
+ !z_out1(17)= ztab(85)
+ !z_out1(18)= ztab(90)
 
 
-	!Free memory
-    deallocate(z_out1)
+  !status = datablock_put_double_array_1d(block,nl_power, "z_mead",z_out1)
+!!
+!!
+!!!Free memory
+    
 	deallocate(k)
 	deallocate(ztab)
 	deallocate(p_out)
@@ -280,7 +303,7 @@ function execute(block,config) result(status)
     IF(ALLOCATED(cosi%ktab)) DEALLOCATE(cosi%ktab)
     IF(ALLOCATED(cosi%tktab)) DEALLOCATE(cosi%tktab)
     IF(ALLOCATED(cosi%pktab)) DEALLOCATE(cosi%pktab)
-
+    !deallocate(z_out1)
 end function execute
 
 
