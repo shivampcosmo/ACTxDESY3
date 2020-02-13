@@ -23,7 +23,7 @@ import plot_funcs as pf
 import multiprocessing
 import time
 import pdb
-
+from mcfit import Hankel
 pi = np.pi
 
 
@@ -894,7 +894,7 @@ class Powerspec:
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
             (1, self.nm))
-
+        # import pdb; pdb.set_trace()
         return coeff_mat * val
 
     # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
@@ -1487,7 +1487,7 @@ class DataVec:
         if self.verbose:
             print('That took {} seconds'.format(time.time() - starttime))
 
-        self.bgl_z_dict, self.byl_z_dict = bgl_z_dict, byl_z_dict
+        self.bgl_z_dict, self.byl_z_dict, self.bkl_z_dict = bgl_z_dict, byl_z_dict, bkl_z_dict
 
         # Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
         # Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
@@ -1537,7 +1537,8 @@ class DataVec:
                 log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
                                                               fill_value='extrapolate')
             if ('SO' in other_params['noise_Cl_filename'].split('/')) or (
-                    'Planck' in other_params['noise_Cl_filename'].split('/')):
+                    'Planck' in other_params['noise_Cl_filename'].split('/') or
+                        'ACT' in other_params['noise_Cl_filename'].split('/')):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 1]
                 log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
                                                               fill_value='extrapolate')
@@ -1593,7 +1594,7 @@ class DataVec:
                     Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_kk_l_array
                 else:
                     Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey]
-
+            # import pdb;pdb.set_trace()
             fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
 
             val_diag = (1. / (fsky_j * (2 * self.l_array_survey + 1.) * self.dl_array_survey)) * (
@@ -1630,6 +1631,21 @@ class DataVec:
 
         return cov_dict_NG
 
+    def do_Hankel_transform(self,ell_array,Cell_array,theta_array_arcmin):
+        l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 500000)
+        Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
+                                           bounds_error=False)
+        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+        theta_out, xi_out = Hankel(l_array_full, nu=0, q=1.0)(Cell_full, extrap=True)
+        xi_out *= (1 / (2 * np.pi))
+        theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+        xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
+                                           bounds_error=False)
+        xi_final = np.exp(xi_interp(np.log(theta_array_arcmin)))
+        return xi_final
+
+
+
     def plot(self, plot_dir='./', cov_fid_dict_G=None, cov_fid_dict_NG=None):
         pf.plot_Cls(self.l_array, self.Cl_dict, self.Cl_noise_yy_l_array, self.Cl_noise_gg_l_array, self.save_suffix,
                     plot_dir, cov_fid_dict_G=cov_fid_dict_G, cov_fid_dict_NG=cov_fid_dict_NG,
@@ -1637,7 +1653,7 @@ class DataVec:
         return 0
 
     def save_diag(self, save_dir):
-        # pdb.set_trace()
+        pdb.set_trace()
         save_dict = {}
         for l in self.ugl_zM_dict.keys(): save_dict[str(l)] = self.ugl_zM_dict[l]
         np.savez(save_dir + 'ug_l_z_' + self.save_suffix + '.npz', **save_dict)
@@ -1645,11 +1661,17 @@ class DataVec:
         for l in self.uyl_zM_dict.keys(): save_dict[str(l)] = self.uyl_zM_dict[l]
         np.savez(save_dir + 'uy_l_z_' + self.save_suffix + '.npz', **save_dict)
         save_dict = {}
+        for l in self.ukl_zM_dict.keys(): save_dict[str(l)] = self.ukl_zM_dict[l]
+        np.savez(save_dir + 'uk_l_z_' + self.save_suffix + '.npz', **save_dict)
+        save_dict = {}
         for l in self.bgl_z_dict.keys(): save_dict[str(l)] = self.bgl_z_dict[l]
         np.savez(save_dir + 'bg_l_z_' + self.save_suffix + '.npz', **save_dict)
         save_dict = {}
         for l in self.byl_z_dict.keys(): save_dict[str(l)] = self.byl_z_dict[l]
         np.savez(save_dir + 'by_l_z_' + self.save_suffix + '.npz', **save_dict)
+        save_dict = {}
+        for l in self.bkl_z_dict.keys(): save_dict[str(l)] = self.bkl_z_dict[l]
+        np.savez(save_dir + 'bk_l_z_' + self.save_suffix + '.npz', **save_dict)
         dndm_bias_pklin_dict = {'dndm': self.PS.dndm_array, 'bm': self.PS.bm_array,
                                 'pklin_interp': self.PS.pkzlin_interp, 'M_array': self.PS.M_array,
                                 'z_array': self.PS.z_array}
@@ -1730,10 +1752,16 @@ class DataVec:
         thetaminus_mat = np.tile(thetaminus_array_rad.reshape(ntheta, 1), (1, nl))
         l_thetaplus = l_mat * thetaplus_mat
         l_thetaminus = l_mat * thetaminus_mat
-        J3_ltheta_plus = sp.special.jv(3, l_thetaplus)
-        J3_ltheta_minus = sp.special.jv(3, l_thetaminus)
-        J2_ltheta_binned = (1. / (l_mat * theta_mat * dtheta_mat)) * (
-                thetaplus_mat * J3_ltheta_plus - thetaminus_mat * J3_ltheta_minus)
+        
+        # J3_ltheta_plus = sp.special.jv(3, l_thetaplus)
+        # J3_ltheta_minus = sp.special.jv(3, l_thetaminus)
+        # J2_ltheta_binned = (1. / (l_mat * theta_mat * dtheta_mat)) * (
+        #         thetaplus_mat * J3_ltheta_plus - thetaminus_mat * J3_ltheta_minus)
+
+        J2_ltheta_binned_coeff = (1. / ( (l_mat**2) * theta_mat * dtheta_mat))
+        term1 = -2. * (sp.special.jv(0, l_thetaplus) - sp.special.jv(0, l_thetaminus))
+        term2 = -1. * l_mat * (thetaplus_mat * sp.special.jv(1, l_thetaplus) - thetaminus_mat * sp.special.jv(1, l_thetaminus))
+        J2_ltheta_binned = J2_ltheta_binned_coeff * (term1 + term2)
 
         J2_ltheta_binned_mat1 = np.tile(J2_ltheta_binned.reshape(ntheta, 1, nl), (1, ntheta, 1))
         J2_ltheta_binned_mat2 = np.tile(J2_ltheta_binned.reshape(1, ntheta, nl), (ntheta, 1, 1))

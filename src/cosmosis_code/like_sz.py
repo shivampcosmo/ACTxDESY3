@@ -25,177 +25,189 @@ def get_corr(cov):
             corr[ii, jj] = cov[ii, jj] / np.sqrt(cov[ii, ii] * cov[jj, jj])
     return corr
 
-def get_theory_terms(block, ell_data, stat_type, bins_array, sec_savename = "save_theory"):
-    Cl_theory_rdata = []
-    ell_array = block.get_double_array_1d(sec_savename, "ell")
-    if stat_type == 'gg':
+
+def QR_inverse(matrix):
+    _Q,_R = np.linalg.qr(matrix)
+    return np.dot(_Q,np.linalg.inv(_R.T))
+
+def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "save_theory"):
+    try:
+        stats_array = stat_type.split('_')
+    except:
+        stats_array = stat_type
+    corrf_theory_rdata = []
+    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord")
+
+    # if stat_type == 'gg':
+    for stat in stats_array:
         nbins = len(bins_array)
+        kbv = 0
         for j in range(nbins):
             bin_j = bins_array[j]
-            Cl_gg =  block.get_double_array_1d(sec_savename,'theory_Clgg_bin_' + str(bin_j) + '_' + str(bin_j))
-            Cl_gg_temp = intspline(ell_array, Cl_gg)
-            Cl_gg_f = Cl_gg_temp(ell_data[j])
-            one_nbar =  1./(block[sec_save_name, 'nbar_Clgg_bin_' + str(bin_j)])
-            if len(Cl_theory_rdata) == 0:
-                Cl_theory_rdata = Cl_gg_f 
+
+            corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+            corrf_stat_temp = intspline(xcoord_array, corrf_stat)
+            corrf_stat_f = corrf_stat_temp(xcoord_data[kbv])
+            if len(corrf_theory_rdata) == 0:
+                corrf_theory_rdata = corrf_stat_f
             else:
-                Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gg_f))
+                corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_stat_f))
 
-    elif stat_type == 'gy':
-        nbins = len(bins_array)
-        for j in range(nbins):
-            bin_j = bins_array[j]
-            Cl_gy = block.get_double_array_1d(sec_savename,'theory_Clgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-            Cl_gy_temp = intspline(ell_array, Cl_gy)
-            Cl_gy_f = Cl_gy_temp(ell_data[j])
-            if len(Cl_theory_rdata) == 0:
-                Cl_theory_rdata = Cl_gy_f
-            else:
-                Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gy_f))
+    # if stat_type == 'gy':
+    #     nbins = len(bins_array)
+    #     for j in range(nbins):
+    #         bin_j = bins_array[j]
+    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
+    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
+    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j])
+    #         if len(corrf_theory_rdata) == 0:
+    #             corrf_theory_rdata = corrf_gy_f
+    #         else:
+    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
+    #
+    # elif stat_type == 'gg_gy':
+    #     nbins = len(bins_array)
+    #     for j in range(nbins):
+    #         bin_j = bins_array[j]
+    #         corrf_gg = block.get_double_array_1d(sec_savename,'theory_corrfgg_bin_' + str(bin_j) + '_' + str(bin_j))
+    #         corrf_gg_temp = intspline(xcoord_array, corrf_gg)
+    #         corrf_gg_f = corrf_gg_temp(xcoord_data[j])
+    #         if len(corrf_theory_rdata) == 0:
+    #             corrf_theory_rdata = corrf_gg_f
+    #         else:
+    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gg_f ))
+    #
+    #     for j in range(nbins):
+    #         bin_j = bins_array[j]
+    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
+    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
+    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j + nbins])
+    #         corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
 
-    elif stat_type == 'gg_gy':
-        nbins = len(bins_array)
-        for j in range(nbins):
-            bin_j = bins_array[j]
-            Cl_gg = block.get_double_array_1d(sec_savename,'theory_Clgg_bin_' + str(bin_j) + '_' + str(bin_j))
-            Cl_gg_temp = intspline(ell_array, Cl_gg)
-            Cl_gg_f = Cl_gg_temp(ell_data[j])
-            one_nbar =  1./(block[sec_save_name, 'nbar_Clgg_bin_' + str(bin_j)])
-            if len(Cl_theory_rdata) == 0:
-                Cl_theory_rdata = Cl_gg_f 
-            else:
-                Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gg_f ))
-
-        for j in range(nbins):
-            bin_j = bins_array[j]
-            Cl_gy = block.get_double_array_1d(sec_savename,'theory_Clgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-            Cl_gy_temp = intspline(ell_array, Cl_gy)
-            Cl_gy_f = Cl_gy_temp(ell_data[j + nbins])
-            Cl_theory_rdata = np.hstack((Cl_theory_rdata, Cl_gy_f))
-
-    return Cl_theory_rdata
-
-
-def lnprob_func(block, ell_data, Cl_data_gtcut, incov_obs_comp, stat_type, bins_array,sec_save_name):
-    Cl_theory_rdata = get_theory_terms(block, ell_data, stat_type, bins_array,sec_savename=sec_save_name)
-    valf = -0.5 * np.dot(np.dot(np.transpose((Cl_data_gtcut - Cl_theory_rdata)), incov_obs_comp),
-                         (Cl_data_gtcut - Cl_theory_rdata))
-    return valf, Cl_theory_rdata
+    return corrf_theory_rdata
 
 
-def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full, cov_obs, stat_type, bins_array, cov_diag=False,
-                     no_cov_zbins_only_gg_gy=False, no_cov_zbins_all=False, no_cov_gg_gy=False):
-    ell_data_comp_ll = []
+def lnprob_func(block, xcoord_data, corrf_data_gtcut, incov_obs_comp, stat_type, bins_array,sec_save_name):
+    corrf_theory_rdata = get_theory_terms(block, xcoord_data, stat_type, bins_array,sec_savename=sec_save_name)
+    # import pdb; pdb.set_trace()
+    valf = -0.5 * np.dot(np.dot(np.transpose((corrf_data_gtcut - corrf_theory_rdata)), incov_obs_comp),
+                         (corrf_data_gtcut - corrf_theory_rdata))
+    return valf, corrf_theory_rdata
+
+
+def setuplnprob_func(scale_cut_min, scale_cut_max, xcoord_data_array, corrf_data_full, cov_obs, stat_type, bins_array, cov_diag=False,
+                     no_cov_zbins_only_auto_cross=False, no_cov_zbins_all=False, no_cov_auto_cross=False):
+    xcoord_data_comp_ll = []
 
     selection = []
     countk = 0
 
-    if stat_type == 'gg_gy':
+    if stat_type in ['gg_gy','kk_gty']:
 
-        ell_data_gg_all = np.array([])
-        ell_data_gy_all = np.array([])
+        xcoord_data_autocorr_all = np.array([])
+        xcoord_data_xcorr_all = np.array([])
         for j in range(len(bins_array)):
-            if len(ell_data_gg_all) == 0:
-                ell_data_gg_all = ell_data_array[j]
-                ell_data_gy_all = ell_data_array[j + len(bins_array)]
+            if len(xcoord_data_autocorr_all) == 0:
+                xcoord_data_autocorr_all = xcoord_data_array[j]
+                xcoord_data_xcorr_all = xcoord_data_array[j + len(bins_array)]
             else:
-                ell_data_gg_all = np.hstack((ell_data_gg_all, ell_data_array[j]))
-                ell_data_gy_all = np.hstack((ell_data_gy_all, ell_data_array[j + len(bins_array)]))
+                xcoord_data_autocorr_all = np.hstack((xcoord_data_autocorr_all, xcoord_data_array[j]))
+                xcoord_data_xcorr_all = np.hstack((xcoord_data_xcorr_all, xcoord_data_array[j + len(bins_array)]))
 
-        ell_data_all = np.hstack((ell_data_gg_all, ell_data_gy_all))
+        xcoord_data_all = np.hstack((xcoord_data_autocorr_all, xcoord_data_xcorr_all))
 
         for j in range(len(bins_array)):
-            ell_data_j = ell_data_array[j]
-            selection_j = np.where((ell_data_j >= scale_cut_min[j]) & (ell_data_j <= scale_cut_max[j]))[0]
+            xcoord_data_j = xcoord_data_array[j]
+            selection_j = np.where((xcoord_data_j >= scale_cut_min[j]) & (xcoord_data_j <= scale_cut_max[j]))[0]
             if len(selection) == 0:
                 selection = selection_j
             else:
                 selection = np.hstack((selection, countk + selection_j))
-            ell_data_comp_j = ell_data_j[selection_j]
-            ell_data_comp_ll.append(ell_data_comp_j)
-            countk += len(ell_data_j)
+            xcoord_data_comp_j = xcoord_data_j[selection_j]
+            xcoord_data_comp_ll.append(xcoord_data_comp_j)
+            countk += len(xcoord_data_j)
 
         for j in range(len(bins_array)):
-            ell_data_j = ell_data_array[j + len(bins_array)]
+            xcoord_data_j = xcoord_data_array[j + len(bins_array)]
             selection_j = \
-                np.where((ell_data_j >= scale_cut_min[j + len(bins_array)]) & (ell_data_j <= scale_cut_max[j + len(bins_array)]))[0]
+                np.where((xcoord_data_j >= scale_cut_min[j + len(bins_array)]) & (xcoord_data_j <= scale_cut_max[j + len(bins_array)]))[0]
             selection = np.hstack((selection, countk + selection_j))
-            ell_data_comp_j = ell_data_j[selection_j]
-            ell_data_comp_ll.append(ell_data_comp_j)
-            countk += len(ell_data_j)
+            xcoord_data_comp_j = xcoord_data_j[selection_j]
+            xcoord_data_comp_ll.append(xcoord_data_comp_j)
+            countk += len(xcoord_data_j)
 
-    if stat_type == 'gg':
+    if stat_type in ['gg','kk']:
 
-        ell_data_gg_all = np.array([])
+        xcoord_data_autocorr_all = np.array([])
         for j in range(len(bins_array)):
-            if len(ell_data_gg_all) == 0:
-                ell_data_gg_all = ell_data_array[j]
+            if len(xcoord_data_autocorr_all) == 0:
+                xcoord_data_autocorr_all = xcoord_data_array[j]
             else:
-                ell_data_gg_all = np.hstack((ell_data_gg_all, ell_data_array[j]))
+                xcoord_data_autocorr_all = np.hstack((xcoord_data_autocorr_all, xcoord_data_array[j]))
 
-        ell_data_all = ell_data_gg_all
+        xcoord_data_all = xcoord_data_autocorr_all
 
         for j in range(len(bins_array)):
-            ell_data_j = ell_data_array[j]
-            selection_j = np.where((ell_data_j >= scale_cut_min[j]) & (ell_data_j <= scale_cut_max[j]))[0]
+            xcoord_data_j = xcoord_data_array[j]
+            selection_j = np.where((xcoord_data_j >= scale_cut_min[j]) & (xcoord_data_j <= scale_cut_max[j]))[0]
             if len(selection) == 0:
                 selection = selection_j
             else:
                 selection = np.hstack((selection, countk + selection_j))
 
-            ell_data_comp_j = ell_data_j[selection_j]
-            ell_data_comp_ll.append(ell_data_comp_j)
-            countk += len(ell_data_j)
+            xcoord_data_comp_j = xcoord_data_j[selection_j]
+            xcoord_data_comp_ll.append(xcoord_data_comp_j)
+            countk += len(xcoord_data_j)
 
-    if stat_type == 'gy':
+    if stat_type in ['gy','gty']:
 
-        ell_data_gy_all = np.array([])
+        xcoord_data_xcorr_all = np.array([])
 
         for j in range(len(bins_array)):
-            if len(ell_data_gy_all) == 0:
-                ell_data_gy_all = ell_data_array[j + len(bins_array)]
+            if len(xcoord_data_xcorr_all) == 0:
+                xcoord_data_xcorr_all = xcoord_data_array[j + len(bins_array)]
             else:
-                ell_data_gy_all = np.hstack((ell_data_gy_all, ell_data_array[j + len(bins_array)]))
+                xcoord_data_xcorr_all = np.hstack((xcoord_data_xcorr_all, xcoord_data_array[j + len(bins_array)]))
 
-        ell_data_all = ell_data_gy_all
+        xcoord_data_all = xcoord_data_xcorr_all
 
         for j in range(len(bins_array)):
-            ell_data_j = ell_data_array[j + len(bins_array)]
+            xcoord_data_j = xcoord_data_array[j + len(bins_array)]
             selection_j = \
-                np.where((ell_data_j >= scale_cut_min[j + len(bins_array)]) & (ell_data_j <= scale_cut_max[j + len(bins_array)]))[0]
+                np.where((xcoord_data_j >= scale_cut_min[j + len(bins_array)]) & (xcoord_data_j <= scale_cut_max[j + len(bins_array)]))[0]
             if len(selection) == 0:
                 selection = selection_j
             else:
                 selection = np.hstack((selection, countk + selection_j))
 
-            ell_data_comp_j = ell_data_j[selection_j]
-            ell_data_comp_ll.append(ell_data_comp_j)
-            countk += len(ell_data_j)
+            xcoord_data_comp_j = xcoord_data_j[selection_j]
+            xcoord_data_comp_ll.append(xcoord_data_comp_j)
+            countk += len(xcoord_data_j)
 
     selection = np.array(selection)
     cov_obs_comp = (cov_obs[:, selection])[selection, :]
 
-    if no_cov_zbins_only_gg_gy or no_cov_zbins_all:
+    if no_cov_zbins_only_auto_cross or no_cov_zbins_all:
         bins_n_array = np.arange(len(bins_array))
         cov_obs_comp_h = np.copy(cov_obs_comp)
 
         if len(bins_array) > 1:
             print ('zeroing the covariance between z bins')
 
-            if stat_type == 'gg_gy':
+            if stat_type in ['gg_gy','kk_gty']:
                 z1_0 = []
                 for ji in range(len(bins_array)):
                     if len(z1_0) == 0:
-                        z1_0 = bins_n_array[ji] * np.ones(len(ell_data_comp_ll[ji]))
+                        z1_0 = bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[ji]))
                     else:
-                        z1_0 = np.hstack((z1_0, bins_n_array[ji] * np.ones(len(ell_data_comp_ll[ji]))))
+                        z1_0 = np.hstack((z1_0, bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[ji]))))
 
                 z1_1 = []
                 for ji in range(len(bins_array)):
                     if len(z1_1) == 0:
-                        z1_1 = bins_n_array[ji] * np.ones(len(ell_data_comp_ll[len(bins_array) + ji]))
+                        z1_1 = bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[len(bins_array) + ji]))
                     else:
-                        z1_1 = np.hstack((z1_1, bins_n_array[ji] * np.ones(len(ell_data_comp_ll[len(bins_array) + ji]))))
+                        z1_1 = np.hstack((z1_1, bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[len(bins_array) + ji]))))
 
                 z1_mat_0 = np.tile(z1_0, (len(z1_0), 1)).transpose()
                 z1_mat_1 = np.tile(z1_1, (len(z1_1), 1)).transpose()
@@ -203,7 +215,7 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full,
                 z1_mat_01 = np.tile(z1_0, (len(z1_1), 1)).transpose()
                 z1_mat_10 = np.tile(z1_1, (len(z1_0), 1)).transpose()
 
-                if no_cov_zbins_only_gg_gy:
+                if no_cov_zbins_only_auto_cross:
                     z1_mat_0c = -1 * np.ones(z1_mat_0.shape)
                     z1_mat_1c = -1 * np.ones(z1_mat_1.shape)
                 if no_cov_zbins_all:
@@ -217,33 +229,33 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full,
                 offdiag = np.where(z1_matf != z2_matf)
                 cov_obs_comp_h[offdiag] = 0.0
 
-            if stat_type == 'gg' or stat_type == 'gy':
-                z1 = np.repeat(np.arange(len(bins_array)), len(ell_data_comp_ll[0]))
-                z1_mat = np.tile(z1, (len(bins_array) * len(ell_data_comp_ll[0]), 1)).transpose()
+            if stat_type == 'gg' or stat_type == 'gy' or stat_type == 'kk' or stat_type == 'gty':
+                z1 = np.repeat(np.arange(len(bins_array)), len(xcoord_data_comp_ll[0]))
+                z1_mat = np.tile(z1, (len(bins_array) * len(xcoord_data_comp_ll[0]), 1)).transpose()
                 z2_mat = np.transpose(z1_mat)
                 offdiag = np.where(z1_mat != z2_mat)
                 cov_obs_comp_h[offdiag] = 0.0
 
         cov_obs_comp = cov_obs_comp_h
 
-    if no_cov_gg_gy:
+    if no_cov_auto_cross:
         bins_n_array = np.arange(len(bins_array)) + 1
         cov_obs_comp_hf = np.copy(cov_obs_comp)
-        print ('zeroing the covariance between gg and gy')
-        if stat_type == 'gg_gy':
+        print ('zeroing the covariance between auto and cross')
+        if stat_type in ['gg_gy','kk_gty']:
             z1_0 = []
             for ji in range(len(bins_array)):
                 if len(z1_0) == 0:
-                    z1_0 = bins_n_array[ji] * np.ones(len(ell_data_comp_ll[ji]))
+                    z1_0 = bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[ji]))
                 else:
-                    z1_0 = np.hstack((z1_0, bins_n_array[ji] * np.ones(len(ell_data_comp_ll[ji]))))
+                    z1_0 = np.hstack((z1_0, bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[ji]))))
 
             z1_1 = []
             for ji in range(len(bins_array)):
                 if len(z1_1) == 0:
-                    z1_1 = -1. * bins_n_array[ji] * np.ones(len(ell_data_comp_ll[len(bins_array) + ji]))
+                    z1_1 = -1. * bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[len(bins_array) + ji]))
                 else:
-                    z1_1 = np.hstack((z1_1, -1. * bins_n_array[ji] * np.ones(len(ell_data_comp_ll[len(bins_array) + ji]))))
+                    z1_1 = np.hstack((z1_1, -1. * bins_n_array[ji] * np.ones(len(xcoord_data_comp_ll[len(bins_array) + ji]))))
 
             z1_mat_0 = np.tile(z1_0, (len(z1_0), 1)).transpose()
             z1_mat_1 = np.tile(z1_1, (len(z1_1), 1)).transpose()
@@ -264,13 +276,14 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, ell_data_array, Cl_data_full,
     if cov_diag:
         cov_obs_comp = np.diag(np.diag(cov_obs_comp))
 
-    incov_obs_comp = np.linalg.inv(cov_obs_comp)
-    ell_data_comp = ell_data_all[selection]
-    Cl_data_gtcut = Cl_data_full[selection]
+    incov_obs_comp = QR_inverse(cov_obs_comp)
+    xcoord_data_comp = xcoord_data_all[selection]
+    corrf_data_gtcut = corrf_data_full[selection]
+    print('total number of data points=' + str(len(corrf_data_gtcut)))
 
-    return Cl_data_gtcut, ell_data_comp, ell_data_comp_ll, incov_obs_comp, cov_obs_comp
+    return corrf_data_gtcut, xcoord_data_comp, xcoord_data_comp_ll, incov_obs_comp, cov_obs_comp
 
-def import_data(ell_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, stat_type):
+def import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, stat_type):
     if len(bins_to_rem) > 0:
         cov_obs_rm = np.ones(cov_obs.shape)
         cov_obs_copy = np.copy(cov_obs)
@@ -278,16 +291,16 @@ def import_data(ell_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, 
         z1_0 = []
         for ji in range(len(bins_all)):
             if len(z1_0) == 0:
-                z1_0 = bins_all[ji] * np.ones(len(ell_obs[ji]))
+                z1_0 = bins_all[ji] * np.ones(len(xcoord_obs[ji]))
             else:
-                z1_0 = np.hstack((z1_0, bins_all[ji] * np.ones(len(ell_obs[ji]))))
+                z1_0 = np.hstack((z1_0, bins_all[ji] * np.ones(len(xcoord_obs[ji]))))
 
         z1_1 = []
         for ji in range(len(bins_all)):
             if len(z1_1) == 0:
-                z1_1 = bins_all[ji] * np.ones(len(ell_obs[len(bins_all) + ji]))
+                z1_1 = bins_all[ji] * np.ones(len(xcoord_obs[len(bins_all) + ji]))
             else:
-                z1_1 = np.hstack((z1_1, bins_all[ji] * np.ones(len(ell_obs[len(bins_all) + ji]))))
+                z1_1 = np.hstack((z1_1, bins_all[ji] * np.ones(len(xcoord_obs[len(bins_all) + ji]))))
 
         z1_mat_0 = np.tile(z1_0, (len(z1_0), 1)).transpose()
         z1_mat_1 = np.tile(z1_1, (len(z1_1), 1)).transpose()
@@ -333,89 +346,96 @@ def import_data(ell_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, 
 
         data_obs_new = np.delete(data_obs, del_indf)
 
-        ell_obs_new = []
+        xcoord_obs_new = []
         for bins in bins_to_fit:
-            ell_obs_new.append(ell_obs[bins - 1])
+            xcoord_obs_new.append(xcoord_obs[bins - 1])
 
         for bins in bins_to_fit:
-            ell_obs_new.append(ell_obs[len(bins_all) + bins - 1])
+            xcoord_obs_new.append(xcoord_obs[len(bins_all) + bins - 1])
 
     else:
         cov_obs_new = np.copy(cov_obs)
         data_obs_new = np.copy(data_obs)
-        ell_obs_new = np.copy(ell_obs)
+        xcoord_obs_new = np.copy(xcoord_obs)
 
-    if stat_type == 'gg':
-        data_obs_new, cov_obs_new = data_obs_new[0:len(bins_to_fit) * len(ell_obs[0])], cov_obs_new[
+    if stat_type in ['gg','kk']:
+        data_obs_new, cov_obs_new = data_obs_new[0:len(bins_to_fit) * len(xcoord_obs[0])], cov_obs_new[
                                                                                       0:len(bins_to_fit) * len(
-                                                                                          ell_obs[0]),
+                                                                                          xcoord_obs[0]),
                                                                                       0:len(bins_to_fit) * len(
-                                                                                          ell_obs[0])]
+                                                                                          xcoord_obs[0])]
 
-    if stat_type == 'gy':
-        data_obs_new, cov_obs_new = data_obs_new[len(bins_to_fit) * len(ell_obs[0]):len(data_obs_new)], cov_obs_new[
+    if stat_type in ['gy','gty']:
+        data_obs_new, cov_obs_new = data_obs_new[len(bins_to_fit) * len(xcoord_obs[0]):len(data_obs_new)], cov_obs_new[
                                                                                                       len(
                                                                                                           bins_to_fit) * len(
-                                                                                                          ell_obs[0]):len(
+                                                                                                          xcoord_obs[0]):len(
                                                                                                           data_obs_new),
                                                                                                       len(
                                                                                                           bins_to_fit) * len(
-                                                                                                          ell_obs[0]):len(
+                                                                                                          xcoord_obs[0]):len(
                                                                                                           data_obs_new)]
 
-    return ell_obs_new, data_obs_new, cov_obs_new
+    return xcoord_obs_new, data_obs_new, cov_obs_new
 
 
 def setup(options):
-    bins_all = ast.literal_eval(options.get_string(option_section, "bins_all", "[1, 2, 3, 4, 5]"))
+    bins_all = ast.literal_eval(options.get_string(option_section, "bins_numbers", "[1, 2, 3, 4, 5]"))
     bins_to_fit = ast.literal_eval(options.get_string(option_section, "bins_to_fit", "[1, 2, 3, 4, 5]"))
-    ell_comp_min = ast.literal_eval(options.get_string(option_section, "ell_comp_min", "[0,0,0,0,0,0,0,0,0,0]"))
-    ell_comp_max = ast.literal_eval(
-        options.get_string(option_section, "ell_comp_max", "[10000,10000,10000,10000,10000,10000,10000,10000,10000,10000]"))
+    xcoord_comp_min = ast.literal_eval(options.get_string(option_section, "xcoord_comp_min", "[0,0,0,0,0,0,0,0,0,0]"))
+    xcoord_comp_max = ast.literal_eval(
+        options.get_string(option_section, "xcoord_comp_max", "[10000,10000,10000,10000,10000,10000,10000,10000,10000,10000]"))
     cov_diag = options.get_bool(option_section, "cov_diag", False)
-    no_cov_zbins_only_gg_gy = options.get_bool(option_section, "no_cov_zbins_only_gg_gy", False)
+    no_cov_zbins_only_auto_cross = options.get_bool(option_section, "no_cov_zbins_only_auto_cross", False)
     no_cov_zbins_all = options.get_bool(option_section, "no_cov_zbins_all", False)
-    no_cov_gg_gy = options.get_bool(option_section, "no_cov_gg_gy", False)
-    stat_type = options.get_string(option_section, "stat_type", 'gg_gy')
+    no_cov_auto_cross = options.get_bool(option_section, "no_cov_auto_cross", False)
+    stat_type = options.get_string(option_section, "stat_analyze", 'gg_gy')
     sec_save_name = options.get_string(option_section, "sec_save_name", 'save_theory')
 
     bins_to_rem = copy.deepcopy(bins_all)
     for bins in bins_to_fit:
         bins_to_rem.remove(bins)
 
-    twopt_file_processed_file = options.get_string(option_section, "twopt_file_processed_file")
-    data = pk.load(open(twopt_file_processed_file, 'rb'))
-    ell_obs, data_obs, cov_obs = data['ell_all'], data['mean'], data['cov_total']
+    twopt_file_processed_file = options.get_string(option_section, "twopt_file")
+    try:
+        data = pk.load(open(twopt_file_processed_file, 'rb'))
+    except:
+        data = pk.load(open(twopt_file_processed_file, 'rb'),encoding='latin1')
 
-    ell_obs_new, data_obs_new, cov_obs_new = import_data(ell_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all,
+    xcoord_obs, data_obs, cov_obs = data['xcoord_all'], data['mean'], data['cov_total']
+
+    xcoord_obs_new, data_obs_new, cov_obs_new = import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all,
                                                        stat_type)
 
-    data_obs_comp, ell_obs_comp, ell_obs_comp_ll, incov_obs_comp, cov_obs_comp = setuplnprob_func(ell_comp_min, ell_comp_max,
-                                                                                              ell_obs_new, data_obs_new,
+    data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp = setuplnprob_func(xcoord_comp_min, xcoord_comp_max,
+                                                                                              xcoord_obs_new, data_obs_new,
                                                                                               cov_obs_new, stat_type,
                                                                                               bins_to_fit,
                                                                                               cov_diag=cov_diag,
-                                                                                              no_cov_zbins_only_gg_gy=no_cov_zbins_only_gg_gy,
+                                                                                              no_cov_zbins_only_auto_cross=no_cov_zbins_only_auto_cross,
                                                                                               no_cov_zbins_all=no_cov_zbins_all,
-                                                                                              no_cov_gg_gy=no_cov_gg_gy)
-    return data_obs_comp, ell_obs_comp, ell_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name
+                                                                                              no_cov_auto_cross=no_cov_auto_cross)
+    # import pdb; pdb.set_trace()
+
+    return data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name
 
 
 def execute(block, config):
-    data_obs_comp, ell_obs_comp, ell_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name = config
-    like3d, Cl_theory_rdata = lnprob_func(block, ell_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
+    data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name = config
+
+    like3d, corrf_theory_rdata = lnprob_func(block, xcoord_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
     chi2 = -2. * like3d
 
     likes = names.likelihoods
     block[likes, 'SZ_LIKE'] = like3d
     block[likes, 'SZ_CHI2'] = chi2
-    block[likes, 'cov_obs_comp'] = cov_obs_comp
-    block[likes, 'incov_obs_comp'] = incov_obs_comp
-    block[likes, 'Cl_theory_rdata'] = Cl_theory_rdata
-    block[likes, 'Cl_data_gtcut'] = data_obs_comp
+    # block[likes, 'cov_obs_comp'] = cov_obs_comp
+    # block[likes, 'incov_obs_comp'] = incov_obs_comp
+    # block[likes, 'corrf_theory_rdata'] = corrf_theory_rdata
+    # block[likes, 'corrf_data_gtcut'] = data_obs_comp
 
-    block["data_vector", '3d_inverse_covariance'] = incov_obs_comp
-    block["data_vector", '3d_theory'] = Cl_theory_rdata
+    # block["data_vector", '3d_inverse_covariance'] = incov_obs_comp
+    # block["data_vector", '3d_theory'] = corrf_theory_rdata
 
     return 0
 
