@@ -22,12 +22,23 @@ def get_wprp_gt(rp, karr, Pkarr):
     valf = (sp.integrate.simps(karr * Pkarr * val1, karr)) / (2 * np.pi)
     return valf
 
+# out_dict = np.load(
+#     '/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_Plancky3_beamed_LeBrun_Ref.npz')
+
+
+# out_dict = np.load(
+#     '/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_acty3_beamed_LeBrun_Ref.npz')
+
+# out_dict = np.load(
+#     '/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_acty3_beamed_v2.npz')
 
 out_dict = np.load(
-    '/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_desy1.npz')
-theta_min = 2.5
-theta_max = 250.
-ntheta = 21
+    '/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_block_ell_kk_ky_Plancky3_beamed_v2.npz')
+
+
+theta_min = 1.0
+theta_max = 200.
+ntheta = 16
 # import pdb; pdb.set_trace()
 
 l_array = out_dict['theory_ell']
@@ -95,11 +106,11 @@ for jb in range(4):
     Cl_ky_1h_array = out_dict['theory_clky1h_bin_' + str(binv) + '_' + str(binv)]
     Cl_ky_2h_array = out_dict['theory_clky2h_bin_' + str(binv) + '_' + str(binv)]
 
-    cov_ky_ky = out_dict['cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)]
-    inv_cov_bin = QR_inverse(cov_ky_ky)
-    Cl_ky_bin = Cl_ky_1h_array + Cl_ky_2h_array
-    snr_bin = np.sqrt(np.dot(np.array([Cl_ky_bin]), np.dot(inv_cov_bin, np.array([Cl_ky_bin]).T)))
-    print('SNR ky bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+    # cov_ky_ky = out_dict['cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)]
+    # inv_cov_bin = QR_inverse(cov_ky_ky)
+    # Cl_ky_bin = Cl_ky_1h_array + Cl_ky_2h_array
+    # snr_bin = np.sqrt(np.dot(np.array([Cl_ky_bin]), np.dot(inv_cov_bin, np.array([Cl_ky_bin]).T)))
+    # print('SNR ky bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
     # import pdb; pdb.set_trace()
 
     Cl_ky_1h_interp = interpolate.interp1d(np.log(l_array), np.log(Cl_ky_1h_array), fill_value='extrapolate',
@@ -129,11 +140,11 @@ for jb in range(4):
     Cl_kk_1h_array = out_dict['theory_clkk1h_bin_' + str(binv) + '_' + str(binv)]
     Cl_kk_2h_array = out_dict['theory_clkk2h_bin_' + str(binv) + '_' + str(binv)]
 
-    cov_kk_kk = out_dict['cov_total_kk_kk_bin_' + str(binv) + '_' + str(binv)]
-    inv_cov_bin = QR_inverse(cov_kk_kk)
-    Cl_kk_bin = Cl_kk_1h_array + Cl_kk_2h_array
-    snr_bin = np.sqrt(np.dot(np.array([Cl_kk_bin]), np.dot(inv_cov_bin, np.array([Cl_kk_bin]).T)))
-    print('SNR kk bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+    # cov_kk_kk = out_dict['cov_total_kk_kk_bin_' + str(binv) + '_' + str(binv)]
+    # inv_cov_bin = QR_inverse(cov_kk_kk)
+    # Cl_kk_bin = Cl_kk_1h_array + Cl_kk_2h_array
+    # snr_bin = np.sqrt(np.dot(np.array([Cl_kk_bin]), np.dot(inv_cov_bin, np.array([Cl_kk_bin]).T)))
+    # print('SNR kk bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
     # import pdb; pdb.set_trace()
 
     Cl_kk_1h_interp = interpolate.interp1d(np.log(l_array), np.log(Cl_kk_1h_array), fill_value='extrapolate',
@@ -157,11 +168,11 @@ for jb in range(4):
         Cl_yy_1h_array = out_dict['theory_clyy1h']
         Cl_yy_2h_array = out_dict['theory_clyy2h']
 
-        cov_yy_yy = out_dict['cov_total_yy_yy']
-        inv_cov_bin = QR_inverse(cov_yy_yy)
-        Cl_yy_bin = Cl_yy_1h_array + Cl_yy_2h_array
-        snr_bin = np.sqrt(np.dot(np.array([Cl_yy_bin]), np.dot(inv_cov_bin, np.array([Cl_yy_bin]).T)))
-        print('SNR yy bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+        # cov_yy_yy = out_dict['cov_total_yy_yy']
+        # inv_cov_bin = QR_inverse(cov_yy_yy)
+        # Cl_yy_bin = Cl_yy_1h_array + Cl_yy_2h_array
+        # snr_bin = np.sqrt(np.dot(np.array([Cl_yy_bin]), np.dot(inv_cov_bin, np.array([Cl_yy_bin]).T)))
+        # print('SNR yy bin:' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
         # import pdb; pdb.set_trace()
 
         Cl_yy_1h_interp = interpolate.interp1d(np.log(l_array), np.log(Cl_yy_1h_array), fill_value='extrapolate',
@@ -204,12 +215,33 @@ for jb in range(4):
 # np.savez('/global/project/projectdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_gg_maglim.npz', **wtheta_gg_dict)
 # np.savez('/global/project/projectdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_gy_maglim.npz', **wtheta_yg_dict)
 
-np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_kk_desy1.npz',
-         **wtheta_kk_dict)
-np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_ky_desy1.npz',
-         **wtheta_ky_dict)
-np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_xi_gty_desy1.npz',
-         **xi_gty_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_kk_acty3_beamed_LeBrun_Ref.npz',
+#          **wtheta_kk_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_ky_acty3_beamed_LeBrun_Ref.npz',
+#          **wtheta_ky_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_xi_gty_acty3_beamed_LeBrun_Ref.npz',
+#          **xi_gty_dict)
 
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_kk_acty3_beamed_v2.npz',
+#          **wtheta_kk_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_ky_acty3_beamed_v2.npz',
+#          **wtheta_ky_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_xi_gty_acty3_beamed_v2.npz',
+#          **xi_gty_dict)
+
+
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_kk_Plancky3_beamed_LeBrun_Ref.npz',
+#          **wtheta_kk_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_ky_Plancky3_beamed_LeBrun_Ref.npz',
+#          **wtheta_ky_dict)
+# np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_xi_gty_Plancky3_beamed_LeBrun_Ref.npz',
+#          **xi_gty_dict)
+
+np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_kk_Plancky3_beamed_v2.npz',
+         **wtheta_kk_dict)
+np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_wtheta_ky_Plancky3_beamed_v2.npz',
+         **wtheta_ky_dict)
+np.savez('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/results_xi_gty_Plancky3_beamed_v2.npz',
+         **xi_gty_dict)
 
 
