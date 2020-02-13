@@ -89,7 +89,7 @@ function execute(block,config) result(status)
 	!CosmoSIS supplies double precision - need to convert
 	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu,bth
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:), umh(:),massh(:)
-	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),bt_out(:,:)
+	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:)
 	real(8) :: Halo_as, halo_eta0
 
 	status = 0
@@ -167,6 +167,7 @@ function execute(block,config) result(status)
     ALLOCATE(p1h_out(settings%nk,settings%nz))
     ALLOCATE(p2h_out(settings%nk,settings%nz))
     ALLOCATE(um_out(1000, settings%nk, settings%nz))
+    ALLOCATE(mass_out(1000, settings%nz))
     ALLOCATE(bt_out(settings%nk, settings%nz))
     ALLOCATE(umh(1000))
     ALLOCATE(massh(1000))
@@ -188,6 +189,7 @@ function execute(block,config) result(status)
 			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,massh)
 			DO kk=1,1000
 			um_out(kk,i,j) = umh(kk)
+            mass_out(kk,j) =massh(kk)
 			end do
 			!This outputs k^3 P(k).  We convert back.
 			p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.))
@@ -215,20 +217,32 @@ function execute(block,config) result(status)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p1h_k",p1h_out)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p2h_k",p2h_out)
 
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_0",um_out(0,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_1",um_out(1,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_4",um_out(4,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_9",um_out(9,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_20",um_out(20,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_45",um_out(45,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_99",um_out(99,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_214",um_out(214,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_463",um_out(463,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_999",um_out(999,:,:))
-    status = datablock_put_double_array_1d(block,nl_power, "Mh",massh([0,1,4,9,20,45,99,214,463,999]))
 
 
-    
+    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,1),  "k_h", k_out, "um_1",um_out(:,:,1))
+    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,5),  "k_h", k_out, "um_5",um_out(:,:,5))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,10), "k_h", k_out, "um_10",um_out(:,:, 10))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,15), "k_h", k_out, "um_15",um_out(:,:, 15))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,20), "k_h", k_out, "um_20",um_out(:,:, 20))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,25), "k_h", k_out, "um_25",um_out(:,:, 25))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,30), "k_h", k_out, "um_30",um_out(:,:, 30))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,35), "k_h", k_out, "um_35",um_out(:,:, 35))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,40), "k_h", k_out, "um_40",um_out(:,:, 40))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,45), "k_h", k_out, "um_45",um_out(:,:, 45))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,50), "k_h", k_out, "um_50",um_out(:,:, 50))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,55), "k_h", k_out, "um_55",um_out(:,:, 55))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,60), "k_h", k_out, "um_60",um_out(:,:, 60))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,65), "k_h", k_out, "um_65",um_out(:,:, 65))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,70), "k_h", k_out, "um_70",um_out(:,:, 70))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,75), "k_h", k_out, "um_75",um_out(:,:, 75))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,80), "k_h", k_out, "um_80",um_out(:,:, 80))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,85), "k_h", k_out, "um_85",um_out(:,:, 85))
+    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,90), "k_h", k_out, "um_90",um_out(:,:, 90))
+
+
+    status = datablock_put_double_array_1d(block,nl_power, "A",massh([0,1,4,9,20,45,99,214,463,999]))
+
+
 
 	!Free memory
 	deallocate(k)
@@ -239,6 +253,7 @@ function execute(block,config) result(status)
 	deallocate(um_out)
 	deallocate(bt_out)
     deallocate(umh)
+    deallocate(mass_out)
     deallocate(massh)
 	deallocate(k_in)
 	deallocate(z_in)

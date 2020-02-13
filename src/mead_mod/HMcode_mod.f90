@@ -267,7 +267,7 @@ MODULE MHM
     umh= u_m(k,z,lut,cosm)
   
     DO i=1,lut%n
-         massh(i)=lut%m(i)
+         massh(i)=lut%m(i)*Delta_v(z,cosm)
        
     END DO 
     c=alpha(z,cosm)

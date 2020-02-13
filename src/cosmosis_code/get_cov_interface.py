@@ -1,6 +1,5 @@
 import sys, os
 from cosmosis.datablock import names, option_section, BlockError
-
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 # sys.path.insert(0, '../../helper/')
 # sys.path.insert(0, '../')
@@ -236,6 +235,7 @@ def setup(options):
     return ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname,save_real_space_cov,do_use_measured_2pt
 
 
+
 def execute(block, config):
     ini_info, bins_numbers, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname,save_real_space_cov,do_use_measured_2pt = config
     clf = pk.load(open(twopt_file, 'rb'))
@@ -338,6 +338,23 @@ def execute(block, config):
         block[sec_save_name, 'theory_Clgk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['2h']
         block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
         block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
+        if other_params_dict_bin['derivative']:
+            block[sec_save_name, 'theory_Clkk1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['kk']['1h']
+            block[sec_save_name, 'theory_Clky1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['ky']['1h']
+            block[sec_save_name, 'theory_Clgg1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['gg']['1h']
+            block[sec_save_name, 'theory_Clgy1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['gy']['1h']
+            block[sec_save_name, 'theory_Clkg1h_dM_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dM_dict['kg']['1h']
+            block[sec_save_name, 'theory_Clyy1h_dM'] = DV_fid.Cl_dM_dict['yy']['1h']
+            
+            
+            
+        if other_params_dict_bin['derivative']:
+            block[sec_save_name, 'theory_Clkk1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['kk']['1h']
+            block[sec_save_name, 'theory_Clky1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['ky']['1h']
+            block[sec_save_name, 'theory_Clgg1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['gg']['1h']
+            block[sec_save_name, 'theory_Clgy1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['gy']['1h']
+            block[sec_save_name, 'theory_Clkg1h_dz_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dz_dict['kg']['1h']
+            block[sec_save_name, 'theory_Clyy1h_dz'] = DV_fid.Cl_dz_dict['yy']['1h']
 
         block[sec_save_name, 'theory_ell'] = DV_fid.l_array
 
@@ -585,6 +602,8 @@ def execute(block, config):
             clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['data'][0] - 1. / nbar_bin
 
     block[sec_save_name, 'ell'] = clf['ell']
+    block[sec_save_name, 'M_array'] = other_params_dict['M_array']
+    block[sec_save_name, 'z_array'] = other_params_dict['z_array']
     block[sec_save_name, 'theory_dv'] = Cl_vec
     savecov = {'cov_total': cov_fid, 'cov_G': cov_fid_G, 'cov_NG': cov_fid_NG, 'mean': Cl_vec_data, 'ell_all': ell_all}
     pk.dump(savecov, open(save_cov_fname, 'wb'))
@@ -595,8 +614,9 @@ def execute(block, config):
         out_dict[key[1]] = block[key]
 
     np.savez(save_block_fname, **out_dict)
-    pdb.set_trace()
-
+    
+    #pdb.set_trace()
+    
     return 0
 
 

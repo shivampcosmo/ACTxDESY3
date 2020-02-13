@@ -64,5 +64,4 @@ outputs:
         P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
         p1h_k: "real 2D array, nonlinear 1-halo term in (Mpc/h)^{-3}"
         p2h_k: "real 2D array, nonlinear 2-halo term in (Mpc/h)^{-3}"
-        um: "real 3D array, um(M,k,z)"
         bt: "real 2D array, bt=(1.-frac*(tanh(k*sigv/sqrt(ABS(frac))))**2.)**0.5"
