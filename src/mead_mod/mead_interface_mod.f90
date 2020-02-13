@@ -88,8 +88,8 @@ function execute(block,config) result(status)
 	TYPE(tables) :: lut
 	!CosmoSIS supplies double precision - need to convert
 	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu,bth
-	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:), umh(:),massh(:)
-	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),bt_out(:,:)
+	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:), umh(:),mah(:),z_out1(:)
+	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),massh(:,:),bt_out(:,:)
 	real(8) :: Halo_as, halo_eta0
 
 	status = 0
@@ -167,9 +167,12 @@ function execute(block,config) result(status)
     ALLOCATE(p1h_out(settings%nk,settings%nz))
     ALLOCATE(p2h_out(settings%nk,settings%nz))
     ALLOCATE(um_out(1000, settings%nk, settings%nz))
+    ALLOCATE(massh(1000, settings%nz))
     ALLOCATE(bt_out(settings%nk, settings%nz))
     ALLOCATE(umh(1000))
-    ALLOCATE(massh(1000))
+    ALLOCATE(mah(1000))
+
+
 
 	!Loop over redshifts
 	DO j=1,settings%nz
@@ -185,9 +188,10 @@ function execute(block,config) result(status)
 		!Loop over k values
 		DO i=1,SIZE(k)
 			plin=p_lin(k(i),cosi)        
-			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,massh)
+			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,mah)
 			DO kk=1,1000
 			um_out(kk,i,j) = umh(kk)
+            massh(kk,j) = mah(kk)
 			end do
 			!This outputs k^3 P(k).  We convert back.
 			p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.))
@@ -214,23 +218,47 @@ function execute(block,config) result(status)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "bt",bt_out)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p1h_k",p1h_out)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p2h_k",p2h_out)
-
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_0",um_out(0,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_1",um_out(1,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_4",um_out(4,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_9",um_out(9,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_20",um_out(20,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_45",um_out(45,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_99",um_out(99,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_214",um_out(214,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_463",um_out(463,:,:))
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_999",um_out(999,:,:))
-    status = datablock_put_double_array_1d(block,nl_power, "Mh",massh([0,1,4,9,20,45,99,214,463,999]))
-
-
+    
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_0",um_out(0,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_1",um_out(1,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_4",um_out(4,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_9",um_out(9,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_20",um_out(20,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_45",um_out(45,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_99",um_out(99,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_214",um_out(214,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_463",um_out(463,:,:))
+    !status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "um_999",um_out(999,:,:))
+    !status = datablock_put_double_array_1d(block,nl_power, "Mh",massh([0,1,4,9,20,45,99,214,463,999]))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,0),   "k_h", k_out, "um_0",um_out(:,:,0))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,1),   "k_h", k_out, "um_1",um_out(:,:,1))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,4),   "k_h", k_out, "um_4",um_out(:,:,4))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,9),   "k_h", k_out, "um_9",um_out(:,:,9))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,20),  "k_h", k_out,"um_20",um_out(:,:,20))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,45),  "k_h", k_out,"um_45",um_out(:,:,45))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,99),  "k_h", k_out,"um_99",um_out(:,:,99))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,214), "k_h", k_out, "um_214",um_out(:,:,214))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,463), "k_h", k_out, "um_463",um_out(:,:,463))
+    status = datablock_put_double_grid(block,nl_power, "Mh", massh(:,999), "k_h", k_out, "um_999",um_out(:,:,999))
+    
+    ALLOCATE(z_out1(10))
+    z_out1(0) = ztab(0) 
+    z_out1(1) = ztab(1) 
+    z_out1(2) = ztab(4) 
+    z_out1(3) = ztab(9) 
+    z_out1(4)= ztab(20)
+    z_out1(5)= ztab(45)
+    z_out1(6)= ztab(99)
+    z_out1(7)= ztab(214)
+    z_out1(8)= ztab(463)
+    z_out1(9)= ztab(999)
+    status = datablock_put_double_array_1d(block,nl_power, "z_mead",z_out1)
+    
     
 
+
 	!Free memory
+    deallocate(z_out1)
 	deallocate(k)
 	deallocate(ztab)
 	deallocate(p_out)
@@ -240,6 +268,7 @@ function execute(block,config) result(status)
 	deallocate(bt_out)
     deallocate(umh)
     deallocate(massh)
+    deallocate(mah)
 	deallocate(k_in)
 	deallocate(z_in)
 	deallocate(p_in)
