@@ -89,7 +89,7 @@ function execute(block,config) result(status)
 	!CosmoSIS supplies double precision - need to convert
 	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu,bth
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:), umh(:),massh(:)
-	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:)
+	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:),p1h_out(:,:),p2h_out(:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:), ind_lut(:,:)
 	real(8) :: Halo_as, halo_eta0
 
 	status = 0
@@ -171,6 +171,7 @@ function execute(block,config) result(status)
     ALLOCATE(bt_out(settings%nk, settings%nz))
     ALLOCATE(umh(1000))
     ALLOCATE(massh(1000))
+	ALLOCATE(ind_lut(settings%nk,settings%nz))
 
 	!Loop over redshifts
 	DO j=1,settings%nz
@@ -187,15 +188,17 @@ function execute(block,config) result(status)
 		DO i=1,SIZE(k)
 			plin=p_lin(k(i),cosi)        
 			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,massh)
-			DO kk=1,1000
-			um_out(kk,i,j) = umh(kk)
-            mass_out(kk,j) =massh(kk)
+			DO kk=1,lut%n
+				um_out(kk,i,j) = umh(kk)
+				mass_out(kk,j) =massh(kk)
 			end do
+!			Print *, um_out(500,i,1)
 			!This outputs k^3 P(k).  We convert back.
 			p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.))
 			bt_out(i,j) = bth
-            		p1h_out(i,j)=p1h / (k(i)**3.0) * (2.*(pi**2.))
-            		p2h_out(i,j)=p2h / (k(i)**3.0) * (2.*(pi**2.))
+			p1h_out(i,j)=p1h / (k(i)**3.0) * (2.*(pi**2.))
+			p2h_out(i,j)=p2h / (k(i)**3.0) * (2.*(pi**2.))
+			ind_lut(i,j)=(lut%n)*1.0
 		END DO
 
 		IF(j==1) THEN
@@ -208,39 +211,70 @@ function execute(block,config) result(status)
 	!convert to double precision
 	allocate(k_out(settings%nk))
 	allocate(z_out(settings%nz))
+
 	k_out = k
 	z_out = ztab
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 1.0
 	!Convert k to k/h to match other modules
 	!Output results to cosmosis
 	status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p_k",p_out)
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 2.0
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "bt",bt_out)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p1h_k",p1h_out)
     status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p2h_k",p2h_out)
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 3.0
+!	SP
+	status = datablock_put_double_array_2d(block, nl_power, "mass_h_um", mass_out)
+	status = datablock_put_double_array_2d(block, nl_power, "ind_lut", ind_lut)
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 4.0
+!	SP
+
+	status = datablock_put_double_array_2d(block,nl_power,  "um_1",um_out(:,:,1))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_5",um_out(:,:,5))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_10",um_out(:,:, 10))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_15",um_out(:,:, 15))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_20",um_out(:,:, 20))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_25",um_out(:,:, 25))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_30",um_out(:,:, 30))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_35",um_out(:,:, 35))
+    status = datablock_put_double_array_2d(block,nl_power, "um_40",um_out(:,:, 40))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_45",um_out(:,:, 45))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_50",um_out(:,:, 50))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_55",um_out(:,:, 55))
+    status = datablock_put_double_array_2d(block,nl_power, "um_60",um_out(:,:, 60))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_65",um_out(:,:, 65))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_70",um_out(:,:, 70))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_75",um_out(:,:, 75))
+    status = datablock_put_double_array_2d(block,nl_power, "um_80",um_out(:,:, 80))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_85",um_out(:,:, 85))
+    status = datablock_put_double_array_2d(block,nl_power,  "um_90",um_out(:,:, 90))
+	status = datablock_put_double_array_2d(block,nl_power, "um_95",um_out(:,:, 95))
+	status = datablock_put_double_array_2d(block,nl_power, "um_100",um_out(:,:, 100))
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 5.0
+!    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,1),  "k_h", k_out, "um_1",um_out(:,:,1))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,5),  "k_h", k_out, "um_5",um_out(:,:,5))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,10), "k_h", k_out, "um_10",um_out(:,:, 10))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,15), "k_h", k_out, "um_15",um_out(:,:, 15))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,20), "k_h", k_out, "um_20",um_out(:,:, 20))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,25), "k_h", k_out, "um_25",um_out(:,:, 25))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,30), "k_h", k_out, "um_30",um_out(:,:, 30))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,35), "k_h", k_out, "um_35",um_out(:,:, 35))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,40), "k_h", k_out, "um_40",um_out(:,:, 40))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,45), "k_h", k_out, "um_45",um_out(:,:, 45))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,50), "k_h", k_out, "um_50",um_out(:,:, 50))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,55), "k_h", k_out, "um_55",um_out(:,:, 55))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,60), "k_h", k_out, "um_60",um_out(:,:, 60))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,65), "k_h", k_out, "um_65",um_out(:,:, 65))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,70), "k_h", k_out, "um_70",um_out(:,:, 70))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,75), "k_h", k_out, "um_75",um_out(:,:, 75))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,80), "k_h", k_out, "um_80",um_out(:,:, 80))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,85), "k_h", k_out, "um_85",um_out(:,:, 85))
+!    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,90), "k_h", k_out, "um_90",um_out(:,:, 90))
+!	status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,95), "k_h", k_out, "um_95",um_out(:,:, 95))
+!	status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,100), "k_h", k_out, "um_100",um_out(:,:, 100))
 
 
-
-    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,1),  "k_h", k_out, "um_1",um_out(:,:,1))
-    status = datablock_put_double_grid(block,nl_power, "mass_h", mass_out(:,5),  "k_h", k_out, "um_5",um_out(:,:,5))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,10), "k_h", k_out, "um_10",um_out(:,:, 10))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,15), "k_h", k_out, "um_15",um_out(:,:, 15))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,20), "k_h", k_out, "um_20",um_out(:,:, 20))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,25), "k_h", k_out, "um_25",um_out(:,:, 25))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,30), "k_h", k_out, "um_30",um_out(:,:, 30))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,35), "k_h", k_out, "um_35",um_out(:,:, 35))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,40), "k_h", k_out, "um_40",um_out(:,:, 40))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,45), "k_h", k_out, "um_45",um_out(:,:, 45))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,50), "k_h", k_out, "um_50",um_out(:,:, 50))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,55), "k_h", k_out, "um_55",um_out(:,:, 55))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,60), "k_h", k_out, "um_60",um_out(:,:, 60))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,65), "k_h", k_out, "um_65",um_out(:,:, 65))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,70), "k_h", k_out, "um_70",um_out(:,:, 70))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,75), "k_h", k_out, "um_75",um_out(:,:, 75))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,80), "k_h", k_out, "um_80",um_out(:,:, 80))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,85), "k_h", k_out, "um_85",um_out(:,:, 85))
-    status = datablock_put_double_grid(block,nl_power, "mass_h",  mass_out(:,90), "k_h", k_out, "um_90",um_out(:,:, 90))
-
-
-    status = datablock_put_double_array_1d(block,nl_power, "A",massh([0,1,4,9,20,45,99,214,463,999]))
+!    status = datablock_put_double_array_1d(block,nl_power, "A",massh([0,1,4,9,20,45,99,214,463,999]))
 
 
 
@@ -266,6 +300,8 @@ function execute(block,config) result(status)
     IF(ALLOCATED(cosi%ktab)) DEALLOCATE(cosi%ktab)
     IF(ALLOCATED(cosi%tktab)) DEALLOCATE(cosi%tktab)
     IF(ALLOCATED(cosi%pktab)) DEALLOCATE(cosi%pktab)
+
+
 
 end function execute
 

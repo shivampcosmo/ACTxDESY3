@@ -251,6 +251,9 @@ MODULE MHM
     REAL :: c
     TYPE(cosmology), INTENT(IN) :: cosm
     TYPE(tables), INTENT(IN) :: lut
+
+    umh = 0.0
+    massh = 0.0
  
     !Calls expressions for one- and two-halo terms and then combines
     !to form the full power spectrum
@@ -266,10 +269,13 @@ MODULE MHM
     bth = bt(k,z,lut,plin,cosm)
     umh= u_m(k,z,lut,cosm)
 
+!    DO i=1,lut%n
+!         massh(i)=lut%m(i)*Delta_v(z,cosm)
     DO i=1,lut%n
-         massh(i)=lut%m(i)*Delta_v(z,cosm)
-       
-    END DO 
+         massh(i)=lut%m(i)
+
+
+    END DO
     c=alpha(z,cosm)
     pfull=(p2h**c+p1h**c)**(1./c)
 
@@ -1033,10 +1039,11 @@ MODULE MHM
     IF(frac .NE. 0.) THEN
        bt=(1.-frac*(tanh(k*sigv/sqrt(ABS(frac))))**2.)**0.5
     ELSE
-       bt=plin
+       bt=1.
     END IF
 
   END FUNCTION bt
+
 
 
 
@@ -1070,18 +1077,6 @@ MODULE MHM
 
     Dv=Delta_v(z,cosm)
     !Calculates the value of the integrand at all nu values!
-    DO i=1,lut%n
-       g=gnu(lut%nu(i))
-       wk(i)=win(k*(lut%nu(i)**et),lut%rv(i),lut%c(i))
-
-       integrand(i)=((lut%rv(i))**3.)*(wk(i))*Dv*4.*pi/3.
-       
-    END DO
-
-!um_out(1000, settings%nk, settings%nz))
-  
-
-    
 
     !Damping of the 1-halo term at very large scales
     ks=kstar(z,cosm)
@@ -1091,9 +1086,17 @@ MODULE MHM
     ELSE
        fac=exp(-((k/ks)**2.))
     END IF
+
     DO i=1,lut%n
-        u_m(i)=integrand(i)*(1.-fac)**(0.5)
+!       g=gnu(lut%nu(i))
+       wk(i)=(win(k*(lut%nu(i)**et),lut%rv(i),lut%c(i)))
+
+!       integrand(i)=((lut%rv(i))**3.)*(wk(i))*Dv*4.*pi/3.
+!       integrand(i)=(wk(i))
+
+        u_m(i)=(wk(i))*((1.-fac)**(0.5))
     END DO
+!    Print *, k, z, u_m(500), lut%rv(750),lut%c(750),lut%nu(750)
     DEALLOCATE(integrand,wk)
   end function u_m
 

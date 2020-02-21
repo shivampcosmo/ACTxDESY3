@@ -745,6 +745,16 @@ def get_corr(cov):
             corr[ii,jj] = cov[ii,jj]/np.sqrt(cov[ii,ii]*cov[jj,jj])
     return corr
 
+def get_wplin_interp(nu, pkzlin_interp):
+    k_array = np.logspace(-5, 3, 100000)
+    z_array = np.logspace(-3,1,100)
+    Pklinz = (pkzlin_interp.ev(np.log(z_array), np.log(k_array)))
+    
+    import pdb; pdb.set_trace()
+    theta_out, xi_out = Hankel(k_array, nu=nu, q=1.0)(Pklinz, extrap=True)
+    for j in range(z_array):
+        theta_out, xi_out = Hankel(k_array, nu=nu, q=1.0)(Pklinz, extrap=True)
+
 # @jit(nopython=True,parallel = True)
 # @vectorize([float64(float64, float64,float64, float64)])
 # def get_integrand_uyl(l,x_mat,y3d_mat,l500c_mat):
