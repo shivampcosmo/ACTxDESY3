@@ -166,16 +166,28 @@ def read_ini(ini_file, ini_def=None, twopt_file=None,get_bp = False):
 
     other_params_dict['M_array'] = np.logspace(other_params_dict['logM_array_min'], other_params_dict['logM_array_max'],
                                                other_params_dict['num_M'])
-    other_params_dict['z_array'] = np.logspace(np.log10(other_params_dict['z_array_min']),
-                                               np.log10(other_params_dict['z_array_max']),
-                                               other_params_dict['num_z'])
+
+    if other_params_dict['zarray_spacing'] == 'log':
+        other_params_dict['z_array'] = np.logspace(np.log10(other_params_dict['z_array_min']),
+                                                   np.log10(other_params_dict['z_array_max']),
+                                                   other_params_dict['num_z'])
+
+    if other_params_dict['zarray_spacing'] == 'lin':
+        other_params_dict['z_array'] = np.linspace((other_params_dict['z_array_min']),
+                                                   (other_params_dict['z_array_max']),
+                                                   other_params_dict['num_z'])
+
     other_params_dict['x_array'] = np.logspace(np.log10(other_params_dict['xmin']), np.log10(other_params_dict['xmax']),
                                                other_params_dict['num_x'])
 
     if twopt_file is None:
         if other_params_dict['larray_spacing'] == 'log':
-            l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
-                                      other_params_dict['num_l'])
+            if other_params_dict['num_l'] == 0:
+                l_array_all = np.exp(np.arange(np.log(other_params_dict['lmin']), np.log(other_params_dict['lmax']),
+                                          other_params_dict['dl_log_array']))
+            else:
+                l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
+                                          other_params_dict['num_l'])
 
         if other_params_dict['larray_spacing'] == 'lin':
             l_array_all = np.linspace((other_params_dict['lmin']), (other_params_dict['lmax']),
@@ -244,15 +256,17 @@ def setup(options):
     save_block_fname = options.get_string(option_section, "save_block_fname", default='')
     save_real_space_cov = options.get_bool(option_section, "save_real_space_cov", default=False)
 
-    ntheta = options.get_double(option_section, "n_theta",default=0)
+    ntheta = options.get_int(option_section, "ntheta",default=0)
+    # dlogtheta = ast.literal_eval(options.get_string(option_section, "dlogtheta", default=None))
+    dlogtheta = (options.get_string(option_section, "dlogtheta", default=None))
     theta_min = options.get_double(option_section, "theta_min",default=1.0)
     theta_max = options.get_double(option_section, "theta_max",default=100.0)
     verbose = options.get_bool(option_section, "verbose", default=False)
-    return ini_info, bins_numbers, bins_lens, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov, do_use_measured_2pt, get_bp, ntheta, theta_min, theta_max,analysis_coords, verbose
+    return ini_info, bins_numbers, bins_lens, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov, do_use_measured_2pt, get_bp, dlogtheta, ntheta, theta_min, theta_max,analysis_coords, verbose
 
 
 def execute(block, config):
-    ini_info, bins_numbers, bins_lens, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov, do_use_measured_2pt, get_bp, ntheta, theta_min, theta_max,analysis_coords,verbose = config
+    ini_info, bins_numbers, bins_lens, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov, do_use_measured_2pt, get_bp, dlogtheta, ntheta, theta_min, theta_max,analysis_coords,verbose = config
     clf = pk.load(open(twopt_file, 'rb'))
 
     other_params_dict = ini_info['other_params_dict']
@@ -413,7 +427,16 @@ def execute(block, config):
         # pdb.set_trace()
 
         if ntheta == 0:
-            theta_array = None
+            if dlogtheta == 'uselarray':
+                block[sec_save_name, 'theory_min'] = theta_min
+                block[sec_save_name, 'theory_max'] = theta_max
+                block[sec_save_name, 'dlogtheta'] = np.log(DV_fid.l_array_survey[1]/DV_fid.l_array_survey[0])
+                theta_array_all = np.exp(np.arange(np.log(theta_min), np.log(theta_max), block[sec_save_name, 'dlogtheta']))
+                ntheta = len(theta_array_all)
+                theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+                print(ntheta)
+            else:
+                theta_array = None
         else:
             block[sec_save_name, 'theory_min'] = theta_min
             block[sec_save_name, 'theory_max'] = theta_max
@@ -444,6 +467,7 @@ def execute(block, config):
         block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
 
         block[sec_save_name, 'theory_ell'] = DV_fid.l_array
+        block[sec_save_name, 'theory_ell_survey'] = DV_fid.l_array_survey
 
         if analysis_coords=='real':
             ti = time.time()
@@ -453,9 +477,9 @@ def execute(block, config):
             block[sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(binv)], theta_array = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['kk']['total'],theta_array_arcmin=theta_array)
             # block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['total'],theta_array_arcmin=theta_array)
             block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['ky']['total'],theta_array_arcmin=theta_array)
-            block[sec_save_name, 'theory_gt_bin_' + str(binv_lens) + '_' + str(
-                binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['gk']['total'],
-                                                                 theta_array_arcmin=theta_array)
+            # block[sec_save_name, 'theory_gt_bin_' + str(binv_lens) + '_' + str(
+            #     binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['gk']['total'],
+            #                                                      theta_array_arcmin=theta_array)
             # block[sec_save_name, 'theory_wyy'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['total'],theta_array_arcmin=theta_array)
 
             if get_bp:
@@ -505,7 +529,7 @@ def execute(block, config):
             # block[sec_save_name, 'theory_corrf_' + 'gk' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgk_bin_' + str(binv) + '_' + str(binv)]
             block[sec_save_name, 'theory_corrf_' + 'kk' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(binv)]
             # block[sec_save_name, 'theory_corrf_' + 'ky' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)]
+            # block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)]
             block[sec_save_name, 'xcoord'] = block[sec_save_name, 'theory_theta']
 
         if bool(save_cov_fname and save_cov_fname.strip()) or bool(save_block_fname and save_block_fname.strip()):
@@ -525,7 +549,6 @@ def execute(block, config):
                                                                                                      'kk' + '_' + 'kk'] + \
                                                                                                  cov_fid_dict_NG[
                                                                                                      'kk' + '_' + 'kk']
-
                     if save_real_space_cov:
                         cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
                                                                  np.log(DV_fid.dl_array_survey * np.diag(
@@ -540,7 +563,7 @@ def execute(block, config):
 
                         # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full)))) / dl_array_full
                         cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
+                        # import pdb; pdb.set_trace()
                         theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
                                                                                   ntheta, l_array_full,
                                                                                   cov_G_diag_lfull)

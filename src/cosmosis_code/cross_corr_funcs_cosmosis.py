@@ -2226,11 +2226,6 @@ class DataVec:
         thetaplus_array_rad = theta_plus_array * (np.pi / 180.) * (1. / 60.)
         thetaminus_array_rad = theta_minus_array * (np.pi / 180.) * (1. / 60.)
 
-        # l_theta = (np.tile(l_array.reshape(1, nl), (ntheta, 1))) * (np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl)))
-        # J0_ltheta = sp.special.jv(0,l_theta)
-        # J0_ltheta_mat1 = np.tile(J0_ltheta.reshape(ntheta, 1, nl), (1, ntheta, 1))
-        # J0_ltheta_mat2 = np.tile(J0_ltheta.reshape( 1,ntheta, nl), (ntheta,1,  1))
-
         l_mat = np.tile(l_array.reshape(1, nl), (ntheta, 1))
         theta_mat = np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl))
         dtheta_mat = np.tile(dtheta_array_rad.reshape(ntheta, 1), (1, nl))
@@ -2238,11 +2233,6 @@ class DataVec:
         thetaminus_mat = np.tile(thetaminus_array_rad.reshape(ntheta, 1), (1, nl))
         l_thetaplus = l_mat * thetaplus_mat
         l_thetaminus = l_mat * thetaminus_mat
-
-        # J3_ltheta_plus = sp.special.jv(3, l_thetaplus)
-        # J3_ltheta_minus = sp.special.jv(3, l_thetaminus)
-        # J2_ltheta_binned = (1. / (l_mat * theta_mat * dtheta_mat)) * (
-        #         thetaplus_mat * J3_ltheta_plus - thetaminus_mat * J3_ltheta_minus)
 
         J2_ltheta_binned_coeff = (1. / ((l_mat ** 2) * theta_mat * dtheta_mat))
         term1 = -2. * (sp.special.jv(0, l_thetaplus) - sp.special.jv(0, l_thetaminus))
@@ -2259,9 +2249,5 @@ class DataVec:
         integrand = (l_mat ** 2) * (J2_ltheta_binned_mat1 * J2_ltheta_binned_mat2) * cov_diag_mat
         cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
 
-        # integrand2 = (l_mat ** 2) * (J0_ltheta_mat1 * J0_ltheta_mat2)  * cov_diag_mat
-        # cov_wtheta2 = (1. / (2 * np.pi) ** 2) * sp.integrate.simps(integrand2, l_array)
-
-        # pdb.set_trace()
 
         return theta_array_rad, cov_wtheta
