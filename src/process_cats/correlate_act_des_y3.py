@@ -60,8 +60,8 @@ ymap_truth = hp.read_map(true_y_file)
 # rand_ra_all,rand_dec_all,rand_z_all  = hdens_rand_ra,hdens_rand_dec,hdens_rand_z
 
 fname = '/project/projectdirs/des/www/y3_cats/Y3_mastercat_12_3_19.h5'
-# cat_tocorr = 'maglim'
-cat_tocorr = 'redmagic'
+cat_tocorr = 'maglim'
+# cat_tocorr = 'redmagic'
 
 
 with h5.File(fname,'r') as cat:
@@ -90,12 +90,12 @@ with h5.File(fname,'r') as cat:
     rand_z_all = cat['randoms/redmagic/combined_sample_fid/z'][()][ind_selr]
 
 
-minz = 0.15
-maxz = 0.9
+minz = 0.2
+maxz = 1.05
 
 # Restrict to datapoint selection
 selection_z = np.where((datapoint_z_all > minz) & (datapoint_z_all < maxz))[0]
-print "num in selection = ", selection_z.shape
+print("num in selection = ", selection_z.shape)
 
 nside = 4096
 mask_final = []
@@ -146,11 +146,11 @@ mask = np.zeros(hp.nside2npix(nside))
 
 mask[ind_datapoints] = 1.
 
-print ndatapoint,nrand
+print(ndatapoint,nrand)
 
 do_jk = True
 nside_ymap = 4096
-put_weights_datapoints = False
+put_weights_datapoints = True
 do_randy_sub = True
 njk = 60
 
@@ -172,34 +172,34 @@ zmin = 0.0
 zmax = 1.2
 nzbins_total = 120
 
-delta_z = (zmax - zmin) / nzbins_total
-zarray_all = np.linspace(zmin, zmax, nzbins_total)
-zarray_edges = (zarray_all[1:] + zarray_all[:-1]) / 2.
-zarray = zarray_all[1:-1]
-gaussian_all = np.zeros((len(zarray), len(datapoint_z)))
-for j in xrange(len(datapoint_z)):
-    z = datapoint_z[j]
-    sig_gauss = 0.0166 * (1 + z)
+# delta_z = (zmax - zmin) / nzbins_total
+# zarray_all = np.linspace(zmin, zmax, nzbins_total)
+# zarray_edges = (zarray_all[1:] + zarray_all[:-1]) / 2.
+# zarray = zarray_all[1:-1]
+# gaussian_all = np.zeros((len(zarray), len(datapoint_z)))
+# for j in range(len(datapoint_z)):
+#     z = datapoint_z[j]
+#     sig_gauss = 0.0166 * (1 + z)
 
-    gaussian_all[:, j] = (1 / (sig_gauss * np.sqrt(2 * np.pi))) * np.exp(-((zarray - z) ** 2) / (2 * (sig_gauss ** 2)))
+#     gaussian_all[:, j] = (1 / (sig_gauss * np.sqrt(2 * np.pi))) * np.exp(-((zarray - z) ** 2) / (2 * (sig_gauss ** 2)))
 
-nzbin_j = np.sum(gaussian_all, axis=1)
-nzbin_j_norm = nzbin_j / (np.sum(nzbin_j) * delta_z)
+# nzbin_j = np.sum(gaussian_all, axis=1)
+# nzbin_j_norm = nzbin_j / (np.sum(nzbin_j) * delta_z)
+# zmean_j = get_zmean(zarray, delta_z, nzbin_j_norm)
+zmean_j = (minz + maxz)/2.
 
-zmean_j = get_zmean(zarray, delta_z, nzbin_j_norm)
-
-print 'total data points : ' + str(len(datapoint_ra))
-print 'total random points : ' + str(len(rand_ra))
-print 'catalog area sq deg : ' + str(catalog_area)
-print 'bin zmean : ' + str(zmean_j)
+print('total data points : ' + str(len(datapoint_ra)))
+print('total random points : ' + str(len(rand_ra)))
+print('catalog area sq deg : ' + str(catalog_area))
+print('bin zmean : ' + str(zmean_j))
 
 min_r = 0.1
 max_r = 80.
 
-minrad = 1.0
-maxrad = 120.0
+minrad = 0.1
+maxrad = 250.0
 
-nrad = 10
+nrad = 15
 
 Omega_m = 0.283705720011
 from astropy.cosmology import FlatLambdaCDM
