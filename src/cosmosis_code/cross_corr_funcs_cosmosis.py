@@ -185,8 +185,6 @@ class Pressure:
         del val_denom_1, val_denom_2, val_denom_3, xmat
         valf = val_num / val_denom
 
-        # pdb.set_trace()
-
         return valf
 
     def get_Pe_mat_Arnaud10(self, M_mat, x_array, z_array, Mmat_cond=None, zmat_cond=None):
@@ -1246,7 +1244,7 @@ class Powerspec:
 
     # get spherical harmonic transform of the effective shear bias
     def get_bk_l_z(self, l, bm_l_z_dict):
-        bm_l_z = bm_l_z_dict[l]
+        bm_l_z = bm_l_z_dict[round(l, 1)]
         coeff = (self.Wk_array / self.chi_array ** 2)
         return coeff * bm_l_z
 
@@ -1262,7 +1260,7 @@ class Powerspec:
     #
     #     return val
 
-    def get_bm_l_z(self, l, uml_zM_dict):
+    def get_bm_l_z(self, l):
 
         val = np.ones_like(self.z_array)
         if hasattr(self, 'bkm_block_allinterp'):
@@ -1284,381 +1282,268 @@ class Powerspec:
         for l in l_array:
             return_dict[round(l, 1)] = self.get_uk_l_zM(l)
 
-    # 1-halo term of Cl galaxy-galaxy, eq 10 of Makiya et al
-    def get_Cl_gg_1h(self, l, ugl_zM_dict):
-        if self.use_only_halos:
-            val = 0
-        else:
-            ugl_zM = ugl_zM_dict[round(l, 1)]
-            toint_M = (ugl_zM ** 2) * self.dndm_array * self.M_mat_cond_inbin
-            val_z = sp.integrate.simps(toint_M, self.M_array)
-            toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-            val = sp.integrate.simps(toint_z, self.z_array)
 
-        return val
 
-    # 2-halo term of Cl galaxy-galaxy, eq 11 of Makiya et al
-    def get_Cl_gg_2h(self, l):
-        k_array = (l + 1. / 2.) / self.chi_array
-        bgl_z = self.get_bg_l_z(l)
-        toint_z = (bgl_z ** 2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    # 1-halo term of Cl y-y, eq 10 of Makiya et al
-    def get_Cl_yy_1h(self, l, uyl_zM_dict):
-        # uyl_zM = self.get_uy_l_zM(l)
-        # self.uyl_zM_dict[l] = uyl_zM
-        uyl_zM = uyl_zM_dict[round(l, 1)]
-        toint_M = (uyl_zM ** 2) * self.dndm_array
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    # 2-halo term of Cl y-y, eq 11 of Makiya et al
-    def get_Cl_yy_2h(self, l, uyl_zM_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
-        # print(l,[*byl_z_dict.keys()][0])
-        if l in byl_z_dict.keys():
-            byl_z = byl_z_dict[l]
-        else:
-            byl_z = self.get_by_l_z(l, uyl_zM_dict)
-            byl_z_dict[l] = byl_z
-        toint_z = (byl_z ** 2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    def get_Cl_yg_1h(self, l, ugl_zM_dict, uyl_zM_dict):
-        # uyl_zM = self.uyl_zM_dict[l]
-        # ugl_zM = self.get_ug_l_zM(l)
-
-        ugl_zM = ugl_zM_dict[round(l, 1)]
-        uyl_zM = uyl_zM_dict[round(l, 1)]
-
-        toint_M = (uyl_zM * ugl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-
-        val = sp.integrate.simps(toint_z, self.z_array)
-
-        return val
-
-    def get_Cl_yg_2h(self, l, uyl_zM_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
-        if l in byl_z_dict.keys():
-            byl_z = byl_z_dict[l]
-        else:
-            byl_z = self.get_by_l_z(l, uyl_zM_dict)
-            byl_z_dict[l] = byl_z
-        bgl_z = self.get_bg_l_z(l)
-        bgl_z_dict[l] = bgl_z
-
-        toint_z = (byl_z * bgl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    def get_Cl_yk_1h(self, l, ukl_zM_dict, uyl_zM_dict):
-        ukl_zM = ukl_zM_dict[round(l, 1)]
-        uyl_zM = uyl_zM_dict[round(l, 1)]
-
-        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-        toint_M = (uyl_zM * ukl_zM) * self.dndm_array
-
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-
-        val = sp.integrate.simps(toint_z, self.z_array)
-
-        return val
-
-    def get_Cl_yk_2h(self, l, uml_zM_dict, uyl_zM_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
-        if l in byl_z_dict.keys():
-            byl_z = byl_z_dict[l]
-        else:
-            byl_z = self.get_by_l_z(l, uyl_zM_dict)
-            byl_z_dict[l] = byl_z
-
-
-        if l in bml_z_dict.keys():
-            bml_z = bml_z_dict[l]
-        else:
-            bml_z = self.get_bm_l_z(l, uml_zM_dict)
-            bml_z_dict[l] = bml_z
-
-        bkl_z = self.get_bk_l_z( l, bml_z_dict)
-        bkl_z_dict[l] = bkl_z
-
-        toint_z = (byl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    def get_Cl_kg_1h(self, l, ukl_zM_dict, ugl_zM_dict):
-        ukl_zM = ukl_zM_dict[round(l, 1)]
-        ugl_zM = ugl_zM_dict[round(l, 1)]
-
-        # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-        toint_M = (ugl_zM * ukl_zM) * self.dndm_array
-
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-
-        val = sp.integrate.simps(toint_z, self.z_array)
-
-        return val
-
-    def get_Cl_kg_2h(self, l, uml_zM_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
-        bgl_z = self.get_bg_l_z(l)
-        if l not in bml_z_dict.keys():
-            bml_z = self.get_bm_l_z(l, uml_zM_dict)
-            bml_z_dict[l] = bml_z
-
-        bkl_z = self.get_bk_l_z( l, bml_z_dict)
-        # bkl_z_dict[l] = bkl_z
-        # bgl_z_dict[l] = bgl_z
-        toint_z = (bgl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    def get_Cl_kk_1h(self, l, ukl_zM_dict):
-        ukl_zM = ukl_zM_dict[round(l, 1)]
-
-        # toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-        toint_M = (ukl_zM * ukl_zM) * self.dndm_array
-
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        # toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-
-        val = sp.integrate.simps(toint_z, self.z_array)
-
-        return val
-
-    def get_Cl_kk_2h(self, l, uml_zM_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
-        if l in bml_z_dict.keys():
-            bml_z = bml_z_dict[l]
-        else:
-            bml_z = self.get_bm_l_z(l, uml_zM_dict)
-            bml_z_dict[l] = bml_z
-
-        bkl_z = self.get_bk_l_z( l, bml_z_dict)
-        # toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-        #     self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-        toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
-
-    def get_dlnCl1h_AB_dlnM(self,l,uA_zM_dict,uB_zM_dict):
-        uAl_zM = uA_zM_dict[round(l, 1)]
-        uBl_zM = uB_zM_dict[round(l, 1)]
-        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-        denom = sp.integrate.simps(toint_z, self.z_array)
-
-        num_volfac = np.tile(( (self.chi_array ** 2) * self.dchi_dz_array).reshape(1,self.nz),(self.nm,1) )
-        toint_z_num = self.dndm_array.T * num_volfac * (uAl_zM.T * uBl_zM.T)
-        num = self.M_array * sp.integrate.simps(toint_z_num, self.z_array)
-
-
-        return num/denom
-
-
-    def get_dlnCl1h_AB_dlnz(self,l,uA_zM_dict,uB_zM_dict):
-        uAl_zM = uA_zM_dict[round(l, 1)]
-        uBl_zM = uB_zM_dict[round(l, 1)]
-        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-        denom = sp.integrate.simps(toint_z, self.z_array)
-
-        num_volfac = self.z_array * (self.chi_array ** 2) * self.dchi_dz_array
-        num = num_volfac * sp.integrate.simps(self.dndm_array*(uAl_zM * uBl_zM), self.M_array)
-        return num/denom
-
-
-
-    def get_Cl_yg_miscentered(self, l_array, Cl_yg):
-        if self.verbose:
-            print('doing miscentering....')
-        nl = len(l_array)
-        # pdb.set_trace()
-        # l_array_full = np.logspace(np.log10(1.0), np.log10(1000), 16000)
-        l_array_full = np.linspace(np.min(l_array), np.max(l_array), 12000)
-        # l_array_full = l_array
-        nl_full = len(l_array_full)
-
-        Cl_yg_interp = interpolate.interp1d(np.log(l_array), Cl_yg)
-        Cl_yg_full = Cl_yg_interp(np.log(l_array_full))
-
-        # theta_min = np.pi/(np.max(l_array))
-        # theta_max = np.pi/(np.min(l_array))
-
-        theta_min = 1e-5
-        theta_max = 0.1
-
-        theta_array_rad = np.logspace(np.log10(theta_min), np.log10(theta_max), 40)
-        ntheta = len(theta_array_rad)
-
-        Cl_yg_mat = (np.tile(Cl_yg_full.reshape(1, nl_full), (ntheta, 1)))
-        l_theta = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1))) * (
-            np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl_full)))
-        j0_ltheta = sp.special.jv(0, l_theta)
-        l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
-        Cl_yg_theta = (sp.integrate.simps(l_mat * Cl_yg_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
-
-        R_array = theta_array_rad * self.cosmo_colossus.angularDiameterDistance(np.mean(self.z_array))
-
-        Rmis_array = np.logspace(-4, 1, 28)
-        psi_array = np.linspace(0, 2 * np.pi, 28)
-        cospsi_array = np.cos(psi_array)
-        nRmis = len(Rmis_array)
-        npsi = len(psi_array)
-
-        Rmis_nRmis_npsi = (np.tile(Rmis_array.reshape(1, nRmis, 1), (ntheta, 1, npsi)))
-        cospsi_nRmis_npsi = (np.tile(cospsi_array.reshape(1, 1, npsi), (ntheta, nRmis, 1)))
-
-        theta_min_rad_full = theta_min
-        theta_max_rad_full = theta_max
-        theta_array_rad_full = np.logspace(np.log10(theta_min_rad_full), np.log10(theta_max_rad_full), 3800)
-        ntheta_full = len(theta_array_rad_full)
-
-        Rmat_nRmis_npsi = (np.tile(R_array.reshape(ntheta, 1, 1), (1, nRmis, npsi)))
-
-        R_arg_new = np.sqrt(
-            Rmat_nRmis_npsi ** 2 + Rmis_nRmis_npsi ** 2 + 2 * Rmat_nRmis_npsi * Rmis_nRmis_npsi * cospsi_nRmis_npsi)
-
-        # if np.any(Cl_yg_theta < 0):
-        #     if self.verbose:
-        #         print('negative values in Cl_yg_theta. Careful about extrapolation!!!!')
-        # Cly_theta_interp = interpolate.interp1d(R_array, Cl_yg_theta, fill_value='extrapolate')
-        Cly_theta_interp = interpolate.interp1d(R_array, Cl_yg_theta, fill_value=0.0, bounds_error=False)
-        Cly_theta_argnew = Cly_theta_interp(R_arg_new)
-
-        Cly_intpsi = (1. / (2 * np.pi)) * sp.integrate.simps(Cly_theta_argnew, psi_array)
-
-        sigmaR_val = self.cmis * np.mean(self.r_vir_mat)
-
-        sigmaR_mat = (np.tile(sigmaR_val.reshape(1, 1), (ntheta, nRmis)))
-        Rmis_mat = (np.tile(Rmis_array.reshape(1, nRmis), (ntheta, 1)))
-        PRmis_mat = (Rmis_mat / sigmaR_mat ** 2) * np.exp(-1. * ((Rmis_mat ** 2) / (2. * sigmaR_mat ** 2)))
-
-        Cly_intRmis = sp.integrate.simps(Cly_intpsi * PRmis_mat, Rmis_array)
-
-        if np.all(Cly_intRmis > 0):
-            Cly_intRmis_interp = interpolate.interp1d(np.log(theta_array_rad), np.log(Cly_intRmis))
-            Cly_misc_theta = np.exp(Cly_intRmis_interp(np.log(theta_array_rad_full)))
-
-        else:
-            # print 'negative values in Cly_intRmis. Careful about extrapolation!!!!'
-            Cly_intRmis_interp = interpolate.interp1d(np.log(theta_array_rad), Cly_intRmis)
-            Cly_misc_theta = (Cly_intRmis_interp(np.log(theta_array_rad_full)))
-
-        # if np.all(Cl_yg_theta > 0):
-        #     Cly_theta_zM_interp = interpolate.interp1d(np.log(theta_array_rad), np.log(Cl_yg_theta),
-        #                                                fill_value='extrapolate')
-        #     Cly_origcheck_theta = np.exp(Cly_theta_zM_interp(np.log(theta_array_rad_full)))
-        #
-        # else:
-        #     print 'negative values in Cl_yg_theta'
-        #     Cly_theta_zM_interp = interpolate.interp1d(np.log(theta_array_rad), Cl_yg_theta,
-        #                                                fill_value='extrapolate')
-        #     Cly_origcheck_theta = (Cly_theta_zM_interp(np.log(theta_array_rad_full)))
-
-        Cly_misc_theta_full = np.tile(Cly_misc_theta.reshape(1, ntheta_full), (nl, 1))
-        l_thetafull = (np.tile(l_array.reshape(nl, 1), (1, ntheta_full))) * (
-            np.tile(theta_array_rad_full.reshape(1, ntheta_full), (nl, 1)))
-        j0_lthetafull = sp.special.jv(0, l_thetafull)
-        theta_mat = (np.tile(theta_array_rad_full.reshape(1, ntheta_full), (nl, 1)))
-        Cly_misc_l = (2 * np.pi) * (
-            sp.integrate.simps(theta_mat * Cly_misc_theta_full * j0_lthetafull, theta_array_rad_full))
-
-        # Cly_origcheck_theta_full = np.tile(Cly_origcheck_theta.reshape(1, ntheta_full), (nl, 1))
-        # Cly_origcheck_l = (2 * np.pi) * (
-        #     sp.integrate.simps(theta_mat * Cly_origcheck_theta_full * j0_lthetafull, theta_array_rad_full))
-
-        Cly_misc_l_final = self.fmis * Cly_misc_l + (1 - self.fmis) * Cl_yg
-
-        # pdb.set_trace()
-        return Cly_misc_l_final
-
-    def get_Cl_yg_beamed(self, l_array, Cl_yg):
-        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-            Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-            Cl_yg = Cl_yg * Bl
-        return Cl_yg
-
-    def get_Cl_yk_beamed(self, l_array, Cl_yk):
-        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-            Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-            Cl_yk = Cl_yk * Bl
-        return Cl_yk
-
-    def get_Cl_yy_beamed(self, l_array, Cl_yy):
-        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-            Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-            Cl_yy = Cl_yy * (Bl ** 2)
-        return Cl_yy
-
-    # See Makiya paper
-    def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict, ukl_zM_dict):
-        nl = len(l_array_all)
-
-        ul_g_mat, ul_y_mat, ul_k_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros(
-            (nl, self.nz, self.nm))
-        for j in range(nl):
-            ul_g_mat[j, :, :] = ugl_zM_dict[round(l_array_all[j], 1)]
-            ul_y_mat[j, :, :] = uyl_zM_dict[round(l_array_all[j], 1)]
-            ul_k_mat[j, :, :] = ukl_zM_dict[round(l_array_all[j], 1)]
-
-        u_ABCD_dict = {}
-        if 'g' in [A, B, C, D]:
-            u_ABCD_dict['g'] = ul_g_mat
-        if 'y' in [A, B, C, D]:
-            u_ABCD_dict['y'] = ul_y_mat
-        if 'k' in [A, B, C, D]:
-            u_ABCD_dict['k'] = ul_k_mat
-
-        uAl1_uBl1 = u_ABCD_dict[A] * u_ABCD_dict[B]
-        uCl2_uDl2 = u_ABCD_dict[C] * u_ABCD_dict[D]
-        uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.nz, self.nm), (nl, 1, 1, 1))
-        uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.nz, self.nm), (1, nl, 1, 1))
-        dndm_array_mat = np.tile(self.dndm_array.reshape(1, 1, self.nz, self.nm), (nl, nl, 1, 1))
-        if 'g' in [A, B, C, D]:
-            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
-        else:
-            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        chi2_array_mat = np.tile((self.chi_array ** 2).reshape(1, 1, self.nz), (nl, nl, 1))
-        dchi_dz_array_mat = np.tile(self.dchi_dz_array.reshape(1, 1, self.nz), (nl, nl, 1))
-        toint_z = val_z * chi2_array_mat * dchi_dz_array_mat
-        val = sp.integrate.simps(toint_z, self.z_array)
-
-        if self.use_only_halos:
-            if (A + B + C + D not in [''.join(elem) for elem in list(set(list(itertools.permutations('gyyy'))))]) and (
-                    A + B + C + D != 'yyyy'):
-                val = np.zeros(val.shape)
-
-        return val
-
-
-
-
-
-class DataVec:
+    #
+    # # 1-halo term of Cl galaxy-galaxy, eq 10 of Makiya et al
+    # def get_Cl_gg_1h(self, l, ugl_zM_dict1, ugl_zM_dict2):
+    #     if self.use_only_halos:
+    #         val = 0
+    #     else:
+    #         ugl_zM1 = ugl_zM_dict1[round(l, 1)]
+    #         ugl_zM2 = ugl_zM_dict2[round(l, 1)]
+    #         toint_M = (ugl_zM1 * ugl_zM2) * self.dndm_array * self.M_mat_cond_inbin
+    #         val_z = sp.integrate.simps(toint_M, self.M_array)
+    #         toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+    #         val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     return val
+    #
+    # # 2-halo term of Cl galaxy-galaxy, eq 11 of Makiya et al
+    # def get_Cl_gg_2h(self, l, bgl_z_dict1, bgl_z_dict2):
+    #     k_array = (l + 1. / 2.) / self.chi_array
+    #     bgl_z1 = bgl_z_dict1[round(l, 1)]
+    #     bgl_z2 = bgl_z_dict2[round(l, 1)]
+    #     toint_z = (bgl_z1 * bgl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # # 1-halo term of Cl y-y, eq 10 of Makiya et al
+    # def get_Cl_yy_1h(self, l, uyl_zM_dict1, uyl_zM_dict2):
+    #     # uyl_zM = self.get_uy_l_zM(l)
+    #     # self.uyl_zM_dict[l] = uyl_zM
+    #     uyl_zM1 = uyl_zM_dict1[round(l, 1)]
+    #     uyl_zM2 = uyl_zM_dict2[round(l, 1)]
+    #     toint_M = (uyl_zM1 * uyl_zM2) * self.dndm_array
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # # 2-halo term of Cl y-y, eq 11 of Makiya et al
+    # def get_Cl_yy_2h(self, l, byl_z_dict1, byl_z_dict2):
+    #     k_array = (l + 1. / 2.) / self.chi_array
+    #     byl_z1 = byl_z_dict1[round(l, 1)]
+    #     byl_z2 = byl_z_dict2[round(l, 1)]
+    #     # # print(l,[*byl_z_dict.keys()][0])
+    #     # if l in byl_z_dict.keys():
+    #     #     byl_z = byl_z_dict[l]
+    #     # else:
+    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
+    #     #     byl_z_dict[l] = byl_z
+    #     toint_z = (byl_z1 * byl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # def get_Cl_yg_1h(self, l, uyl_zM_dict, ugl_zM_dict):
+    #     # uyl_zM = self.uyl_zM_dict[l]
+    #     # ugl_zM = self.get_ug_l_zM(l)
+    #
+    #     ugl_zM = ugl_zM_dict[round(l, 1)]
+    #     uyl_zM = uyl_zM_dict[round(l, 1)]
+    #
+    #     toint_M = (uyl_zM * ugl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+    #
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+    #
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     return val
+    #
+    # def get_Cl_yg_2h(self, l, byl_z_dict, bgl_z_dict):
+    #     k_array = (l + 1. / 2.) / self.chi_array
+    #     # if l in byl_z_dict.keys():
+    #     #     byl_z = byl_z_dict[l]
+    #     # else:
+    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
+    #     #     byl_z_dict[l] = byl_z
+    #     # bgl_z = self.get_bg_l_z(l)
+    #     # bgl_z_dict[l] = bgl_z
+    #
+    #     byl_z = byl_z_dict[round(l, 1)]
+    #     bgl_z = bgl_z_dict[round(l, 1)]
+    #
+    #     toint_z = (byl_z * bgl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # def get_Cl_yk_1h(self, l, uyl_zM_dict, ukl_zM_dict):
+    #     ukl_zM = ukl_zM_dict[round(l, 1)]
+    #     uyl_zM = uyl_zM_dict[round(l, 1)]
+    #
+    #     # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+    #     toint_M = (uyl_zM * ukl_zM) * self.dndm_array
+    #
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+    #
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     return val
+    #
+    # def get_Cl_yk_2h(self, l, byl_z_dict, bkl_z_dict):
+    #     # k_array = (l + 1. / 2.) / self.chi_array
+    #     # if l in byl_z_dict.keys():
+    #     #     byl_z = byl_z_dict[l]
+    #     # else:
+    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
+    #     #     byl_z_dict[l] = byl_z
+    #     #
+    #     #
+    #     # if l in bml_z_dict.keys():
+    #     #     bml_z = bml_z_dict[l]
+    #     # else:
+    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
+    #     #     bml_z_dict[l] = bml_z
+    #     #
+    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
+    #     # bkl_z_dict[l] = bkl_z
+    #
+    #     byl_z = byl_z_dict[round(l, 1)]
+    #     bkl_z = bkl_z_dict[round(l, 1)]
+    #
+    #     toint_z = (byl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # def get_Cl_kg_1h(self, l, ukl_zM_dict, ugl_zM_dict):
+    #     ukl_zM = ukl_zM_dict[round(l, 1)]
+    #     ugl_zM = ugl_zM_dict[round(l, 1)]
+    #
+    #     # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+    #     toint_M = (ugl_zM * ukl_zM) * self.dndm_array
+    #
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+    #
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     return val
+    #
+    # def get_Cl_kg_2h(self, l, bkl_z_dict, bgl_z_dict):
+    #     k_array = (l + 1. / 2.) / self.chi_array
+    #     # bgl_z = self.get_bg_l_z(l)
+    #     # if l not in bml_z_dict.keys():
+    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
+    #     #     bml_z_dict[l] = bml_z
+    #     #
+    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
+    #
+    #     bgl_z = bgl_z_dict[round(l, 1)]
+    #     bkl_z = bkl_z_dict[round(l, 1)]
+    #
+    #     # bkl_z_dict[l] = bkl_z
+    #     # bgl_z_dict[l] = bgl_z
+    #     toint_z = (bgl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    # def get_Cl_kk_1h(self, l, ukl_zM_dict1, ukl_zM_dict2):
+    #     ukl_zM1 = ukl_zM_dict1[round(l, 1)]
+    #     ukl_zM2 = ukl_zM_dict2[round(l, 1)]
+    #
+    #     # toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
+    #     toint_M = (ukl_zM1 * ukl_zM2) * self.dndm_array
+    #
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     # toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
+    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+    #
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     return val
+    #
+    # def get_Cl_kk_2h(self, l, bkl_z_dict1, bkl_z_dict2):
+    #     # k_array = (l + 1. / 2.) / self.chi_array
+    #     # if l in bml_z_dict.keys():
+    #     #     bml_z = bml_z_dict[l]
+    #     # else:
+    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
+    #     #     bml_z_dict[l] = bml_z
+    #     #
+    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
+    #     # toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #     #     self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
+    #
+    #     bkl_z1 = bkl_z_dict1[round(l, 1)]
+    #     bkl_z2 = bkl_z_dict2[round(l, 1)]
+    #
+    #     toint_z = (bkl_z1 * bkl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #     return val
+    #
+    #
+    # def get_Cl_yg_beamed(self, l_array, Cl_yg):
+    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
+    #         Cl_yg = Cl_yg * Bl
+    #     return Cl_yg
+    #
+    # def get_Cl_yk_beamed(self, l_array, Cl_yk):
+    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
+    #         Cl_yk = Cl_yk * Bl
+    #     return Cl_yk
+    #
+    # def get_Cl_yy_beamed(self, l_array, Cl_yy):
+    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
+    #         Cl_yy = Cl_yy * (Bl ** 2)
+    #     return Cl_yy
+    #
+    #
+    # # See Makiya paper
+    # def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict, ukl_zM_dict):
+    #     nl = len(l_array_all)
+    #
+    #     ul_g_mat, ul_y_mat, ul_k_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros(
+    #         (nl, self.nz, self.nm))
+    #     for j in range(nl):
+    #         ul_g_mat[j, :, :] = ugl_zM_dict[round(l_array_all[j], 1)]
+    #         ul_y_mat[j, :, :] = uyl_zM_dict[round(l_array_all[j], 1)]
+    #         ul_k_mat[j, :, :] = ukl_zM_dict[round(l_array_all[j], 1)]
+    #
+    #     u_ABCD_dict = {}
+    #     if 'g' in [A, B, C, D]:
+    #         u_ABCD_dict['g'] = ul_g_mat
+    #     if 'y' in [A, B, C, D]:
+    #         u_ABCD_dict['y'] = ul_y_mat
+    #     if 'k' in [A, B, C, D]:
+    #         u_ABCD_dict['k'] = ul_k_mat
+    #
+    #     uAl1_uBl1 = u_ABCD_dict[A] * u_ABCD_dict[B]
+    #     uCl2_uDl2 = u_ABCD_dict[C] * u_ABCD_dict[D]
+    #     uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.nz, self.nm), (nl, 1, 1, 1))
+    #     uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.nz, self.nm), (1, nl, 1, 1))
+    #     dndm_array_mat = np.tile(self.dndm_array.reshape(1, 1, self.nz, self.nm), (nl, nl, 1, 1))
+    #     if 'g' in [A, B, C, D]:
+    #         toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
+    #     else:
+    #         toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
+    #     val_z = sp.integrate.simps(toint_M, self.M_array)
+    #     chi2_array_mat = np.tile((self.chi_array ** 2).reshape(1, 1, self.nz), (nl, nl, 1))
+    #     dchi_dz_array_mat = np.tile(self.dchi_dz_array.reshape(1, 1, self.nz), (nl, nl, 1))
+    #     toint_z = val_z * chi2_array_mat * dchi_dz_array_mat
+    #     val = sp.integrate.simps(toint_z, self.z_array)
+    #
+    #     if self.use_only_halos:
+    #         if (A + B + C + D not in [''.join(elem) for elem in list(set(list(itertools.permutations('gyyy'))))]) and (
+    #                 A + B + C + D != 'yyyy'):
+    #             val = np.zeros(val.shape)
+    #
+    #     return val
+
+class PrepDataVec:
 
     def __init__(self, cosmo_params, hod_params, pressure_params, other_params):
 
@@ -1691,6 +1576,28 @@ class DataVec:
 
         self.fsky = {'gg': self.fsky_gg, 'yy': self.fsky_yy, 'yg': self.fsky_yg, 'gy': self.fsky_yg, 'yk': self.fsky_yk,
                      'ky': self.fsky_yk, 'kk': self.fsky_kk}
+
+
+        self.stats_analyze = other_params['stats_analyze']
+        stats_analyze_pairs = []
+
+        stats_analyze_pairs_all = []
+
+        index_params = range(len(self.stats_analyze))
+        for j1 in index_params:
+            for j2 in index_params:
+                if j2 >= j1:
+                    stats_analyze_pairs.append([self.stats_analyze[j1], self.stats_analyze[j2]])
+
+                stats_analyze_pairs_all.append([self.stats_analyze[j1], self.stats_analyze[j2]])
+
+        self.stats_analyze_pairs = stats_analyze_pairs
+        self.stats_analyze_pairs_all = stats_analyze_pairs_all
+
+        stat_analyze_temp = ''
+        for j in range(len(self.stats_analyze)):
+            stat_analyze_temp += self.stats_analyze[j]
+        self.lss_probes_analyze = list(set(list(stat_analyze_temp)))
 
         if 'uyl_zM_dict' in other_params.keys():
             uyl_zM_dict = other_params['uyl_zM_dict']
@@ -1827,169 +1734,46 @@ class DataVec:
 
             if 'uml_zM_dict' not in other_params.keys():
                 uml_zM_dict = {}
-                for j in range(len(l_array)):
-                    uml_zM_dict[round(l_array[j], 1)] = self.PS.get_um_l_zM(l_array[j])
+                if 'k' in self.lss_probes_analyze:
+                    for j in range(len(l_array)):
+                        uml_zM_dict[round(l_array[j], 1)] = self.PS.get_um_l_zM(l_array[j])
 
             ugl_zM_dict, ukl_zM_dict = {}, {}
             for j in range(len(l_array)):
-                ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
-                ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j],uml_zM_dict)
+                if 'g' in self.lss_probes_analyze:
+                    ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
+                if 'k' in self.lss_probes_analyze:
+                    ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j],uml_zM_dict)
 
             if self.verbose:
                 print('that took ', time.time() - ti, 'seconds')
+
+            if 'byl_z_dict' in other_params.keys():
+                self.byl_z_dict = other_params['byl_z_dict']
+            else:
+                self.byl_z_dict = {}
+                for j in range(len(l_array)):
+                    self.byl_z_dict[round(l_array[j], 1)] = self.PS.get_by_l_z(l_array[j], uyl_zM_dict)
+
+            if 'bml_z_dict' in other_params.keys():
+                self.bml_z_dict = other_params['bml_z_dict']
+            else:
+                self.bml_z_dict = {}
+                for j in range(len(l_array)):
+                    if 'k' in self.lss_probes_analyze:
+                        self.bml_z_dict[round(l_array[j], 1)] = self.PS.get_bm_l_z(l_array[j])
+
+            self.bgl_z_dict, self.bkl_z_dict = {}, {}
+            for j in range(len(l_array)):
+                if 'g' in self.lss_probes_analyze:
+                    self.bgl_z_dict[round(l_array[j], 1)] = self.PS.get_bg_l_z(l_array[j])
+                if 'k' in self.lss_probes_analyze:
+                    self.bkl_z_dict[round(l_array[j], 1)] = self.PS.get_bk_l_z(l_array[j], bm_l_z_dict)
 
         self.ugl_zM_dict = ugl_zM_dict
         self.uyl_zM_dict = uyl_zM_dict
         self.ukl_zM_dict = ukl_zM_dict
         self.uml_zM_dict = uml_zM_dict
-
-        # import pdb; pdb.set_trace()
-        # ell_tosave = np.array([10,100,1000,5000])
-        # self.binv = other_params['binv']
-        #
-        # save_dict_kk_M = {'M':self.PS.M_array}
-        # save_dict_ky_M = {'M':self.PS.M_array}
-        # save_dict_ky_M2 = {'M': self.PS.M_array}
-        #
-        # save_dict_kk_z = {'z':self.PS.z_array}
-        # save_dict_ky_z = {'z':self.PS.z_array}
-        #
-        # for ell in ell_tosave:
-        #     ell_calc = l_array[np.where(l_array > ell)[0][0]]
-        #     dlnCl1h_ky_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #     dlnCl1h_ky_dlnM2 = self.PS.get_Cl_yk_dM_1h(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #     dlnCl1h_ky_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #
-        #     dlnCl1h_kk_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, ukl_zM_dict)
-        #     dlnCl1h_kk_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, ukl_zM_dict)
-        #
-        #     save_dict_kk_M[ell_calc] =  dlnCl1h_kk_dlnM
-        #     save_dict_kk_z[ell_calc] =  dlnCl1h_kk_dlnz
-        #
-        #     save_dict_ky_M[ell_calc] =  dlnCl1h_ky_dlnM
-        #     save_dict_ky_M2[ell_calc] = dlnCl1h_ky_dlnM2
-        #     save_dict_ky_z[ell_calc] =  dlnCl1h_ky_dlnz
-        #
-        # save_dict_kk = {'dlnCl_dM':save_dict_kk_M,'dlnCl_dz':save_dict_kk_z}
-        # save_dict_ky = {'dlnCl_dM2':save_dict_ky_M2,'dlnCl_dM':save_dict_ky_M,'dlnCl_dz':save_dict_ky_z}
-        # import pickle as pk
-        # pk.dump(save_dict_kk,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_kk_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
-        # pk.dump(save_dict_ky,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_ky_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
-        # import pdb; pdb.set_trace()
-
-        # print len(ugl_zM_dict.keys()), np.sort(np.array(ugl_zM_dict.keys()))
-        # print len(uyl_zM_dict.keys()), np.sort(np.array(uyl_zM_dict.keys()))
-
-        global bgl_z_dict, byl_z_dict, bkl_z_dict,bml_z_dict
-        bgl_z_dict,  bkl_z_dict = {}, {}
-
-        if 'byl_z_dict' in other_params.keys():
-            byl_z_dict = other_params['byl_z_dict']
-        else:
-            byl_z_dict = {}
-
-        if 'bml_z_dict' in other_params.keys():
-            bml_z_dict = other_params['bml_z_dict']
-        else:
-            bml_z_dict = {}
-
-        if self.verbose:
-            print('getting Cl arrays for gg, gy and yy')
-        starttime = time.time()
-        Cl_gg_1h_array, Cl_gg_2h_array, Cl_yg_1h_array, Cl_yg_2h_array, Cl_yy_1h_array, Cl_yy_2h_array = np.zeros(
-            len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(
-            len(l_array)), np.zeros(len(l_array))
-        Cl_kk_1h_array, Cl_kk_2h_array, Cl_yk_1h_array, Cl_yk_2h_array = np.zeros(
-            len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
-        Cl_kg_1h_array, Cl_kg_2h_array = np.zeros(len(l_array)), np.zeros(len(l_array))
-
-        for j in range(len(l_array)):
-            if self.verbose:
-                if np.mod(j, 40) == 0:
-                    print(j)
-
-            starttime0 = time.time()
-            Cl_gg_1h_array[j] = self.PS.get_Cl_gg_1h(l_array[j], self.ugl_zM_dict)
-            Cl_gg_2h_array[j] = self.PS.get_Cl_gg_2h(l_array[j])
-            if self.verbose:
-                print('gg took {} seconds'.format(time.time() - starttime0))
-                starttime0 = time.time()
-
-            Cl_yy_1h_array[j] = self.PS.get_Cl_yy_1h(l_array[j], self.uyl_zM_dict)
-            Cl_yy_2h_array[j] = self.PS.get_Cl_yy_2h(l_array[j], self.uyl_zM_dict)
-            if self.verbose:
-                print('yy took {} seconds'.format(time.time() - starttime0))
-                starttime0 = time.time()
-
-            Cl_yg_1h_array[j] = self.PS.get_Cl_yg_1h(l_array[j], self.ugl_zM_dict, self.uyl_zM_dict)
-            Cl_yg_2h_array[j] = self.PS.get_Cl_yg_2h(l_array[j], self.uyl_zM_dict)
-            if self.verbose:
-                print('yg took {} seconds'.format(time.time() - starttime0))
-                starttime0 = time.time()
-
-            Cl_yk_1h_array[j] = self.PS.get_Cl_yk_1h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
-            Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.uml_zM_dict, self.uyl_zM_dict)
-            if self.verbose:
-                print('yk took {} seconds'.format(time.time() - starttime0))
-                starttime0 = time.time()
-
-            Cl_kk_1h_array[j] = self.PS.get_Cl_kk_1h(l_array[j], self.ukl_zM_dict)
-            Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j], self.uml_zM_dict)
-            if self.verbose:
-                print('kk took {} seconds'.format(time.time() - starttime0))
-                starttime0 = time.time()
-
-            Cl_kg_1h_array[j] = self.PS.get_Cl_kg_1h(l_array[j], self.ukl_zM_dict, self.ugl_zM_dict)
-            Cl_kg_2h_array[j] = self.PS.get_Cl_kg_2h(l_array[j], self.uml_zM_dict)
-            if self.verbose:
-                print('kg took {} seconds'.format(time.time() - starttime0))
-
-
-        if self.verbose:
-            print('That took {} seconds'.format(time.time() - starttime))
-
-        self.bgl_z_dict, self.byl_z_dict, self.bkl_z_dict, self.bml_z_dict = bgl_z_dict, byl_z_dict, bkl_z_dict, bml_z_dict
-
-        # Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
-        # Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
-
-        # Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
-        # Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
-
-        # Cl_yy_1h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_1h_array)
-        # Cl_yy_2h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_2h_array)
-
-        if self.PS.fmis > 0:
-            Cl_yg_total = self.PS.get_Cl_yg_miscentered(l_array, Cl_yg_1h_array + Cl_yg_2h_array)
-        else:
-            Cl_yg_total = Cl_yg_1h_array + Cl_yg_2h_array
-
-        self.Cl_dict = {'gg': {'1h': Cl_gg_1h_array, '2h': Cl_gg_2h_array, 'total': Cl_gg_1h_array + Cl_gg_2h_array},
-                        'yy': {'1h': Cl_yy_1h_array, '2h': Cl_yy_2h_array, 'total': Cl_yy_1h_array + Cl_yy_2h_array},
-                        'yg': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
-                        'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
-                        'kk': {'1h': Cl_kk_1h_array, '2h': Cl_kk_2h_array, 'total': Cl_kk_1h_array + Cl_kk_2h_array},
-                        'yk': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
-                        'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
-                        'kg': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array},
-                        'gk': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array}}
-
-        self.stats_analyze = other_params['stats_analyze']
-        stats_analyze_pairs = []
-
-        stats_analyze_pairs_all = []
-
-        index_params = range(len(self.stats_analyze))
-        for j1 in index_params:
-            for j2 in index_params:
-                if j2 >= j1:
-                    stats_analyze_pairs.append([self.stats_analyze[j1], self.stats_analyze[j2]])
-
-                stats_analyze_pairs_all.append([self.stats_analyze[j1], self.stats_analyze[j2]])
-
-        self.stats_analyze_pairs = stats_analyze_pairs
-        self.stats_analyze_pairs_all = stats_analyze_pairs_all
-
         if other_params['noise_Cl_filename'] is not None:
 
             self.noise_yy_Cl_file = np.loadtxt(other_params['noise_Cl_filename'])
@@ -2028,6 +1812,140 @@ class DataVec:
 
         if other_params['get_bp']:
             self.wplin_interp = other_params['wplin_interp']
+
+
+        # import pdb; pdb.set_trace()
+        # ell_tosave = np.array([10,100,1000,5000])
+        # self.binv = other_params['binv']
+        #
+        # save_dict_kk_M = {'M':self.PS.M_array}
+        # save_dict_ky_M = {'M':self.PS.M_array}
+        # save_dict_ky_M2 = {'M': self.PS.M_array}
+        #
+        # save_dict_kk_z = {'z':self.PS.z_array}
+        # save_dict_ky_z = {'z':self.PS.z_array}
+        #
+        # for ell in ell_tosave:
+        #     ell_calc = l_array[np.where(l_array > ell)[0][0]]
+        #     dlnCl1h_ky_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, uyl_zM_dict)
+        #     dlnCl1h_ky_dlnM2 = self.PS.get_Cl_yk_dM_1h(ell_calc, ukl_zM_dict, uyl_zM_dict)
+        #     dlnCl1h_ky_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, uyl_zM_dict)
+        #
+        #     dlnCl1h_kk_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, ukl_zM_dict)
+        #     dlnCl1h_kk_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, ukl_zM_dict)
+        #
+        #     save_dict_kk_M[ell_calc] =  dlnCl1h_kk_dlnM
+        #     save_dict_kk_z[ell_calc] =  dlnCl1h_kk_dlnz
+        #
+        #     save_dict_ky_M[ell_calc] =  dlnCl1h_ky_dlnM
+        #     save_dict_ky_M2[ell_calc] = dlnCl1h_ky_dlnM2
+        #     save_dict_ky_z[ell_calc] =  dlnCl1h_ky_dlnz
+        #
+        # save_dict_kk = {'dlnCl_dM':save_dict_kk_M,'dlnCl_dz':save_dict_kk_z}
+        # save_dict_ky = {'dlnCl_dM2':save_dict_ky_M2,'dlnCl_dM':save_dict_ky_M,'dlnCl_dz':save_dict_ky_z}
+        # import pickle as pk
+        # pk.dump(save_dict_kk,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_kk_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
+        # pk.dump(save_dict_ky,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_ky_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
+        # import pdb; pdb.set_trace()
+
+        # print len(ugl_zM_dict.keys()), np.sort(np.array(ugl_zM_dict.keys()))
+        # print len(uyl_zM_dict.keys()), np.sort(np.array(uyl_zM_dict.keys()))
+
+        # global bgl_z_dict, byl_z_dict, bkl_z_dict,bml_z_dict
+        # bgl_z_dict,  bkl_z_dict = {}, {}
+        #
+        # if 'byl_z_dict' in other_params.keys():
+        #     byl_z_dict = other_params['byl_z_dict']
+        # else:
+        #     byl_z_dict = {}
+        #
+        # if 'bml_z_dict' in other_params.keys():
+        #     bml_z_dict = other_params['bml_z_dict']
+        # else:
+        #     bml_z_dict = {}
+        #
+        # if self.verbose:
+        #     print('getting Cl arrays for gg, gy and yy')
+        # starttime = time.time()
+        # Cl_gg_1h_array, Cl_gg_2h_array, Cl_yg_1h_array, Cl_yg_2h_array, Cl_yy_1h_array, Cl_yy_2h_array = np.zeros(
+        #     len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(
+        #     len(l_array)), np.zeros(len(l_array))
+        # Cl_kk_1h_array, Cl_kk_2h_array, Cl_yk_1h_array, Cl_yk_2h_array = np.zeros(
+        #     len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
+        # Cl_kg_1h_array, Cl_kg_2h_array = np.zeros(len(l_array)), np.zeros(len(l_array))
+        #
+        # for j in range(len(l_array)):
+        #     if self.verbose:
+        #         if np.mod(j, 40) == 0:
+        #             print(j)
+        #
+        #     starttime0 = time.time()
+        #     Cl_gg_1h_array[j] = self.PS.get_Cl_gg_1h(l_array[j], self.ugl_zM_dict)
+        #     Cl_gg_2h_array[j] = self.PS.get_Cl_gg_2h(l_array[j])
+        #     if self.verbose:
+        #         print('gg took {} seconds'.format(time.time() - starttime0))
+        #         starttime0 = time.time()
+        #
+        #     Cl_yy_1h_array[j] = self.PS.get_Cl_yy_1h(l_array[j], self.uyl_zM_dict)
+        #     Cl_yy_2h_array[j] = self.PS.get_Cl_yy_2h(l_array[j], self.uyl_zM_dict)
+        #     if self.verbose:
+        #         print('yy took {} seconds'.format(time.time() - starttime0))
+        #         starttime0 = time.time()
+        #
+        #     Cl_yg_1h_array[j] = self.PS.get_Cl_yg_1h(l_array[j], self.ugl_zM_dict, self.uyl_zM_dict)
+        #     Cl_yg_2h_array[j] = self.PS.get_Cl_yg_2h(l_array[j], self.uyl_zM_dict)
+        #     if self.verbose:
+        #         print('yg took {} seconds'.format(time.time() - starttime0))
+        #         starttime0 = time.time()
+        #
+        #     Cl_yk_1h_array[j] = self.PS.get_Cl_yk_1h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
+        #     Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.uml_zM_dict, self.uyl_zM_dict)
+        #     if self.verbose:
+        #         print('yk took {} seconds'.format(time.time() - starttime0))
+        #         starttime0 = time.time()
+        #
+        #     Cl_kk_1h_array[j] = self.PS.get_Cl_kk_1h(l_array[j], self.ukl_zM_dict)
+        #     Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j], self.uml_zM_dict)
+        #     if self.verbose:
+        #         print('kk took {} seconds'.format(time.time() - starttime0))
+        #         starttime0 = time.time()
+        #
+        #     Cl_kg_1h_array[j] = self.PS.get_Cl_kg_1h(l_array[j], self.ukl_zM_dict, self.ugl_zM_dict)
+        #     Cl_kg_2h_array[j] = self.PS.get_Cl_kg_2h(l_array[j], self.uml_zM_dict)
+        #     if self.verbose:
+        #         print('kg took {} seconds'.format(time.time() - starttime0))
+        #
+        #
+        # if self.verbose:
+        #     print('That took {} seconds'.format(time.time() - starttime))
+        #
+        # self.bgl_z_dict, self.byl_z_dict, self.bkl_z_dict, self.bml_z_dict = bgl_z_dict, byl_z_dict, bkl_z_dict, bml_z_dict
+        #
+        # # Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
+        # # Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
+        #
+        # # Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
+        # # Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
+        #
+        # # Cl_yy_1h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_1h_array)
+        # # Cl_yy_2h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_2h_array)
+
+        # if self.PS.fmis > 0:
+        #     Cl_yg_total = self.PS.get_Cl_yg_miscentered(l_array, Cl_yg_1h_array + Cl_yg_2h_array)
+        # else:
+        #     Cl_yg_total = Cl_yg_1h_array + Cl_yg_2h_array
+
+        # self.Cl_dict = {'gg': {'1h': Cl_gg_1h_array, '2h': Cl_gg_2h_array, 'total': Cl_gg_1h_array + Cl_gg_2h_array},
+        #                 'yy': {'1h': Cl_yy_1h_array, '2h': Cl_yy_2h_array, 'total': Cl_yy_1h_array + Cl_yy_2h_array},
+        #                 'yg': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
+        #                 'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
+        #                 'kk': {'1h': Cl_kk_1h_array, '2h': Cl_kk_2h_array, 'total': Cl_kk_1h_array + Cl_kk_2h_array},
+        #                 'yk': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
+        #                 'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
+        #                 'kg': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array},
+        #                 'gk': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array}}
+
+
 
     def get_Cl_vector(self):
 
@@ -2251,3 +2169,304 @@ class DataVec:
 
 
         return theta_array_rad, cov_wtheta
+
+
+class CalcDataVec:
+
+    def __init__(self, PrepDV_params):
+        PS_prepDV = PrepDV_params['PS']
+        self.M_mat_cond_inbin = PS_prepDV.M_mat_cond_inbin
+        self.z_array_cond_inbin = PS_prepDV.z_array_cond_inbin
+        self.int_prob = PS_prepDV.int_prob
+        self.dndm_array = PS_prepDV.dndm_array
+        self.M_array = PS_prepDV.M_array
+
+        self.chi_array = PS_prepDV.chi_array
+        self.dchi_dz_array = PS_prepDV.dchi_dz_array
+        self.z_array = PS_prepDV.z_array
+        self.pkzlin_interp = PS_prepDV.pkzlin_interp
+
+
+    def get_Cl_AB_1h(self, A, B, l, uAl_zM_dict, uBl_zM_dict):
+        g_sum = (A == 'g') + (B == 'g')
+        if g_sum == 2:
+            if self.use_only_halos:
+                return 0
+            else:
+                toint_M_multfac = self.M_mat_cond_inbin
+                toint_z_multfac = self.z_array_cond_inbin
+        elif g_sum == 1:
+            toint_M_multfac = self.M_mat_cond_inbin * self.int_prob
+            toint_z_multfac = self.z_array_cond_inbin
+        else:
+            toint_M_multfac = 1.
+            toint_z_multfac = 1.
+        uAl_zM = uAl_zM_dict[round(l, 1)]
+        uBl_zM = uBl_zM_dict[round(l, 1)]
+        toint_M = (uAl_zM * uBl_zM) * self.dndm_array * toint_M_multfac
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * toint_z_multfac
+        val = sp.integrate.simps(toint_z, self.z_array)
+        return val
+
+    def get_Cl_AB_2h(self, A, B, l, bAl_z_dict, bBl_z_dict):
+        k_array = (l + 1. / 2.) / self.chi_array
+        g_sum = (A == 'g') + (B == 'g')
+        if g_sum > 0:
+            toint_z_multfac = self.z_array_cond_inbin
+        else:
+            toint_z_multfac = 1.
+        bgl_z1 = bAl_z_dict[round(l, 1)]
+        bgl_z2 = bBl_z_dict[round(l, 1)]
+        toint_z = (bgl_z1 * bgl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
+            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * toint_z_multfac
+        val = sp.integrate.simps(toint_z, self.z_array)
+        return val
+
+    def get_Cl_AB_tot(self, A, B, ClAB_1h, ClAB_2h):
+        g_sum = (A == 'g') + (B == 'g')
+        if (g_sum == 1) and self.use_only_halos and (self.fmis > 0):
+            Cl_AB_tot = self.get_Cl_yg_miscentered(l_array, ClAB_1h + ClAB_2h)
+        else:
+            Cl_AB_tot = ClAB_1h + ClAB_2h
+        return Cl_AB_tot
+
+
+    # See Makiya paper
+    def get_T_ABCD_NG(self, l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict):
+        nl = len(l_array_all)
+
+        ul_A_mat, ul_B_mat, ul_C_mat, ul_D_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm))
+        for j in range(nl):
+            ul_A_mat[j, :, :] = uAl_zM_dict[round(l_array_all[j], 1)]
+            ul_B_mat[j, :, :] = uBl_zM_dict[round(l_array_all[j], 1)]
+            ul_C_mat[j, :, :] = uCl_zM_dict[round(l_array_all[j], 1)]
+            ul_D_mat[j, :, :] = uDl_zM_dict[round(l_array_all[j], 1)]
+
+        uAl1_uBl1 = ul_A_mat * ul_B_mat
+        uCl2_uDl2 = ul_C_mat * ul_D_mat
+        uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.nz, self.nm), (nl, 1, 1, 1))
+        uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.nz, self.nm), (1, nl, 1, 1))
+        dndm_array_mat = np.tile(self.dndm_array.reshape(1, 1, self.nz, self.nm), (nl, nl, 1, 1))
+        if 'g' in [A, B, C, D]:
+            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
+        else:
+            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        chi2_array_mat = np.tile((self.chi_array ** 2).reshape(1, 1, self.nz), (nl, nl, 1))
+        dchi_dz_array_mat = np.tile(self.dchi_dz_array.reshape(1, 1, self.nz), (nl, nl, 1))
+        toint_z = val_z * chi2_array_mat * dchi_dz_array_mat
+        val = sp.integrate.simps(toint_z, self.z_array)
+
+        if self.use_only_halos:
+            if (A + B + C + D not in [''.join(elem) for elem in list(set(list(itertools.permutations('gyyy'))))]) and (
+                    A + B + C + D != 'yyyy'):
+                val = np.zeros(val.shape)
+
+        return val
+
+    def get_dlnCl1h_AB_dlnM(self,l,uA_zM_dict,uB_zM_dict):
+        uAl_zM = uA_zM_dict[round(l, 1)]
+        uBl_zM = uB_zM_dict[round(l, 1)]
+        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+        denom = sp.integrate.simps(toint_z, self.z_array)
+
+        num_volfac = np.tile(( (self.chi_array ** 2) * self.dchi_dz_array).reshape(1,self.nz),(self.nm,1) )
+        toint_z_num = self.dndm_array.T * num_volfac * (uAl_zM.T * uBl_zM.T)
+        num = self.M_array * sp.integrate.simps(toint_z_num, self.z_array)
+        return num/denom
+
+    def get_dlnCl1h_AB_dlnz(self,l,uA_zM_dict,uB_zM_dict):
+        uAl_zM = uA_zM_dict[round(l, 1)]
+        uBl_zM = uB_zM_dict[round(l, 1)]
+        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
+        val_z = sp.integrate.simps(toint_M, self.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
+        denom = sp.integrate.simps(toint_z, self.z_array)
+
+        num_volfac = self.z_array * (self.chi_array ** 2) * self.dchi_dz_array
+        num = num_volfac * sp.integrate.simps(self.dndm_array*(uAl_zM * uBl_zM), self.M_array)
+        return num/denom
+
+    def get_Cl_yg_miscentered(self, l_array, Cl_yg):
+        if self.verbose:
+            print('doing miscentering....')
+        nl = len(l_array)
+        # pdb.set_trace()
+        # l_array_full = np.logspace(np.log10(1.0), np.log10(1000), 16000)
+        l_array_full = np.linspace(np.min(l_array), np.max(l_array), 12000)
+        # l_array_full = l_array
+        nl_full = len(l_array_full)
+
+        Cl_yg_interp = interpolate.interp1d(np.log(l_array), Cl_yg)
+        Cl_yg_full = Cl_yg_interp(np.log(l_array_full))
+
+        # theta_min = np.pi/(np.max(l_array))
+        # theta_max = np.pi/(np.min(l_array))
+
+        theta_min = 1e-5
+        theta_max = 0.1
+
+        theta_array_rad = np.logspace(np.log10(theta_min), np.log10(theta_max), 40)
+        ntheta = len(theta_array_rad)
+
+        Cl_yg_mat = (np.tile(Cl_yg_full.reshape(1, nl_full), (ntheta, 1)))
+        l_theta = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1))) * (
+            np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl_full)))
+        j0_ltheta = sp.special.jv(0, l_theta)
+        l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
+        Cl_yg_theta = (sp.integrate.simps(l_mat * Cl_yg_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+        R_array = theta_array_rad * self.cosmo_colossus.angularDiameterDistance(np.mean(self.z_array))
+
+        Rmis_array = np.logspace(-4, 1, 28)
+        psi_array = np.linspace(0, 2 * np.pi, 28)
+        cospsi_array = np.cos(psi_array)
+        nRmis = len(Rmis_array)
+        npsi = len(psi_array)
+
+        Rmis_nRmis_npsi = (np.tile(Rmis_array.reshape(1, nRmis, 1), (ntheta, 1, npsi)))
+        cospsi_nRmis_npsi = (np.tile(cospsi_array.reshape(1, 1, npsi), (ntheta, nRmis, 1)))
+
+        theta_min_rad_full = theta_min
+        theta_max_rad_full = theta_max
+        theta_array_rad_full = np.logspace(np.log10(theta_min_rad_full), np.log10(theta_max_rad_full), 3800)
+        ntheta_full = len(theta_array_rad_full)
+
+        Rmat_nRmis_npsi = (np.tile(R_array.reshape(ntheta, 1, 1), (1, nRmis, npsi)))
+
+        R_arg_new = np.sqrt(
+            Rmat_nRmis_npsi ** 2 + Rmis_nRmis_npsi ** 2 + 2 * Rmat_nRmis_npsi * Rmis_nRmis_npsi * cospsi_nRmis_npsi)
+
+        # if np.any(Cl_yg_theta < 0):
+        #     if self.verbose:
+        #         print('negative values in Cl_yg_theta. Careful about extrapolation!!!!')
+        # Cly_theta_interp = interpolate.interp1d(R_array, Cl_yg_theta, fill_value='extrapolate')
+        Cly_theta_interp = interpolate.interp1d(R_array, Cl_yg_theta, fill_value=0.0, bounds_error=False)
+        Cly_theta_argnew = Cly_theta_interp(R_arg_new)
+
+        Cly_intpsi = (1. / (2 * np.pi)) * sp.integrate.simps(Cly_theta_argnew, psi_array)
+
+        sigmaR_val = self.cmis * np.mean(self.r_vir_mat)
+
+        sigmaR_mat = (np.tile(sigmaR_val.reshape(1, 1), (ntheta, nRmis)))
+        Rmis_mat = (np.tile(Rmis_array.reshape(1, nRmis), (ntheta, 1)))
+        PRmis_mat = (Rmis_mat / sigmaR_mat ** 2) * np.exp(-1. * ((Rmis_mat ** 2) / (2. * sigmaR_mat ** 2)))
+
+        Cly_intRmis = sp.integrate.simps(Cly_intpsi * PRmis_mat, Rmis_array)
+
+        if np.all(Cly_intRmis > 0):
+            Cly_intRmis_interp = interpolate.interp1d(np.log(theta_array_rad), np.log(Cly_intRmis))
+            Cly_misc_theta = np.exp(Cly_intRmis_interp(np.log(theta_array_rad_full)))
+
+        else:
+            # print 'negative values in Cly_intRmis. Careful about extrapolation!!!!'
+            Cly_intRmis_interp = interpolate.interp1d(np.log(theta_array_rad), Cly_intRmis)
+            Cly_misc_theta = (Cly_intRmis_interp(np.log(theta_array_rad_full)))
+
+        # if np.all(Cl_yg_theta > 0):
+        #     Cly_theta_zM_interp = interpolate.interp1d(np.log(theta_array_rad), np.log(Cl_yg_theta),
+        #                                                fill_value='extrapolate')
+        #     Cly_origcheck_theta = np.exp(Cly_theta_zM_interp(np.log(theta_array_rad_full)))
+        #
+        # else:
+        #     print 'negative values in Cl_yg_theta'
+        #     Cly_theta_zM_interp = interpolate.interp1d(np.log(theta_array_rad), Cl_yg_theta,
+        #                                                fill_value='extrapolate')
+        #     Cly_origcheck_theta = (Cly_theta_zM_interp(np.log(theta_array_rad_full)))
+
+        Cly_misc_theta_full = np.tile(Cly_misc_theta.reshape(1, ntheta_full), (nl, 1))
+        l_thetafull = (np.tile(l_array.reshape(nl, 1), (1, ntheta_full))) * (
+            np.tile(theta_array_rad_full.reshape(1, ntheta_full), (nl, 1)))
+        j0_lthetafull = sp.special.jv(0, l_thetafull)
+        theta_mat = (np.tile(theta_array_rad_full.reshape(1, ntheta_full), (nl, 1)))
+        Cly_misc_l = (2 * np.pi) * (
+            sp.integrate.simps(theta_mat * Cly_misc_theta_full * j0_lthetafull, theta_array_rad_full))
+
+        # Cly_origcheck_theta_full = np.tile(Cly_origcheck_theta.reshape(1, ntheta_full), (nl, 1))
+        # Cly_origcheck_l = (2 * np.pi) * (
+        #     sp.integrate.simps(theta_mat * Cly_origcheck_theta_full * j0_lthetafull, theta_array_rad_full))
+
+        Cly_misc_l_final = self.fmis * Cly_misc_l + (1 - self.fmis) * Cl_yg
+
+        # pdb.set_trace()
+        return Cly_misc_l_final
+
+
+    def get_cov_G(self):
+
+        cov_dict_G = {}
+
+        for j in range(len(self.stats_analyze_pairs)):
+            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
+            A, B = list(stats_analyze_1)
+            C, D = list(stats_analyze_2)
+            stats_pairs = [A + C, B + D, A + D, B + C]
+            Cl_stats_dict = {}
+
+            for stat in stats_pairs:
+                if stat == 'yy':
+                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_yy_l_array
+                elif stat == 'gg':
+                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_gg_l_array
+                elif stat == 'kk':
+                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_kk_l_array
+                else:
+                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey]
+            # import pdb;pdb.set_trace()
+            fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
+
+            val_diag = (1. / (fsky_j * (2 * self.l_array_survey + 1.) * self.dl_array_survey)) * (
+                    Cl_stats_dict[A + C] * Cl_stats_dict[B + D] + Cl_stats_dict[A + D] * Cl_stats_dict[B + C])
+
+            cov_dict_G[A + B + '_' + C + D] = np.diag(val_diag)
+            cov_dict_G[C + D + '_' + A + B] = np.diag(val_diag)
+
+        return cov_dict_G
+
+    def get_cov_NG(self):
+
+        cov_dict_NG = {}
+
+        for j in range(len(self.stats_analyze_pairs)):
+            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
+
+            A, B = list(stats_analyze_1)
+            C, D = list(stats_analyze_2)
+
+            if self.PS.use_only_halos and (A + B + '_' + C + D != 'yy_yy'):
+                nl = len(self.l_array_survey, )
+                val_NG = np.zeros((nl, nl))
+            else:
+                T_l_ABCD = self.PS.get_T_ABCD_l_array(self.l_array_survey, A, B, C, D, self.ugl_zM_dict,
+                                                      self.uyl_zM_dict, self.ukl_zM_dict)
+                fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
+                # pdb.set_trace()
+                # fsky_j = np.min(np.array([self.fsky[A + B] , self.fsky[C + D]]))
+                val_NG = (1. / (4. * np.pi * fsky_j)) * T_l_ABCD
+
+            cov_dict_NG[A + B + '_' + C + D] = val_NG
+            cov_dict_NG[C + D + '_' + A + B] = val_NG
+
+        return cov_dict_NG
+
+    def do_Hankel_transform(self,nu,ell_array,Cell_array,theta_array_arcmin=None):
+        l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
+        Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
+                                           bounds_error=False)
+        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full,extrap=True)
+        xi_out *= (1 / (2 * np.pi))
+        theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+        if theta_array_arcmin is not None:
+            xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
+                                               bounds_error=False)
+            xi_final = np.exp(xi_interp(np.log(theta_array_arcmin)))
+        else:
+            xi_final = xi_out
+            theta_array_arcmin = theta_out_arcmin
+        return xi_final, theta_array_arcmin
+
+
