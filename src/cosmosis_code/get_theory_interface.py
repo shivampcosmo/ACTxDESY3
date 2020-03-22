@@ -233,7 +233,7 @@ def setup(options):
     params_files_dir = options.get_string(option_section, "params_files_dir")
     params_file = options.get_string(option_section, "params_file")
     params_def_file = options.get_string(option_section, "params_def_file")
-    twopt_file = options.get_string(option_section, 'twopt_file')
+    twopt_file = ast.literal_eval(options.get_string(option_section, 'twopt_file','None'))
     do_use_measured_2pt = options.get_bool(option_section, "do_use_measured_2pt", default=False)
     get_bp = options.get_bool(option_section, "get_bp", default=False)
     if do_use_measured_2pt:
@@ -246,6 +246,7 @@ def setup(options):
         options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
     bins_source = ast.literal_eval(options.get_string(option_section, "bins_source", default='[ 1 ]'))
     bins_lens = options.get_int(option_section, "bins_lens", default='[ 1 ]')
+    gg_doauto = options.get_bool(option_section, "gg_doauto", default=True)
     # if bins_lens is not None:
     #     bins_lens = int(bins_lens)
 
@@ -268,7 +269,7 @@ def setup(options):
                   'save_block_fname': save_block_fname, 'save_real_space_cov': save_real_space_cov,
                   'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'dlogtheta': dlogtheta,
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
-                  'verbose': verbose}
+                  'verbose': verbose, 'gg_doauto':gg_doauto}
 
     return ini_info, returndict
 
@@ -278,6 +279,7 @@ def execute(block, config):
     ini_info, returndict = config
 
     bins_source, bins_lens, z_edges = returndict['bins_source'], returndict['bins_lens'], returndict['z_edges']
+    gg_doauto = returndict['gg_doauto']
     twopt_file = returndict['twopt_file']
     sec_name, sec_save_name, save_cov_fname, save_block_fname = returndict['sec_name'], returndict['sec_save_name'], \
                                                                 returndict['save_cov_fname'], returndict[
@@ -288,10 +290,11 @@ def execute(block, config):
                                               returndict['theta_max']
     analysis_coords, verbose = returndict['analysis_coords'], returndict['verbose']
 
-    try:
-        clf = pk.load(open(twopt_file, 'rb'))
-    except:
-        clf = pk.load(open(twopt_file, 'rb'), encoding='latin1')
+    if twopt_file is not None:
+        try:
+            clf = pk.load(open(twopt_file, 'rb'))
+        except:
+            clf = pk.load(open(twopt_file, 'rb'), encoding='latin1')
 
     other_params_dict = ini_info['other_params_dict']
     cosmo_params_dict = ini_info['cosmo_params_dict']
@@ -310,7 +313,26 @@ def execute(block, config):
     lin_power = names.matter_power_lin
     nl_power = names.matter_power_nl
     PrepDV_dict_allbins = {}
-
+    run_cov_pipe = bool(save_cov_fname and save_cov_fname.strip()) or bool(save_block_fname and save_block_fname.strip())
+    if ntheta == 0:
+        if dlogtheta == 'uselarray':
+            block[sec_save_name, 'theory_min'] = theta_min
+            block[sec_save_name, 'theory_max'] = theta_max
+            block[sec_save_name, 'dlogtheta'] = np.log(DV_fid.l_array_survey[1] / DV_fid.l_array_survey[0])
+            theta_array_all = np.exp(
+                np.arange(np.log(theta_min), np.log(theta_max), block[sec_save_name, 'dlogtheta']))
+            ntheta = len(theta_array_all)
+            theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+            print(ntheta)
+        else:
+            theta_array = None
+            theta_array_all = None
+    else:
+        block[sec_save_name, 'theory_min'] = theta_min
+        block[sec_save_name, 'theory_max'] = theta_max
+        block[sec_save_name, 'ntheta'] = ntheta
+        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
+        theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
 
     for binvs in bins_source:
         for binvl in bins_lens:
@@ -465,7 +487,7 @@ def execute(block, config):
             PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
 
             if 'uyl_zM_dict' not in PrepDV_dict_allbins.keys():
-                PrepDV_dict_allbins['ukl_zM_dict'] = PrepDV_fid.uyl_zM_dict
+                PrepDV_dict_allbins['uyl_zM_dict'] = PrepDV_fid.uyl_zM_dict
                 PrepDV_dict_allbins['byl_z_dict'] = PrepDV_fid.byl_z_dict
                 PrepDV_dict_allbins['uml_zM_dict'] = PrepDV_fid.uml_zM_dict
                 PrepDV_dict_allbins['bml_z_dict'] = PrepDV_fid.bml_z_dict
@@ -473,29 +495,22 @@ def execute(block, config):
                 PrepDV_dict_allbins['Cl_noise_yy_l_array'] = PrepDV_fid.Cl_noise_yy_l_array
                 PrepDV_dict_allbins['bins_source'] = bins_source
                 PrepDV_dict_allbins['bins_lens'] = bins_lens
+                PrepDV_dict_allbins['run_cov_pipe'] = run_cov_pipe
+                PrepDV_dict_allbins['theta_min'] = theta_min
+                PrepDV_dict_allbins['theta_max'] = theta_max
+                PrepDV_dict_allbins['ntheta'] = ntheta
+                PrepDV_dict_allbins['theta_array'] = theta_array
+                PrepDV_dict_allbins['theta_array_all'] = theta_array_all
+                PrepDV_dict_allbins['analysis_coords'] = analysis_coords
+                PrepDV_dict_allbins['gg_doauto'] = gg_doauto
+                PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
+
 
 
         # DV_fid.save_diag('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/')
         # pdb.set_trace()
 
-        if ntheta == 0:
-            if dlogtheta == 'uselarray':
-                block[sec_save_name, 'theory_min'] = theta_min
-                block[sec_save_name, 'theory_max'] = theta_max
-                block[sec_save_name, 'dlogtheta'] = np.log(DV_fid.l_array_survey[1] / DV_fid.l_array_survey[0])
-                theta_array_all = np.exp(
-                    np.arange(np.log(theta_min), np.log(theta_max), block[sec_save_name, 'dlogtheta']))
-                ntheta = len(theta_array_all)
-                theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-                print(ntheta)
-            else:
-                theta_array = None
-        else:
-            block[sec_save_name, 'theory_min'] = theta_min
-            block[sec_save_name, 'theory_max'] = theta_max
-            block[sec_save_name, 'ntheta'] = ntheta
-            theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
-            theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+
 
         block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
         block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']

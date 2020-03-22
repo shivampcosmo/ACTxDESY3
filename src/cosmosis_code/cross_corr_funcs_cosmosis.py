@@ -25,6 +25,7 @@ import multiprocessing
 import time
 import pdb
 from mcfit import Hankel
+
 pi = np.pi
 
 
@@ -44,9 +45,9 @@ class HOD:
         elif self.hod_type == 'DES_MICE':
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fmaxcen'] * (
-                        1.0 - (1.0 - self.hod_params['fmincen'] / self.hod_params['fmaxcen']) / (1.0 + 10 ** (
-                            (2.0 / self.hod_params['fcen_k']) * (
-                                np.log10(M_val) - self.hod_params['log_mdrop'])))) * 0.5 * (1 + erfval)
+                    1.0 - (1.0 - self.hod_params['fmincen'] / self.hod_params['fmaxcen']) / (1.0 + 10 ** (
+                    (2.0 / self.hod_params['fcen_k']) * (
+                    np.log10(M_val) - self.hod_params['log_mdrop'])))) * 0.5 * (1 + erfval)
         elif self.hod_type == 'DES_GGL':
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fcen'] * 0.5 * (1 + erfval)
@@ -234,7 +235,6 @@ class Pressure:
 
         return Pe_mat
 
-
     def get_gnfwp_LeBrun15(self, x, M_mat_shape_nz_nm):
         # import pdb; pdb.set_trace()
         params_names_gnfwp = copy.deepcopy([*self.pressure_params_dict.keys()])
@@ -245,7 +245,7 @@ class Pressure:
         nz, nm = M_mat_shape_nz_nm.shape
         nx = len(x)
         xmat = np.tile(x.reshape(1, 1, nx), (nz, nm, 1))
-        M_mat_Delta_no_h_nz_nm_nx = (np.tile(M_mat_shape_nz_nm.reshape(nz, nm, 1), (1, 1, nx)))/(self.cosmo.h)
+        M_mat_Delta_no_h_nz_nm_nx = (np.tile(M_mat_shape_nz_nm.reshape(nz, nm, 1), (1, 1, nx))) / (self.cosmo.h)
 
         # M_mat_cond_dict = {}
         # if self.do_split_params_massbins:
@@ -299,11 +299,11 @@ class Pressure:
         for j in range(len(params_names_gnfwp)):
             param_j = params_names_gnfwp[j]
             if param_j == 'c500':
-                param_j_array = self.pressure_params_dict[param_j] *  np.power((M_mat_Delta_no_h_nz_nm_nx / (10 ** 14)),self.pressure_params_dict['delta'])
+                param_j_array = self.pressure_params_dict[param_j] * np.power((M_mat_Delta_no_h_nz_nm_nx / (10 ** 14)),
+                                                                              self.pressure_params_dict['delta'])
             else:
                 param_j_array = self.pressure_params_dict[param_j]
             params_array_value_gnfwp[param_j] = param_j_array
-
 
         val_num = params_array_value_gnfwp['P0']
         val_denom_1 = np.power(params_array_value_gnfwp['c500'] * xmat, params_array_value_gnfwp['gamma'])
@@ -315,10 +315,9 @@ class Pressure:
         valf = val_num / val_denom
 
         return valf
-    
-    
+
     def get_Pe_mat_LeBrun15(self, M_mat_Delta, x_array, z_array, R_mat_Delta, mdef_Delta=None,
-                               Mmat_cond=None, zmat_cond=None):
+                            Mmat_cond=None, zmat_cond=None):
         nz, nm = M_mat_Delta.shape
 
         if mdef_Delta is None:
@@ -366,7 +365,7 @@ class Pressure:
         P_Delta = (coeff / 2.) * pressure_model_delta * (
                 self.cosmo.Ob0 / self.cosmo.Om0) * M_mat_Delta_no_h_nz_nm_nx * rho_crit_mat / R_mat_Delta_no_h_nz_nm_nx
 
-        gnfw_P = self.get_gnfwp_LeBrun15(x_array,M_mat_Delta)
+        gnfw_P = self.get_gnfwp_LeBrun15(x_array, M_mat_Delta)
         M_mat_Delta_no_h = (M_mat_Delta / self.cosmo.h)
         M_mat_Delta_no_h_nz_nm_nx = np.tile(M_mat_Delta_no_h.reshape(nz, nm, 1), (1, 1, nx))
 
@@ -452,13 +451,12 @@ class Pressure:
         # else:
         #     M_mat_coeff = np.ones((nz, nm, nx))
 
-        M_mat_coeff = np.power((M_mat_Delta_no_h_nz_nm_nx / (10 ** 14)),self.pressure_params_dict['epsilon'])
+        M_mat_coeff = np.power((M_mat_Delta_no_h_nz_nm_nx / (10 ** 14)), self.pressure_params_dict['epsilon'])
         Pe_mat = 0.518 * P_Delta * gnfw_P * M_mat_coeff
 
         # pdb.set_trace()
 
         return Pe_mat
-
 
     def get_gnfwp_Battaglia12(self, M_mat_shape_nz_nm, x_array, z_array, Mmat_cond=None, zmat_cond=None):
         # pdb.set_trace()
@@ -689,7 +687,7 @@ class Pressure:
                                                  mdef_Delta=mdef_M_mat, Mmat_cond=Mmat_cond, zmat_cond=zmat_cond)
         elif self.pressure_model_name == 'LeBrun15':
             Pe_mat = self.get_Pe_mat_LeBrun15(M_mat, x_array, z_array, R_mat,
-                                                 mdef_Delta=mdef_M_mat, Mmat_cond=Mmat_cond, zmat_cond=zmat_cond)
+                                              mdef_Delta=mdef_M_mat, Mmat_cond=Mmat_cond, zmat_cond=zmat_cond)
         else:
             print('provide correct Pe model')
             sys.exit(1)
@@ -782,8 +780,9 @@ class Pressure:
 
         R200c_mat = R200c_mat_kpc_h / 1000.
 
-        if self.pressure_model_name in ['LeBrun15','Arnaud10']:
-            to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M_mat, x_array, z_array, R_mat, M200c_mat=M200c_mat,mdef_M_mat='500c')
+        if self.pressure_model_name in ['LeBrun15', 'Arnaud10']:
+            to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M_mat, x_array, z_array, R_mat,
+                                                                       M200c_mat=M200c_mat, mdef_M_mat='500c')
 
         elif self.pressure_model_name == 'Battaglia12':
             to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M200c_mat, x_array, z_array, R200c_mat,
@@ -856,7 +855,6 @@ class general_hm:
 
             bm_array_Mz[j, :] = bias.haloBias(M_array, self.z_array[j], model=self.bias_model, mdef=mdef)
 
-
         return dndm_array_Mz, bm_array_Mz
 
     # get the halo concentration using the colossus module
@@ -895,24 +893,23 @@ class general_hm:
 
         return halo_conc_array_Mz
 
-
-    def get_wplin_interp(self,nu, pkzlin_interp):
+    def get_wplin_interp(self, nu, pkzlin_interp):
         k_array = np.logspace(-5, 2.5, 30000)
         z_array = np.logspace(-3, 1, 100)
         Pklinz0 = np.exp(pkzlin_interp.ev(np.log(z_array[0]), np.log(k_array)))
         theta_out, xi_out = Hankel(k_array, nu=nu, q=1.0)(Pklinz0)
         xi_out *= (1 / (2 * np.pi))
         theta_out_arcmin = theta_out * (180. / np.pi) * 60.
-        xi_mat = np.zeros((len(z_array),len(theta_out)))
+        xi_mat = np.zeros((len(z_array), len(theta_out)))
 
         for j in range(len(z_array)):
             Pklinz = np.exp(pkzlin_interp.ev(np.log(z_array[j]), np.log(k_array)))
             theta_out, xi_out = Hankel(k_array, nu=nu, q=1.0)(Pklinz)
             xi_out *= (1 / (2 * np.pi))
-            xi_mat[j,:] = xi_out
+            xi_mat[j, :] = xi_out
 
         wplin_mat_interp = interpolate.RectBivariateSpline(np.log(z_array), np.log(theta_out),
-                                                               np.log(xi_mat))
+                                                           np.log(xi_mat))
         # import pdb; pdb.set_trace()
         return wplin_mat_interp
 
@@ -1010,8 +1007,8 @@ class Powerspec:
         self.M_mat_200cP = M_mat_200cP / hydro_B
         self.r200cP_mat = hmf.get_R_from_M_mat(self.M_mat_200cP, 200 * self.rho_crit_array)
 
-            #
-            # self.rmdefP_mat = R_mat_mdefP_kpc_h / 1000.
+        #
+        # self.rmdefP_mat = R_mat_mdefP_kpc_h / 1000.
 
         # print 'getting y3d matrix'
         # self.y3d_mat = self.ghmf.get_y3d(M_mat_mdefP, self.x_array, self.z_array)
@@ -1137,7 +1134,6 @@ class Powerspec:
             self.um_block_allinterp = other_params['um_block_allinterp']
             self.bkm_block_allinterp = other_params['bkm_block_allinterp']
 
-
         # pdb.set_trace()
 
     # get spherical harmonic transform of the galaxy distribution, eq 18 of Makiya et al
@@ -1194,7 +1190,7 @@ class Powerspec:
         return val
 
     # get spherical harmonic transform of the matter distribution
-    def get_uk_l_zM(self, l,uml_zM_dict):
+    def get_uk_l_zM(self, l, uml_zM_dict):
         # k_array = (l + 1. / 2.) / self.chi_array
         # uk_mat_normed = np.zeros((self.nz, self.nm))
         # if hasattr(self,'um_block_kinterp'):
@@ -1210,11 +1206,10 @@ class Powerspec:
 
         return coeff_mat * um_mat_normed
 
-
     # get spherical harmonic transform of the matter distribution
     def get_um_l_zM(self, l):
         k_array = (l + 1. / 2.) / self.chi_array
-        if hasattr(self,'um_block_allinterp'):
+        if hasattr(self, 'um_block_allinterp'):
             ukzm_mat = np.zeros((self.nz, self.nm))
             marray_rs = np.log(np.reshape(self.M_array, (1, self.nm, 1)))
             for j in range(len(k_array)):
@@ -1222,13 +1217,13 @@ class Powerspec:
                 # print(j,kv,self.z_array[j])
                 marray_insz = np.insert(marray_rs, 0, (self.z_array[j]), axis=-1)
                 marray_insk = np.insert(marray_insz, 2, np.log(kv), axis=-1)[0]
-                ukzm_mat[j,:] = np.exp(self.um_block_allinterp(marray_insk))
+                ukzm_mat[j, :] = np.exp(self.um_block_allinterp(marray_insk))
                 # if l > 200:
                 #     import pdb;
                 #     pdb.set_trace()
             # print(l)
 
-                # uk_mat_normed[j,:] = ukmz[j,:]
+            # uk_mat_normed[j,:] = ukmz[j,:]
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
 
@@ -1266,7 +1261,7 @@ class Powerspec:
         if hasattr(self, 'bkm_block_allinterp'):
             k_array = (l + 1. / 2.) / self.chi_array
             # import pdb; pdb.set_trace()
-            val *= np.exp(self.bkm_block_allinterp(np.stack(((self.z_array),np.log(k_array)), axis=-1)))
+            val *= np.exp(self.bkm_block_allinterp(np.stack(((self.z_array), np.log(k_array)), axis=-1)))
 
         return val
 
@@ -1281,8 +1276,6 @@ class Powerspec:
     def collect_uk(self, l_array, return_dict):
         for l in l_array:
             return_dict[round(l, 1)] = self.get_uk_l_zM(l)
-
-
 
     #
     # # 1-halo term of Cl galaxy-galaxy, eq 10 of Makiya et al
@@ -1543,6 +1536,7 @@ class Powerspec:
     #
     #     return val
 
+
 class PrepDataVec:
 
     def __init__(self, cosmo_params, hod_params, pressure_params, other_params):
@@ -1577,7 +1571,6 @@ class PrepDataVec:
         self.fsky = {'gg': self.fsky_gg, 'yy': self.fsky_yy, 'yg': self.fsky_yg, 'gy': self.fsky_yg, 'yk': self.fsky_yk,
                      'ky': self.fsky_yk, 'kk': self.fsky_kk}
 
-
         self.stats_analyze = other_params['stats_analyze']
         stats_analyze_pairs = []
 
@@ -1606,7 +1599,8 @@ class PrepDataVec:
             if self.verbose:
                 print('getting y3d matrix')
             global x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
-            y3d_mat = self.PS.Pressure.get_y3d(self.PS.M_mat_mdefP, self.PS.x_array, self.PS.z_array, self.PS.rmdefP_mat,
+            y3d_mat = self.PS.Pressure.get_y3d(self.PS.M_mat_mdefP, self.PS.x_array, self.PS.z_array,
+                                               self.PS.rmdefP_mat,
                                                M200c_mat=self.PS.M_mat_200cP, Mmat_cond=self.PS.M_mat_cond_inbin,
                                                zmat_cond=self.PS.z_mat_cond_inbin)
 
@@ -1743,7 +1737,7 @@ class PrepDataVec:
                 if 'g' in self.lss_probes_analyze:
                     ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
                 if 'k' in self.lss_probes_analyze:
-                    ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j],uml_zM_dict)
+                    ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j], uml_zM_dict)
 
             if self.verbose:
                 print('that took ', time.time() - ti, 'seconds')
@@ -1783,7 +1777,7 @@ class PrepDataVec:
                                                               fill_value='extrapolate')
             if ('SO' in other_params['noise_Cl_filename'].split('/')) or (
                     'Planck' in other_params['noise_Cl_filename'].split('/') or
-                        'ACT' in other_params['noise_Cl_filename'].split('/')):
+                    'ACT' in other_params['noise_Cl_filename'].split('/')):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 1]
                 log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
                                                               fill_value='extrapolate')
@@ -1812,7 +1806,6 @@ class PrepDataVec:
 
         if other_params['get_bp']:
             self.wplin_interp = other_params['wplin_interp']
-
 
         # import pdb; pdb.set_trace()
         # ell_tosave = np.array([10,100,1000,5000])
@@ -1945,8 +1938,6 @@ class PrepDataVec:
         #                 'kg': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array},
         #                 'gk': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array}}
 
-
-
     def get_Cl_vector(self):
 
         Cl_vec = []
@@ -2022,38 +2013,38 @@ class PrepDataVec:
                     ind_select_survey=self.ind_select_survey)
         return 0
 
-
-    def do_Hankel_transform(self,nu,ell_array,Cell_array,theta_array_arcmin=None):
+    def do_Hankel_transform(self, nu, ell_array, Cell_array, theta_array_arcmin=None):
         l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
         Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
                                            bounds_error=False)
         Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
-        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full,extrap=True)
+        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full, extrap=True)
         xi_out *= (1 / (2 * np.pi))
         theta_out_arcmin = theta_out * (180. / np.pi) * 60.
         if theta_array_arcmin is not None:
             xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
-                                               bounds_error=False)
+                                             bounds_error=False)
             xi_final = np.exp(xi_interp(np.log(theta_array_arcmin)))
         else:
             xi_final = xi_out
             theta_array_arcmin = theta_out_arcmin
         return xi_final, theta_array_arcmin
 
-    def get_xi_kappy_2h(self,theta_arcmin,bp_keVcm3 = 1e-7):
+    def get_xi_kappy_2h(self, theta_arcmin, bp_keVcm3=1e-7):
         sigmat = const.sigma_T
         m_e = const.m_e
         c = const.c
         coeff = sigmat / (m_e * (c ** 2))
         oneMpc_h = (((10 ** 6) / self.PS.cosmo.h) * (u.pc).to(u.m)) * (u.m)
         const_coeff = ((coeff * oneMpc_h).to(((u.cm ** 3) / u.keV))).value
-        theta_rad = theta_arcmin * (np.pi/180.)*(1./60.)
+        theta_rad = theta_arcmin * (np.pi / 180.) * (1. / 60.)
         wp_chiz = np.zeros_like(self.PS.z_array)
         for j in range(len(self.PS.z_array)):
-            wp_chiz[j] = np.exp(self.wplin_interp.ev(np.log(self.PS.z_array[j]), np.log(self.PS.chi_array[j]*theta_rad)))
-        int_val = self.PS.dchi_dz_array *  (self.PS.Wk_array / (1. + self.PS.z_array)) * wp_chiz
-        value = bp_keVcm3 * const_coeff * sp.integrate.simps(int_val,self.PS.z_array)
-        print('zmean=' + str(sp.integrate.simps(self.PS.dchi_dz_array *  self.PS.Wk_array ,self.PS.z_array )))
+            wp_chiz[j] = np.exp(
+                self.wplin_interp.ev(np.log(self.PS.z_array[j]), np.log(self.PS.chi_array[j] * theta_rad)))
+        int_val = self.PS.dchi_dz_array * (self.PS.Wk_array / (1. + self.PS.z_array)) * wp_chiz
+        value = bp_keVcm3 * const_coeff * sp.integrate.simps(int_val, self.PS.z_array)
+        print('zmean=' + str(sp.integrate.simps(self.PS.dchi_dz_array * self.PS.Wk_array, self.PS.z_array)))
         # import pdb; pdb.set_trace()
         return value
 
@@ -2155,7 +2146,7 @@ class PrepDataVec:
         J2_ltheta_binned_coeff = (1. / ((l_mat ** 2) * theta_mat * dtheta_mat))
         term1 = -2. * (sp.special.jv(0, l_thetaplus) - sp.special.jv(0, l_thetaminus))
         term2 = -1. * l_mat * (
-                    thetaplus_mat * sp.special.jv(1, l_thetaplus) - thetaminus_mat * sp.special.jv(1, l_thetaminus))
+                thetaplus_mat * sp.special.jv(1, l_thetaplus) - thetaminus_mat * sp.special.jv(1, l_thetaminus))
         J2_ltheta_binned = J2_ltheta_binned_coeff * (term1 + term2)
 
         J2_ltheta_binned_mat1 = np.tile(J2_ltheta_binned.reshape(ntheta, 1, nl), (1, ntheta, 1))
@@ -2167,76 +2158,84 @@ class PrepDataVec:
         integrand = (l_mat ** 2) * (J2_ltheta_binned_mat1 * J2_ltheta_binned_mat2) * cov_diag_mat
         cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
 
-
         return theta_array_rad, cov_wtheta
 
 
 class CalcDataVec:
 
     def __init__(self, PrepDV_params):
-        PS_prepDV = PrepDV_params['PS']
-        self.M_mat_cond_inbin = PS_prepDV.M_mat_cond_inbin
-        self.z_array_cond_inbin = PS_prepDV.z_array_cond_inbin
-        self.int_prob = PS_prepDV.int_prob
-        self.dndm_array = PS_prepDV.dndm_array
-        self.M_array = PS_prepDV.M_array
+        self.PS_prepDV = PrepDV_params['PS']
+        # self.M_mat_cond_inbin = self.PS_prepDV.M_mat_cond_inbin
+        # self.z_array_cond_inbin = self.PS_prepDV.z_array_cond_inbin
+        # self.int_prob = self.PS_prepDV.int_prob
+        # self.dndm_array = self.PS_prepDV.dndm_array
+        # self.M_array = self.PS_prepDV.M_array
+        #
+        # self.chi_array = self.PS_prepDV.chi_array
+        # self.dchi_dz_array = self.PS_prepDV.dchi_dz_array
+        # self.z_array = self.PS_prepDV.z_array
+        # self.pkzlin_interp = self.PS_prepDV.pkzlin_interp
+        # self.use_only_halos = self.PS_prepDV.use_only_halos
 
-        self.chi_array = PS_prepDV.chi_array
-        self.dchi_dz_array = PS_prepDV.dchi_dz_array
-        self.z_array = PS_prepDV.z_array
-        self.pkzlin_interp = PS_prepDV.pkzlin_interp
-
-
-    def get_Cl_AB_1h(self, A, B, l, uAl_zM_dict, uBl_zM_dict):
+    def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')
         if g_sum == 2:
-            if self.use_only_halos:
+            if self.PS_prepDV.use_only_halos:
                 return 0
             else:
-                toint_M_multfac = self.M_mat_cond_inbin
-                toint_z_multfac = self.z_array_cond_inbin
+                toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin
+                toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         elif g_sum == 1:
-            toint_M_multfac = self.M_mat_cond_inbin * self.int_prob
-            toint_z_multfac = self.z_array_cond_inbin
+            toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin * self.PS_prepDV.int_prob
+            toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         else:
             toint_M_multfac = 1.
             toint_z_multfac = 1.
-        uAl_zM = uAl_zM_dict[round(l, 1)]
-        uBl_zM = uBl_zM_dict[round(l, 1)]
-        toint_M = (uAl_zM * uBl_zM) * self.dndm_array * toint_M_multfac
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * toint_z_multfac
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
+        Cl_1h = np.zeros_like(l_array)
+        for j in range(len(l_array)):
+            l = l_array[j]
+            uAl_zM = uAl_zM_dict[round(l, 1)]
+            uBl_zM = uBl_zM_dict[round(l, 1)]
+            toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array * toint_M_multfac
+            val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+            toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac
+            val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+            Cl_1h[j] = val
+        return Cl_1h
 
-    def get_Cl_AB_2h(self, A, B, l, bAl_z_dict, bBl_z_dict):
-        k_array = (l + 1. / 2.) / self.chi_array
+    def get_Cl_AB_2h(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
         if g_sum > 0:
-            toint_z_multfac = self.z_array_cond_inbin
+            toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         else:
             toint_z_multfac = 1.
-        bgl_z1 = bAl_z_dict[round(l, 1)]
-        bgl_z2 = bBl_z_dict[round(l, 1)]
-        toint_z = (bgl_z1 * bgl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-            self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * toint_z_multfac
-        val = sp.integrate.simps(toint_z, self.z_array)
-        return val
+        Cl_2h = np.zeros_like(l_array)
+        for j in range(len(l_array)):
+            l = l_array[j]
+            k_array = (l + 1. / 2.) / self.PS_prepDV.chi_array
+            bgl_z1 = bAl_z_dict[round(l, 1)]
+            bgl_z2 = bBl_z_dict[round(l, 1)]
+            toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
+                self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
+            val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+            Cl_2h[j] = val
+        return Cl_2h
 
     def get_Cl_AB_tot(self, A, B, ClAB_1h, ClAB_2h):
         g_sum = (A == 'g') + (B == 'g')
-        if (g_sum == 1) and self.use_only_halos and (self.fmis > 0):
+        if (g_sum == 1) and self.PS_prepDV.use_only_halos and (self.PS_prepDV.fmis > 0):
             Cl_AB_tot = self.get_Cl_yg_miscentered(l_array, ClAB_1h + ClAB_2h)
         else:
             Cl_AB_tot = ClAB_1h + ClAB_2h
         return Cl_AB_tot
 
-
     # See Makiya paper
     def get_T_ABCD_NG(self, l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict):
         nl = len(l_array_all)
 
-        ul_A_mat, ul_B_mat, ul_C_mat, ul_D_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm))
+        ul_A_mat, ul_B_mat, ul_C_mat, ul_D_mat = np.zeros((nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros(
+            (nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros((nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros(
+            (nl, self.PS_prepDV.nz, self.PS_prepDV.nm))
         for j in range(nl):
             ul_A_mat[j, :, :] = uAl_zM_dict[round(l_array_all[j], 1)]
             ul_B_mat[j, :, :] = uBl_zM_dict[round(l_array_all[j], 1)]
@@ -2245,53 +2244,55 @@ class CalcDataVec:
 
         uAl1_uBl1 = ul_A_mat * ul_B_mat
         uCl2_uDl2 = ul_C_mat * ul_D_mat
-        uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.nz, self.nm), (nl, 1, 1, 1))
-        uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.nz, self.nm), (1, nl, 1, 1))
-        dndm_array_mat = np.tile(self.dndm_array.reshape(1, 1, self.nz, self.nm), (nl, nl, 1, 1))
+        uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.PS_prepDV.nz, self.PS_prepDV.nm), (nl, 1, 1, 1))
+        uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.PS_prepDV.nz, self.PS_prepDV.nm), (1, nl, 1, 1))
+        dndm_array_mat = np.tile(self.PS_prepDV.dndm_array.reshape(1, 1, self.PS_prepDV.nz, self.PS_prepDV.nm),
+                                 (nl, nl, 1, 1))
         if 'g' in [A, B, C, D]:
             toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
         else:
             toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        chi2_array_mat = np.tile((self.chi_array ** 2).reshape(1, 1, self.nz), (nl, nl, 1))
-        dchi_dz_array_mat = np.tile(self.dchi_dz_array.reshape(1, 1, self.nz), (nl, nl, 1))
+        val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+        chi2_array_mat = np.tile((self.PS_prepDV.chi_array ** 2).reshape(1, 1, self.PS_prepDV.nz), (nl, nl, 1))
+        dchi_dz_array_mat = np.tile(self.PS_prepDV.dchi_dz_array.reshape(1, 1, self.PS_prepDV.nz), (nl, nl, 1))
         toint_z = val_z * chi2_array_mat * dchi_dz_array_mat
-        val = sp.integrate.simps(toint_z, self.z_array)
+        val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
 
-        if self.use_only_halos:
+        if self.PS_prepDV.use_only_halos:
             if (A + B + C + D not in [''.join(elem) for elem in list(set(list(itertools.permutations('gyyy'))))]) and (
                     A + B + C + D != 'yyyy'):
                 val = np.zeros(val.shape)
 
         return val
 
-    def get_dlnCl1h_AB_dlnM(self,l,uA_zM_dict,uB_zM_dict):
+    def get_dlnCl1h_AB_dlnM(self, l, uA_zM_dict, uB_zM_dict):
         uAl_zM = uA_zM_dict[round(l, 1)]
         uBl_zM = uB_zM_dict[round(l, 1)]
-        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-        denom = sp.integrate.simps(toint_z, self.z_array)
+        toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array
+        val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+        toint_z = val_z * (self.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+        denom = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
 
-        num_volfac = np.tile(( (self.chi_array ** 2) * self.dchi_dz_array).reshape(1,self.nz),(self.nm,1) )
-        toint_z_num = self.dndm_array.T * num_volfac * (uAl_zM.T * uBl_zM.T)
-        num = self.M_array * sp.integrate.simps(toint_z_num, self.z_array)
-        return num/denom
+        num_volfac = np.tile(((self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array).reshape(1, self.nz),
+                             (self.nm, 1))
+        toint_z_num = self.PS_prepDV.dndm_array.T * num_volfac * (uAl_zM.T * uBl_zM.T)
+        num = self.PS_prepDV.M_array * sp.integrate.simps(toint_z_num, self.PS_prepDV.z_array)
+        return num / denom
 
-    def get_dlnCl1h_AB_dlnz(self,l,uA_zM_dict,uB_zM_dict):
+    def get_dlnCl1h_AB_dlnz(self, l, uA_zM_dict, uB_zM_dict):
         uAl_zM = uA_zM_dict[round(l, 1)]
         uBl_zM = uB_zM_dict[round(l, 1)]
-        toint_M = (uAl_zM * uBl_zM) * self.dndm_array
-        val_z = sp.integrate.simps(toint_M, self.M_array)
-        toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-        denom = sp.integrate.simps(toint_z, self.z_array)
+        toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array
+        val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+        toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+        denom = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
 
-        num_volfac = self.z_array * (self.chi_array ** 2) * self.dchi_dz_array
-        num = num_volfac * sp.integrate.simps(self.dndm_array*(uAl_zM * uBl_zM), self.M_array)
-        return num/denom
+        num_volfac = self.PS_prepDV.z_array * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+        num = num_volfac * sp.integrate.simps(self.PS_prepDV.dndm_array * (uAl_zM * uBl_zM), self.PS_prepDV.M_array)
+        return num / denom
 
     def get_Cl_yg_miscentered(self, l_array, Cl_yg):
-        if self.verbose:
+        if self.PS_prepDV.verbose:
             print('doing miscentering....')
         nl = len(l_array)
         # pdb.set_trace()
@@ -2319,7 +2320,8 @@ class CalcDataVec:
         l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
         Cl_yg_theta = (sp.integrate.simps(l_mat * Cl_yg_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
 
-        R_array = theta_array_rad * self.cosmo_colossus.angularDiameterDistance(np.mean(self.z_array))
+        R_array = theta_array_rad * self.PS_prepDV.cosmo_colossus.angularDiameterDistance(
+            np.mean(self.PS_prepDV.z_array))
 
         Rmis_array = np.logspace(-4, 1, 28)
         psi_array = np.linspace(0, 2 * np.pi, 28)
@@ -2349,7 +2351,7 @@ class CalcDataVec:
 
         Cly_intpsi = (1. / (2 * np.pi)) * sp.integrate.simps(Cly_theta_argnew, psi_array)
 
-        sigmaR_val = self.cmis * np.mean(self.r_vir_mat)
+        sigmaR_val = self.cmis * np.mean(self.PS_prepDV.r_vir_mat)
 
         sigmaR_mat = (np.tile(sigmaR_val.reshape(1, 1), (ntheta, nRmis)))
         Rmis_mat = (np.tile(Rmis_array.reshape(1, nRmis), (ntheta, 1)))
@@ -2389,45 +2391,51 @@ class CalcDataVec:
         # Cly_origcheck_l = (2 * np.pi) * (
         #     sp.integrate.simps(theta_mat * Cly_origcheck_theta_full * j0_lthetafull, theta_array_rad_full))
 
-        Cly_misc_l_final = self.fmis * Cly_misc_l + (1 - self.fmis) * Cl_yg
+        Cly_misc_l_final = self.PS_prepDV.fmis * Cly_misc_l + (1 - self.PS_prepDV.fmis) * Cl_yg
 
         # pdb.set_trace()
         return Cly_misc_l_final
 
-
-    def get_cov_G(self):
+    def get_cov_G(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2, Cl_result_dict, fsky_dict):
 
         cov_dict_G = {}
 
-        for j in range(len(self.stats_analyze_pairs)):
-            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
-            A, B = list(stats_analyze_1)
-            C, D = list(stats_analyze_2)
-            stats_pairs = [A + C, B + D, A + D, B + C]
-            Cl_stats_dict = {}
+        # for j in range(len(self.stats_analyze_pairs)):
+        #     stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
+        A, B = list(stats_analyze_1)
+        C, D = list(stats_analyze_2)
+        stats_pairs = [A + C, B + D, A + D, B + C]
+        bin_pairs = [[bin1_stat1, bin1_stat2],[bin2_stat1, bin2_stat2],[bin1_stat1, bin2_stat2],[bin2_stat1, bin1_stat2]]
+        Cl_stats_dict = {}
 
-            for stat in stats_pairs:
-                if stat == 'yy':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_yy_l_array
-                elif stat == 'gg':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_gg_l_array
-                elif stat == 'kk':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_kk_l_array
+
+        for j in range(len(stats_pairs)):
+            stat = stats_pairs[j]
+            bin_pair = bin_pairs[j]
+            if stat == 'yy':
+                bin_key = 'bin'
+            if stat in ['ky','yk','gy','yg']:
+                if bin_pair[0] is None:
+                    bin_key = 'bin_' + str(bin_pair[1])
                 else:
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey]
-            # import pdb;pdb.set_trace()
-            fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
+                    bin_key = 'bin_' + str(bin_pair[0])
+            else:
+                bin_key = 'bin_' + str(bin_pair[0]) + '_' + str(bin_pair[1])
 
-            val_diag = (1. / (fsky_j * (2 * self.l_array_survey + 1.) * self.dl_array_survey)) * (
-                    Cl_stats_dict[A + C] * Cl_stats_dict[B + D] + Cl_stats_dict[A + D] * Cl_stats_dict[B + C])
+            Cl_stats_dict[stat] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+        # import pdb;pdb.set_trace()
+        fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
 
-            cov_dict_G[A + B + '_' + C + D] = np.diag(val_diag)
-            cov_dict_G[C + D + '_' + A + B] = np.diag(val_diag)
+        val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
+                Cl_stats_dict[A + C] * Cl_stats_dict[B + D] + Cl_stats_dict[A + D] * Cl_stats_dict[B + C])
 
-        return cov_dict_G
+        # cov_dict_G[A + B + '_' + C + D] = np.diag(val_diag)
+        # cov_dict_G[C + D + '_' + A + B] = np.diag(val_diag)
+
+        return np.diag(val_diag)
 
     def get_cov_NG(self):
-
+        # l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict
         cov_dict_NG = {}
 
         for j in range(len(self.stats_analyze_pairs)):
@@ -2452,21 +2460,243 @@ class CalcDataVec:
 
         return cov_dict_NG
 
-    def do_Hankel_transform(self,nu,ell_array,Cell_array,theta_array_arcmin=None):
+    def do_Hankel_transform(self, nu, ell_array, Cell_array, theta_array_arcmin=None):
         l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
         Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
                                            bounds_error=False)
         Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
-        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full,extrap=True)
+        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full, extrap=True)
         xi_out *= (1 / (2 * np.pi))
         theta_out_arcmin = theta_out * (180. / np.pi) * 60.
         if theta_array_arcmin is not None:
             xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
-                                               bounds_error=False)
+                                             bounds_error=False)
             xi_final = np.exp(xi_interp(np.log(theta_array_arcmin)))
         else:
             xi_final = xi_out
             theta_array_arcmin = theta_out_arcmin
         return xi_final, theta_array_arcmin
 
+
+class DataVec:
+    def __init__(self, PrepDV_params):
+        self.CalcDV = CalcDataVec(PrepDV_params)
+        PS_prepDV = PrepDV_params['PS']
+        run_cov_pipe = PrepDV_dict_allbins['run_cov_pipe']
+        bins_source = PrepDV_dict_allbins['bins_source']
+        bins_lens = PrepDV_dict_allbins['bins_lens']
+        analysis_coords = PrepDV_dict_allbins['analysis_coords']
+        theta_array_arcmin = PrepDV_dict_allbins['theta_array']
+        gg_doauto = PrepDV_dict_allbins['gg_doauto']
+        # stats_analyze_pairs = PS_prepDV.stats_analyze_pairs
+        Cl_result_dict = {'l_array': PS_prepDV.l_array, 'l_array_survey': PS_prepDV.l_array_survey,
+                          'ind_select_survey': PS_prepDV.ind_select_survey, 'dl_array_survey': PS_prepDV.dl_array_survey}
+        if analysis_coords == 'real':
+            xi_result_dict = {}
+        if ('kk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('kk' in PS_prepDV.stats_analyze_pairs)):
+            Cl_kk_dict = {}
+            if analysis_coords == 'real':
+                xi_kk_dict = {}
+            for j1 in bins_source:
+                for j2 in bins_source:
+                    Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'k', PS_prepDV.l_array,
+                                                         PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                         PrepDV_params['ukl_zM_dict' + str(j2)])
+                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'k', PS_prepDV.l_array,
+                                                         PrepDV_params['bkl_z_dict' + str(j1)],
+                                                         PrepDV_params['bkl_z_dict' + str(j2)])
+                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'k', Cl1h_j1j2, Cl2h_j1j2)
+                    if j1 == j2:
+                        Cl_noise_ellsurvey = PrepDV_params['Cl_noise_kk_l_array' + str(j1)]
+                    else:
+                        Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                    Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                                    'tot_ellsurvey': Cltot_j1j2[
+                                                                        PS_prepDV.ind_select_survey],
+                                                                    'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                    PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                    if analysis_coords == 'real':
+                        xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                                  Cltot_j1j2,
+                                                                                  theta_array_arcmin=theta_array_arcmin)
+                        xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                        if 'theta' not in xi_kk_dict.keys():
+                            xi_kk_dict['theta'] = theta_array
+            Cl_result_dict['kk'] = Cl_kk_dict
+            if analysis_coords == 'real':
+                xi_result_dict['kk'] = xi_kk_dict
+
+        if ('ky' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('ky' in PS_prepDV.stats_analyze_pairs)):
+            Cl_ky_dict = {}
+            if analysis_coords == 'real':
+                # xi_ky_dict = {}
+                xi_gty_dict = {}
+            for j1 in bins_source:
+                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PS_prepDV.l_array,
+                                                     PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                     PrepDV_params['uyl_zM_dict'])
+                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PS_prepDV.l_array, PrepDV_params['bkl_z_dict' + str(j1)],
+                                                     PrepDV_params['byl_z_dict'])
+                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
+                Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+
+                Cl_ky_dict['bin_' + str(j1)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                if analysis_coords == 'real':
+                    # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                    #                                                           Cltot_j1j2,
+                    #                                                           theta_array_arcmin=theta_array_arcmin)
+                    gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PS_prepDV.l_array,
+                                                                               Cltot_j1j2,
+                                                                               theta_array_arcmin=theta_array_arcmin)
+                    # xi_ky_dict['bin_' + str(j1)] = xitot_j1j2
+                    xi_gty_dict['bin_' + str(j1)] = gt_tot_j1j2
+                    if 'theta' not in xi_kk_dict.keys():
+                        # xi_ky_dict['theta'] = theta_array
+                        xi_gty_dict['theta'] = theta_array
+            Cl_result_dict['ky'] = Cl_ky_dict
+            Cl_result_dict['yk'] = Cl_ky_dict
+            if analysis_coords == 'real':
+                # xi_result_dict['ky'] = xi_ky_dict
+                xi_result_dict['gty'] = xi_gty_dict
+
+        if ('yy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('yy' in PS_prepDV.stats_analyze_pairs)):
+            Cl_yy_dict = {}
+            Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('y', 'y', PS_prepDV.l_array, PrepDV_params['uyl_zM_dict'],
+                                                 PrepDV_params['uyl_zM_dict'])
+            Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('y', 'y', PS_prepDV.l_array, PrepDV_params['byl_z_dict'],
+                                                 PrepDV_params['byl_z_dict'])
+            Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('y', 'y', Cl1h_j1j2, Cl2h_j1j2)
+            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_yy_l_array']
+
+            Cl_yy_dict['bin'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                 'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                 'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                 PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+            Cl_result_dict['yy'] = Cl_yy_dict
+            if analysis_coords == 'real':
+                xi_yy_dict = {}
+                xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                          Cltot_j1j2,
+                                                                          theta_array_arcmin=theta_array_arcmin)
+                xi_yy_dict['bin'] = xitot_j1j2
+                xi_yy_dict['theta'] = theta_array
+                xi_result_dict['yy'] = xi_yy_dict
+
+        if ('gg' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gg' in PS_prepDV.stats_analyze_pairs)):
+            Cl_gg_dict = {}
+            if analysis_coords == 'real':
+                xi_gg_dict = {}
+            for j1 in bins_lens:
+                for j2 in bins_lens:
+                    if gg_doauto:
+                        if j1 == j2:
+                            runj1j2 = True
+                        else:
+                            runj1j2 = False
+                    else:
+                        runj1j2 = True
+                    if runj1j2:
+                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'g', PS_prepDV.l_array,
+                                                             PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                             PrepDV_params['ugl_zM_dict' + str(j2)])
+                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PS_prepDV.l_array,
+                                                             PrepDV_params['bgl_z_dict' + str(j1)],
+                                                             PrepDV_params['bgl_z_dict' + str(j2)])
+                        Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
+                        if j1 == j2:
+                            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
+                        else:
+                            Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+
+                        Cl_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,
+                                                                        'tot': Cltot_j1j2,
+                                                                        'tot_ellsurvey': Cltot_j1j2[
+                                                                            PS_prepDV.ind_select_survey],
+                                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                        PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                        if analysis_coords == 'real':
+                            xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                                      Cltot_j1j2,
+                                                                                      theta_array_arcmin=theta_array_arcmin)
+                            xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                            if 'theta' not in xi_gg_dict.keys():
+                                xi_gg_dict['theta'] = theta_array
+
+            Cl_result_dict['gg'] = Cl_gg_dict
+            if analysis_coords == 'real':
+                xi_result_dict['gg'] = xi_gg_dict
+
+        if ('gy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gy' in PS_prepDV.stats_analyze_pairs)):
+            Cl_gy_dict = {}
+            if analysis_coords == 'real':
+                xi_gy_dict = {}
+            for j1 in bins_lens:
+                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PS_prepDV.l_array,
+                                                     PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                     PrepDV_params['uyl_zM_dict'])
+                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PS_prepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
+                                                     PrepDV_params['byl_z_dict'])
+                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
+                Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                Cl_gy_dict['bin_' + str(j1)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                if analysis_coords == 'real':
+                    xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                              Cltot_j1j2,
+                                                                              theta_array_arcmin=theta_array_arcmin)
+                    xi_gy_dict['bin_' + str(j1)] = xitot_j1j2
+
+                    if 'theta' not in xi_kk_dict.keys():
+                        xi_gy_dict['theta'] = theta_array
+
+            Cl_result_dict['gy'] = Cl_gy_dict
+            Cl_result_dict['yg'] = Cl_gy_dict
+            if analysis_coords == 'real':
+                xi_result_dict['gy'] = xi_gy_dict
+
+        if ('gk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gk' in PS_prepDV.stats_analyze_pairs)):
+            Cl_gk_dict = {}
+            if analysis_coords == 'real':
+                xi_gk_dict = {}
+                xi_ggty_dict = {}
+            for j1 in bins_lens:
+                for j2 in bins_source:
+                    Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'k', PS_prepDV.l_array,
+                                                         PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                         PrepDV_params['ukl_zM_dict' + str(j2)])
+                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'k', PS_prepDV.l_array,
+                                                         PrepDV_params['bgl_z_dict' + str(j1)],
+                                                         PrepDV_params['ukl_zM_dict' + str(j2)])
+                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
+                    Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                    Cl_gk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                                    'tot_ellsurvey': Cltot_j1j2[
+                                                                        PS_prepDV.ind_select_survey],
+                                                                    'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                    PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                    if analysis_coords == 'real':
+                        xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                                  Cltot_j1j2,
+                                                                                  theta_array_arcmin=theta_array_arcmin)
+                        gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PS_prepDV.l_array,
+                                                                                   Cltot_j1j2,
+                                                                                   theta_array_arcmin=theta_array_arcmin)
+                        xi_gk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                        xi_ggty_dict['bin_' + str(j1) + '_' + str(j2)] = gt_tot_j1j2
+                        if 'theta' not in xi_kk_dict.keys():
+                            xi_gk_dict['theta'] = theta_array
+                            xi_ggty_dict['theta'] = theta_array
+
+            Cl_result_dict['gk'] = Cl_gk_dict
+            Cl_result_dict['kg'] = Cl_gk_dict
+            if analysis_coords == 'real':
+                xi_result_dict['gk'] = xi_gk_dict
+                xi_result_dict['gtg'] = xi_ggty_dict
+
+        if run_cov_pipe:
 
