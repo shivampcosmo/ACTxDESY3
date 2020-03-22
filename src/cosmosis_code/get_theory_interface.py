@@ -9,7 +9,7 @@ import copy
 import pdb
 import ast
 import scipy as sp
-from cross_corr_funcs_cosmosis import DataVec, general_hm
+from cross_corr_funcs_cosmosis import DataVec, general_hm, PrepDataVec
 from scipy import interpolate
 from scipy.interpolate import RegularGridInterpolator
 import multiprocessing
@@ -487,10 +487,10 @@ def execute(block, config):
             PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
 
             if 'uyl_zM_dict' not in PrepDV_dict_allbins.keys():
-                PrepDV_dict_allbins['uyl_zM_dict'] = PrepDV_fid.uyl_zM_dict
-                PrepDV_dict_allbins['byl_z_dict'] = PrepDV_fid.byl_z_dict
-                PrepDV_dict_allbins['uml_zM_dict'] = PrepDV_fid.uml_zM_dict
-                PrepDV_dict_allbins['bml_z_dict'] = PrepDV_fid.bml_z_dict
+                PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
+                PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
+                PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
+                PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
                 PrepDV_dict_allbins['PrepDV_fid'] = PrepDV_fid
                 PrepDV_dict_allbins['Cl_noise_yy_l_array'] = PrepDV_fid.Cl_noise_yy_l_array
                 PrepDV_dict_allbins['bins_source'] = bins_source
@@ -505,340 +505,341 @@ def execute(block, config):
                 PrepDV_dict_allbins['gg_doauto'] = gg_doauto
                 PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
 
-
+        DV = DataVec(PrepDV_dict_allbins)
+        import pdb; pdb.set_trace()
 
         # DV_fid.save_diag('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/')
         # pdb.set_trace()
 
 
 
-        block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
-        block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']
-        block[sec_save_name, 'theory_Clgk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['total']
-        block[sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['total']
-        block[sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['total']
-        block[sec_save_name, 'theory_Clyy'] = DV_fid.Cl_dict['yy']['total']
-
-        block[sec_save_name, 'theory_Clkk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['1h']
-        block[sec_save_name, 'theory_Clky1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['1h']
-        block[sec_save_name, 'theory_Clgg1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['1h']
-        block[sec_save_name, 'theory_Clgk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['1h']
-        block[sec_save_name, 'theory_Clgy1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['1h']
-        block[sec_save_name, 'theory_Clyy1h'] = DV_fid.Cl_dict['yy']['1h']
-
-        block[sec_save_name, 'theory_Clkk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['2h']
-        block[sec_save_name, 'theory_Clky2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['2h']
-        block[sec_save_name, 'theory_Clgg2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['2h']
-        block[sec_save_name, 'theory_Clgk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['2h']
-        block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
-        block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
-
-        block[sec_save_name, 'theory_ell'] = DV_fid.l_array
-        block[sec_save_name, 'theory_ell_survey'] = DV_fid.l_array_survey
-
-        if analysis_coords == 'real':
-            ti = time.time()
-            # block[sec_save_name, 'theory_wgg_bin_' + str(binv) + '_' + str(binv)], theta_array = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['total'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgy_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['total'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgk_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['total'],theta_array_arcmin=theta_array)
-            block[sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(
-                binv)], theta_array = DV_fid.do_Hankel_transform(0, DV_fid.l_array, DV_fid.Cl_dict['kk']['total'],
-                                                                 theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['total'],theta_array_arcmin=theta_array)
-            block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(
-                binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['ky']['total'],
-                                                                 theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_gt_bin_' + str(binv_lens) + '_' + str(
-            #     binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['gk']['total'],
-            #                                                      theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wyy'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['total'],theta_array_arcmin=theta_array)
-
-            if get_bp:
-                theta_array_all = np.logspace(np.log10(1.), np.log10(300.), 21)
-                theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-                xi_yk_2h = np.zeros_like(theta_array)
-                for j in range(len(theta_array)):
-                    xi_yk_2h[j] = DV_fid.get_xi_kappy_2h(theta_array[j])
-                block[sec_save_name, 'theory_gty_2h_bp_bin_' + str(binv) + '_' + str(binv)] = xi_yk_2h
-                block[sec_save_name, 'theory_gty_2h_bp_theta'] = theta_array
-                # import pdb; pdb.set_trace()
-
-            # block[sec_save_name, 'theory_wkk1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['kk']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wky1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgg1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgk1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgy1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(2,DV_fid.l_array,DV_fid.Cl_dict['ky']['1h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wyy1h'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['1h'],theta_array_arcmin=theta_array)
-            #
-            # block[sec_save_name, 'theory_wkk2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['kk']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wky2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgg2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgk2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgy2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(2,DV_fid.l_array,DV_fid.Cl_dict['ky']['2h'],theta_array_arcmin=theta_array)
-            # block[sec_save_name, 'theory_wyy2h'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['2h'],theta_array_arcmin=theta_array)
-
-            block[sec_save_name, 'theory_theta'] = theta_array
-
-            if verbose:
-                print('Calculating all Hankel took : ' + str(time.time() - ti) + 's')
-
-        # import pdb; pdb.set_trace()
-        if analysis_coords == 'fourier':
-            block[sec_save_name, 'theory_corrf_' + 'gg' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'gy' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'gk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_Clgk_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'kk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'ky' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'xcoord'] = block[sec_save_name, 'theory_ell']
-
-        if analysis_coords == 'real':
-            # block[sec_save_name, 'theory_corrf_' + 'gg' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgg_bin_' + str(binv) + '_' + str(binv)]
-            # block[sec_save_name, 'theory_corrf_' + 'gy' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgy_bin_' + str(binv) + '_' + str(binv)]
-            # block[sec_save_name, 'theory_corrf_' + 'gk' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgk_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'theory_corrf_' + 'kk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
-                sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(binv)]
-            # block[sec_save_name, 'theory_corrf_' + 'ky' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)]
-            # block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)]
-            block[sec_save_name, 'xcoord'] = block[sec_save_name, 'theory_theta']
-
-        if bool(save_cov_fname and save_cov_fname.strip()) or bool(save_block_fname and save_block_fname.strip()):
-            stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
-            cov_fid_dict_G = DV_fid.get_cov_G()
-            cov_fid_dict_NG = DV_fid.get_cov_NG()
-
-            j1 = 0
-            for stats in other_params_dict['stats_analyze']:
-
-                if stats == 'kk':
-                    block[sec_save_name, 'covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                        'kk' + '_' + 'kk']
-                    block[sec_save_name, 'covNG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
-                        'kk' + '_' + 'kk']
-                    block[sec_save_name, 'cov_total_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                                                                                                     'kk' + '_' + 'kk'] + \
-                                                                                                 cov_fid_dict_NG[
-                                                                                                     'kk' + '_' + 'kk']
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['kk' + '_' + 'kk'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full)))) / dl_array_full
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-                        # import pdb; pdb.set_trace()
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-                        block[sec_save_name, 'theory_theta_rad'] = theta_array
-
-                if stats == 'gg':
-                    block[sec_save_name, 'covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                        'gg' + '_' + 'gg']
-                    block[sec_save_name, 'covNG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
-                        'gg' + '_' + 'gg']
-                    block[sec_save_name, 'cov_total_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                                                                                                     'gg' + '_' + 'gg'] + \
-                                                                                                 cov_fid_dict_NG[
-                                                                                                     'gg' + '_' + 'gg']
-
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['gg' + '_' + 'gg'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-
-                    if do_use_measured_2pt:
-                        Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
-                            clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['data'][0] - \
-                            clf[('galaxy_density', 'galaxy_density')][(0, 0)]['random'][0][0]
-                        Cl_gg_data_bin = clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['data'][0] - \
-                                         clf[('galaxy_density', 'galaxy_density')][(0, 0)]['random'][0][0]
-                        cov_gg_bin = cov_fid_dict_G['gg' + '_' + 'gg'] + cov_fid_dict_NG['gg' + '_' + 'gg']
-                        inv_cov_bin = QR_inverse(cov_gg_bin)
-                        snr_bin = np.sqrt(
-                            np.dot(np.array([Cl_gg_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gg_data_bin]).T)))
-                        print('SNR gg bin:' + str(binv) + ', ' + str(zmin_array[binv - 1]) + '<z<' + str(
-                            zmax_array[binv - 1]) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
-
-                if stats == 'ky':
-                    block[sec_save_name, 'covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                        'ky' + '_' + 'ky']
-                    block[sec_save_name, 'covNG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
-                        'ky' + '_' + 'ky']
-                    block[sec_save_name, 'cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                                                                                                     'ky' + '_' + 'ky'] + \
-                                                                                                 cov_fid_dict_NG[
-                                                                                                     'ky' + '_' + 'ky']
-
-                    theory_yk = DV_fid.Cl_dict['ky']['total'][DV_fid.ind_select_survey]
-                    yk_cov = block[sec_save_name, 'cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)]
-                    inv_cov_bin = QR_inverse(yk_cov)
-                    snr_bin = np.sqrt(np.dot(np.array([theory_yk]), np.dot(inv_cov_bin, np.array([theory_yk]).T)))
-                    print(
-                        'SNR Gaussian Cl theory yk bin' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
-
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['ky' + '_' + 'ky'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-
-                        theta_array, cov_G_theta_j1j2_gt = DV_fid.get_covdiag_gammat(theta_min, theta_max,
-                                                                                     ntheta, l_array_full,
-                                                                                     cov_G_diag_lfull)
-                        block[
-                            sec_save_name, 'real_covG_gty_gty_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2_gt
-                        # pdb.set_trace()
-
-                if stats == 'gy':
-                    block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                        'gy' + '_' + 'gy']
-                    block[sec_save_name, 'covNG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
-                        'gy' + '_' + 'gy']
-                    block[sec_save_name, 'cov_total_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                                                                                                     'gy' + '_' + 'gy'] + \
-                                                                                                 cov_fid_dict_NG[
-                                                                                                     'gy' + '_' + 'gy']
-
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['gy' + '_' + 'gy'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-
-                    if do_use_measured_2pt:
-                        Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
-                            clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['data'][0]
-                        Cl_gy_data_bin = clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['data'][0]
-                        cov_gy_bin = cov_fid_dict_G['gy' + '_' + 'gy'] + cov_fid_dict_NG['gy' + '_' + 'gy']
-                        inv_cov_bin = QR_inverse(cov_gy_bin)
-                        snr_bin = np.sqrt(
-                            np.dot(np.array([Cl_gy_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gy_data_bin]).T)))
-                        print('SNR gy bin:' + str(binv) + ', ' + str(zmin_array[binv - 1]) + '<z<' + str(
-                            zmax_array[binv - 1]) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
-
-                if stats == 'gk':
-                    block[sec_save_name, 'covG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                        'gk' + '_' + 'gk']
-                    block[sec_save_name, 'covNG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
-                        'gk' + '_' + 'gk']
-                    block[sec_save_name, 'cov_total_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
-                                                                                                     'gk' + '_' + 'gk'] + \
-                                                                                                 cov_fid_dict_NG[
-                                                                                                     'gk' + '_' + 'gk']
-
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['gk' + '_' + 'gk'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
-
-                if binv == 1:
-                    block[sec_save_name, 'covG_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy']
-                    block[sec_save_name, 'covNG_yy_yy'] = cov_fid_dict_NG['yy' + '_' + 'yy']
-                    block[sec_save_name, 'cov_total_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy'] + cov_fid_dict_NG[
-                        'yy' + '_' + 'yy']
-
-                    if save_real_space_cov:
-                        cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
-                                                                 np.log(DV_fid.dl_array_survey * np.diag(
-                                                                     cov_fid_dict_G['yy' + '_' + 'yy'])),
-                                                                 fill_value=-100.0, bounds_error=False)
-
-                        l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
-                                                       np.log10(np.max(DV_fid.l_array_survey)),
-                                                       500000)
-                        dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
-                        l_array_full = l_array_full_all[1:]
-
-                        cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
-
-                        theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
-                                                                                  ntheta, l_array_full,
-                                                                                  cov_G_diag_lfull)
-                        block[sec_save_name, 'real_covG_yy_yy'] = cov_G_theta_j1j2
-
-                Cl_vec[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = DV_fid.Cl_dict[stats][
-                    'total']
-
-                j1 += 1
-
-        if binv == bins_numbers[-1]:
-            out_dict = {}
-            all_keys = block.keys()
-            for key in all_keys:
-                out_dict[key[1]] = block[key]
-
-            np.savez(save_block_fname, **out_dict)
-            import pdb;
-            pdb.set_trace()
+        # block[sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['total']
+        # block[sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['total']
+        # block[sec_save_name, 'theory_Clgk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['total']
+        # block[sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['total']
+        # block[sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['total']
+        # block[sec_save_name, 'theory_Clyy'] = DV_fid.Cl_dict['yy']['total']
+        #
+        # block[sec_save_name, 'theory_Clkk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['1h']
+        # block[sec_save_name, 'theory_Clky1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['1h']
+        # block[sec_save_name, 'theory_Clgg1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['1h']
+        # block[sec_save_name, 'theory_Clgk1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['1h']
+        # block[sec_save_name, 'theory_Clgy1h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['1h']
+        # block[sec_save_name, 'theory_Clyy1h'] = DV_fid.Cl_dict['yy']['1h']
+        #
+        # block[sec_save_name, 'theory_Clkk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['kk']['2h']
+        # block[sec_save_name, 'theory_Clky2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['ky']['2h']
+        # block[sec_save_name, 'theory_Clgg2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gg']['2h']
+        # block[sec_save_name, 'theory_Clgk2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gk']['2h']
+        # block[sec_save_name, 'theory_Clgy2h_bin_' + str(binv) + '_' + str(binv)] = DV_fid.Cl_dict['gy']['2h']
+        # block[sec_save_name, 'theory_Clyy2h'] = DV_fid.Cl_dict['yy']['2h']
+        #
+        # block[sec_save_name, 'theory_ell'] = DV_fid.l_array
+        # block[sec_save_name, 'theory_ell_survey'] = DV_fid.l_array_survey
+        #
+        # if analysis_coords == 'real':
+        #     ti = time.time()
+        #     # block[sec_save_name, 'theory_wgg_bin_' + str(binv) + '_' + str(binv)], theta_array = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['total'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgy_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['total'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgk_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['total'],theta_array_arcmin=theta_array)
+        #     block[sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(
+        #         binv)], theta_array = DV_fid.do_Hankel_transform(0, DV_fid.l_array, DV_fid.Cl_dict['kk']['total'],
+        #                                                          theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['total'],theta_array_arcmin=theta_array)
+        #     block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(
+        #         binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['ky']['total'],
+        #                                                          theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_gt_bin_' + str(binv_lens) + '_' + str(
+        #     #     binv)], theta_array = DV_fid.do_Hankel_transform(2, DV_fid.l_array, DV_fid.Cl_dict['gk']['total'],
+        #     #                                                      theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wyy'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['total'],theta_array_arcmin=theta_array)
+        #
+        #     if get_bp:
+        #         theta_array_all = np.logspace(np.log10(1.), np.log10(300.), 21)
+        #         theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+        #         xi_yk_2h = np.zeros_like(theta_array)
+        #         for j in range(len(theta_array)):
+        #             xi_yk_2h[j] = DV_fid.get_xi_kappy_2h(theta_array[j])
+        #         block[sec_save_name, 'theory_gty_2h_bp_bin_' + str(binv) + '_' + str(binv)] = xi_yk_2h
+        #         block[sec_save_name, 'theory_gty_2h_bp_theta'] = theta_array
+        #         # import pdb; pdb.set_trace()
+        #
+        #     # block[sec_save_name, 'theory_wkk1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['kk']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wky1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgg1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgk1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgy1h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(2,DV_fid.l_array,DV_fid.Cl_dict['ky']['1h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wyy1h'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['1h'],theta_array_arcmin=theta_array)
+        #     #
+        #     # block[sec_save_name, 'theory_wkk2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['kk']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wky2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['ky']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgg2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gg']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgk2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gk']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgy2h_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['gy']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)], _ = DV_fid.do_Hankel_transform(2,DV_fid.l_array,DV_fid.Cl_dict['ky']['2h'],theta_array_arcmin=theta_array)
+        #     # block[sec_save_name, 'theory_wyy2h'], _ = DV_fid.do_Hankel_transform(0,DV_fid.l_array,DV_fid.Cl_dict['yy']['2h'],theta_array_arcmin=theta_array)
+        #
+        #     block[sec_save_name, 'theory_theta'] = theta_array
+        #
+        #     if verbose:
+        #         print('Calculating all Hankel took : ' + str(time.time() - ti) + 's')
+        #
+        # # import pdb; pdb.set_trace()
+        # if analysis_coords == 'fourier':
+        #     block[sec_save_name, 'theory_corrf_' + 'gg' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_Clgg_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'theory_corrf_' + 'gy' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_Clgy_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'theory_corrf_' + 'gk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_Clgk_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'theory_corrf_' + 'kk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_Clkk_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'theory_corrf_' + 'ky' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_Clky_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'xcoord'] = block[sec_save_name, 'theory_ell']
+        #
+        # if analysis_coords == 'real':
+        #     # block[sec_save_name, 'theory_corrf_' + 'gg' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgg_bin_' + str(binv) + '_' + str(binv)]
+        #     # block[sec_save_name, 'theory_corrf_' + 'gy' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgy_bin_' + str(binv) + '_' + str(binv)]
+        #     # block[sec_save_name, 'theory_corrf_' + 'gk' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgk_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'theory_corrf_' + 'kk' + '_bin_' + str(binv) + '_' + str(binv)] = block[
+        #         sec_save_name, 'theory_wkk_bin_' + str(binv) + '_' + str(binv)]
+        #     # block[sec_save_name, 'theory_corrf_' + 'ky' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wky_bin_' + str(binv) + '_' + str(binv)]
+        #     # block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binv) + '_' + str(binv)] = block[sec_save_name, 'theory_wgty_bin_' + str(binv) + '_' + str(binv)]
+        #     block[sec_save_name, 'xcoord'] = block[sec_save_name, 'theory_theta']
+        #
+        # if bool(save_cov_fname and save_cov_fname.strip()) or bool(save_block_fname and save_block_fname.strip()):
+        #     stats_analyze_pairs_all = DV_fid.stats_analyze_pairs_all
+        #     cov_fid_dict_G = DV_fid.get_cov_G()
+        #     cov_fid_dict_NG = DV_fid.get_cov_NG()
+        #
+        #     j1 = 0
+        #     for stats in other_params_dict['stats_analyze']:
+        #
+        #         if stats == 'kk':
+        #             block[sec_save_name, 'covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                 'kk' + '_' + 'kk']
+        #             block[sec_save_name, 'covNG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+        #                 'kk' + '_' + 'kk']
+        #             block[sec_save_name, 'cov_total_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                                                                                              'kk' + '_' + 'kk'] + \
+        #                                                                                          cov_fid_dict_NG[
+        #                                                                                              'kk' + '_' + 'kk']
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['kk' + '_' + 'kk'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 # cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full)))) / dl_array_full
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #                 # import pdb; pdb.set_trace()
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_kk_kk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+        #                 block[sec_save_name, 'theory_theta_rad'] = theta_array
+        #
+        #         if stats == 'gg':
+        #             block[sec_save_name, 'covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                 'gg' + '_' + 'gg']
+        #             block[sec_save_name, 'covNG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+        #                 'gg' + '_' + 'gg']
+        #             block[sec_save_name, 'cov_total_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                                                                                              'gg' + '_' + 'gg'] + \
+        #                                                                                          cov_fid_dict_NG[
+        #                                                                                              'gg' + '_' + 'gg']
+        #
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['gg' + '_' + 'gg'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_gg_gg_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+        #
+        #             if do_use_measured_2pt:
+        #                 Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
+        #                     clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['data'][0] - \
+        #                     clf[('galaxy_density', 'galaxy_density')][(0, 0)]['random'][0][0]
+        #                 Cl_gg_data_bin = clf[('galaxy_density', 'galaxy_density')][(binv - 1, binv - 1)]['data'][0] - \
+        #                                  clf[('galaxy_density', 'galaxy_density')][(0, 0)]['random'][0][0]
+        #                 cov_gg_bin = cov_fid_dict_G['gg' + '_' + 'gg'] + cov_fid_dict_NG['gg' + '_' + 'gg']
+        #                 inv_cov_bin = QR_inverse(cov_gg_bin)
+        #                 snr_bin = np.sqrt(
+        #                     np.dot(np.array([Cl_gg_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gg_data_bin]).T)))
+        #                 print('SNR gg bin:' + str(binv) + ', ' + str(zmin_array[binv - 1]) + '<z<' + str(
+        #                     zmax_array[binv - 1]) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+        #
+        #         if stats == 'ky':
+        #             block[sec_save_name, 'covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                 'ky' + '_' + 'ky']
+        #             block[sec_save_name, 'covNG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+        #                 'ky' + '_' + 'ky']
+        #             block[sec_save_name, 'cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                                                                                              'ky' + '_' + 'ky'] + \
+        #                                                                                          cov_fid_dict_NG[
+        #                                                                                              'ky' + '_' + 'ky']
+        #
+        #             theory_yk = DV_fid.Cl_dict['ky']['total'][DV_fid.ind_select_survey]
+        #             yk_cov = block[sec_save_name, 'cov_total_ky_ky_bin_' + str(binv) + '_' + str(binv)]
+        #             inv_cov_bin = QR_inverse(yk_cov)
+        #             snr_bin = np.sqrt(np.dot(np.array([theory_yk]), np.dot(inv_cov_bin, np.array([theory_yk]).T)))
+        #             print(
+        #                 'SNR Gaussian Cl theory yk bin' + str(binv) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+        #
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['ky' + '_' + 'ky'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_ky_ky_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+        #
+        #                 theta_array, cov_G_theta_j1j2_gt = DV_fid.get_covdiag_gammat(theta_min, theta_max,
+        #                                                                              ntheta, l_array_full,
+        #                                                                              cov_G_diag_lfull)
+        #                 block[
+        #                     sec_save_name, 'real_covG_gty_gty_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2_gt
+        #                 # pdb.set_trace()
+        #
+        #         if stats == 'gy':
+        #             block[sec_save_name, 'covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                 'gy' + '_' + 'gy']
+        #             block[sec_save_name, 'covNG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+        #                 'gy' + '_' + 'gy']
+        #             block[sec_save_name, 'cov_total_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                                                                                              'gy' + '_' + 'gy'] + \
+        #                                                                                          cov_fid_dict_NG[
+        #                                                                                              'gy' + '_' + 'gy']
+        #
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['gy' + '_' + 'gy'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_gy_gy_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+        #
+        #             if do_use_measured_2pt:
+        #                 Cl_vec_data[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = \
+        #                     clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['data'][0]
+        #                 Cl_gy_data_bin = clf[('galaxy_density', 'ymap')][(binv - 1, 'y')]['data'][0]
+        #                 cov_gy_bin = cov_fid_dict_G['gy' + '_' + 'gy'] + cov_fid_dict_NG['gy' + '_' + 'gy']
+        #                 inv_cov_bin = QR_inverse(cov_gy_bin)
+        #                 snr_bin = np.sqrt(
+        #                     np.dot(np.array([Cl_gy_data_bin]), np.dot(inv_cov_bin, np.array([Cl_gy_data_bin]).T)))
+        #                 print('SNR gy bin:' + str(binv) + ', ' + str(zmin_array[binv - 1]) + '<z<' + str(
+        #                     zmax_array[binv - 1]) + '=' + str(np.round(snr_bin[0][0], 2)) + ' sigma')
+        #
+        #         if stats == 'gk':
+        #             block[sec_save_name, 'covG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                 'gk' + '_' + 'gk']
+        #             block[sec_save_name, 'covNG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_NG[
+        #                 'gk' + '_' + 'gk']
+        #             block[sec_save_name, 'cov_total_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_fid_dict_G[
+        #                                                                                              'gk' + '_' + 'gk'] + \
+        #                                                                                          cov_fid_dict_NG[
+        #                                                                                              'gk' + '_' + 'gk']
+        #
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['gk' + '_' + 'gk'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_gk_gk_bin_' + str(binv) + '_' + str(binv)] = cov_G_theta_j1j2
+        #
+        #         if binv == 1:
+        #             block[sec_save_name, 'covG_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy']
+        #             block[sec_save_name, 'covNG_yy_yy'] = cov_fid_dict_NG['yy' + '_' + 'yy']
+        #             block[sec_save_name, 'cov_total_yy_yy'] = cov_fid_dict_G['yy' + '_' + 'yy'] + cov_fid_dict_NG[
+        #                 'yy' + '_' + 'yy']
+        #
+        #             if save_real_space_cov:
+        #                 cov_G_diag_interp = interpolate.interp1d(np.log(DV_fid.l_array_survey),
+        #                                                          np.log(DV_fid.dl_array_survey * np.diag(
+        #                                                              cov_fid_dict_G['yy' + '_' + 'yy'])),
+        #                                                          fill_value=-100.0, bounds_error=False)
+        #
+        #                 l_array_full_all = np.logspace(np.log10(np.min(DV_fid.l_array_survey)),
+        #                                                np.log10(np.max(DV_fid.l_array_survey)),
+        #                                                500000)
+        #                 dl_array_full = l_array_full_all[1:] - l_array_full_all[:-1]
+        #                 l_array_full = l_array_full_all[1:]
+        #
+        #                 cov_G_diag_lfull = (np.exp(cov_G_diag_interp(np.log(l_array_full))))
+        #
+        #                 theta_array, cov_G_theta_j1j2 = DV_fid.get_covdiag_wtheta(theta_min, theta_max,
+        #                                                                           ntheta, l_array_full,
+        #                                                                           cov_G_diag_lfull)
+        #                 block[sec_save_name, 'real_covG_yy_yy'] = cov_G_theta_j1j2
+        #
+        #         Cl_vec[j1 * (nl * nbins) + (binv - 1) * nl:j1 * (nl * nbins) + binv * nl] = DV_fid.Cl_dict[stats][
+        #             'total']
+        #
+        #         j1 += 1
+        #
+        # if binv == bins_numbers[-1]:
+        #     out_dict = {}
+        #     all_keys = block.keys()
+        #     for key in all_keys:
+        #         out_dict[key[1]] = block[key]
+        #
+        #     np.savez(save_block_fname, **out_dict)
+        #     import pdb;
+        #     pdb.set_trace()
 
     return 0
 

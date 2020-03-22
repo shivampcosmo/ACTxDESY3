@@ -19,6 +19,7 @@ import itertools
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 # sys.path.insert(0, '../../helper/')
 import mycosmo as cosmodef
+from twobessel import *
 import LSS_funcs as hmf
 import plot_funcs as pf
 import multiprocessing
@@ -1591,6 +1592,10 @@ class PrepDataVec:
         for j in range(len(self.stats_analyze)):
             stat_analyze_temp += self.stats_analyze[j]
         self.lss_probes_analyze = list(set(list(stat_analyze_temp)))
+        self.lss_probes_allcomb = []
+        for js1 in range(len(self.lss_probes_analyze)):
+            for js2 in range(len(self.lss_probes_analyze)):
+                self.lss_probes_allcomb.append(self.lss_probes_analyze[js1] + self.lss_probes_analyze[js2])
 
         if 'uyl_zM_dict' in other_params.keys():
             uyl_zM_dict = other_params['uyl_zM_dict']
@@ -2396,7 +2401,8 @@ class CalcDataVec:
         # pdb.set_trace()
         return Cly_misc_l_final
 
-    def get_cov_G(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2, Cl_result_dict, fsky_dict):
+    def get_cov_G(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2,
+                  Cl_result_dict, fsky_dict):
 
         cov_dict_G = {}
 
@@ -2405,16 +2411,16 @@ class CalcDataVec:
         A, B = list(stats_analyze_1)
         C, D = list(stats_analyze_2)
         stats_pairs = [A + C, B + D, A + D, B + C]
-        bin_pairs = [[bin1_stat1, bin1_stat2],[bin2_stat1, bin2_stat2],[bin1_stat1, bin2_stat2],[bin2_stat1, bin1_stat2]]
+        bin_pairs = [[bin1_stat1, bin1_stat2], [bin2_stat1, bin2_stat2], [bin1_stat1, bin2_stat2],
+                     [bin2_stat1, bin1_stat2]]
         Cl_stats_dict = {}
-
 
         for j in range(len(stats_pairs)):
             stat = stats_pairs[j]
             bin_pair = bin_pairs[j]
             if stat == 'yy':
                 bin_key = 'bin'
-            if stat in ['ky','yk','gy','yg']:
+            if stat in ['ky', 'yk', 'gy', 'yg']:
                 if bin_pair[0] is None:
                     bin_key = 'bin_' + str(bin_pair[1])
                 else:
@@ -2434,31 +2440,23 @@ class CalcDataVec:
 
         return np.diag(val_diag)
 
-    def get_cov_NG(self):
-        # l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict
-        cov_dict_NG = {}
+    def get_cov_NG(self, l_array_survey, stats_analyze_1, stats_analyze_2, use_only_halos, fsky_dict, uAl_zM_dict,
+                   uBl_zM_dict, uCl_zM_dict, uDl_zM_dict):
+        A, B = list(stats_analyze_1)
+        C, D = list(stats_analyze_2)
 
-        for j in range(len(self.stats_analyze_pairs)):
-            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
+        if use_only_halos and (A + B + '_' + C + D != 'yy_yy'):
+            nl = len(l_array_survey)
+            val_NG = np.zeros((nl, nl))
+        else:
+            T_l_ABCD = self.get_T_ABCD_NG(l_array_survey, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict,
+                                          uDl_zM_dict)
+            fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
+            # pdb.set_trace()
+            # fsky_j = np.min(np.array([self.fsky[A + B] , self.fsky[C + D]]))
+            val_NG = (1. / (4. * np.pi * fsky_j)) * T_l_ABCD
 
-            A, B = list(stats_analyze_1)
-            C, D = list(stats_analyze_2)
-
-            if self.PS.use_only_halos and (A + B + '_' + C + D != 'yy_yy'):
-                nl = len(self.l_array_survey, )
-                val_NG = np.zeros((nl, nl))
-            else:
-                T_l_ABCD = self.PS.get_T_ABCD_l_array(self.l_array_survey, A, B, C, D, self.ugl_zM_dict,
-                                                      self.uyl_zM_dict, self.ukl_zM_dict)
-                fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
-                # pdb.set_trace()
-                # fsky_j = np.min(np.array([self.fsky[A + B] , self.fsky[C + D]]))
-                val_NG = (1. / (4. * np.pi * fsky_j)) * T_l_ABCD
-
-            cov_dict_NG[A + B + '_' + C + D] = val_NG
-            cov_dict_NG[C + D + '_' + A + B] = val_NG
-
-        return cov_dict_NG
+        return val_NG
 
     def do_Hankel_transform(self, nu, ell_array, Cell_array, theta_array_arcmin=None):
         l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
@@ -2482,136 +2480,39 @@ class DataVec:
     def __init__(self, PrepDV_params):
         self.CalcDV = CalcDataVec(PrepDV_params)
         PS_prepDV = PrepDV_params['PS']
-        run_cov_pipe = PrepDV_dict_allbins['run_cov_pipe']
-        bins_source = PrepDV_dict_allbins['bins_source']
-        bins_lens = PrepDV_dict_allbins['bins_lens']
-        analysis_coords = PrepDV_dict_allbins['analysis_coords']
-        theta_array_arcmin = PrepDV_dict_allbins['theta_array']
-        gg_doauto = PrepDV_dict_allbins['gg_doauto']
-        # stats_analyze_pairs = PS_prepDV.stats_analyze_pairs
-        Cl_result_dict = {'l_array': PS_prepDV.l_array, 'l_array_survey': PS_prepDV.l_array_survey,
-                          'ind_select_survey': PS_prepDV.ind_select_survey, 'dl_array_survey': PS_prepDV.dl_array_survey}
+        run_cov_pipe = PrepDV_params['run_cov_pipe']
+        bins_source = PrepDV_params['bins_source']
+        bins_lens = PrepDV_params['bins_lens']
+        analysis_coords = PrepDV_params['analysis_coords']
+        theta_array_arcmin = PrepDV_params['theta_array']
+        gg_doauto = PrepDV_params['gg_doauto']
+        fsky_dict = PrepDV_params['fsky_dict']
+        self.Cl_result_dict = {'l_array': PS_prepDV.l_array, 'l_array_survey': PS_prepDV.l_array_survey,
+                          'ind_select_survey': PS_prepDV.ind_select_survey,
+                          'dl_array_survey': PS_prepDV.dl_array_survey}
         if analysis_coords == 'real':
-            xi_result_dict = {}
-        if ('kk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('kk' in PS_prepDV.stats_analyze_pairs)):
+            self.xi_result_dict = {}
+        if ('kk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('kk' in PS_prepDV.lss_probes_allcomb)):
             Cl_kk_dict = {}
             if analysis_coords == 'real':
                 xi_kk_dict = {}
             for j1 in bins_source:
                 for j2 in bins_source:
-                    Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'k', PS_prepDV.l_array,
-                                                         PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                         PrepDV_params['ukl_zM_dict' + str(j2)])
-                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'k', PS_prepDV.l_array,
-                                                         PrepDV_params['bkl_z_dict' + str(j1)],
-                                                         PrepDV_params['bkl_z_dict' + str(j2)])
-                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'k', Cl1h_j1j2, Cl2h_j1j2)
-                    if j1 == j2:
-                        Cl_noise_ellsurvey = PrepDV_params['Cl_noise_kk_l_array' + str(j1)]
-                    else:
-                        Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
-                    Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
-                                                                    'tot_ellsurvey': Cltot_j1j2[
-                                                                        PS_prepDV.ind_select_survey],
-                                                                    'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                                    PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
-                    if analysis_coords == 'real':
-                        xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
-                                                                                  Cltot_j1j2,
-                                                                                  theta_array_arcmin=theta_array_arcmin)
-                        xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                        if 'theta' not in xi_kk_dict.keys():
-                            xi_kk_dict['theta'] = theta_array
-            Cl_result_dict['kk'] = Cl_kk_dict
-            if analysis_coords == 'real':
-                xi_result_dict['kk'] = xi_kk_dict
-
-        if ('ky' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('ky' in PS_prepDV.stats_analyze_pairs)):
-            Cl_ky_dict = {}
-            if analysis_coords == 'real':
-                # xi_ky_dict = {}
-                xi_gty_dict = {}
-            for j1 in bins_source:
-                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PS_prepDV.l_array,
-                                                     PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                     PrepDV_params['uyl_zM_dict'])
-                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PS_prepDV.l_array, PrepDV_params['bkl_z_dict' + str(j1)],
-                                                     PrepDV_params['byl_z_dict'])
-                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
-                Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
-
-                Cl_ky_dict['bin_' + str(j1)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
-                                                'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
-                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
-                if analysis_coords == 'real':
-                    # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
-                    #                                                           Cltot_j1j2,
-                    #                                                           theta_array_arcmin=theta_array_arcmin)
-                    gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PS_prepDV.l_array,
-                                                                               Cltot_j1j2,
-                                                                               theta_array_arcmin=theta_array_arcmin)
-                    # xi_ky_dict['bin_' + str(j1)] = xitot_j1j2
-                    xi_gty_dict['bin_' + str(j1)] = gt_tot_j1j2
-                    if 'theta' not in xi_kk_dict.keys():
-                        # xi_ky_dict['theta'] = theta_array
-                        xi_gty_dict['theta'] = theta_array
-            Cl_result_dict['ky'] = Cl_ky_dict
-            Cl_result_dict['yk'] = Cl_ky_dict
-            if analysis_coords == 'real':
-                # xi_result_dict['ky'] = xi_ky_dict
-                xi_result_dict['gty'] = xi_gty_dict
-
-        if ('yy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('yy' in PS_prepDV.stats_analyze_pairs)):
-            Cl_yy_dict = {}
-            Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('y', 'y', PS_prepDV.l_array, PrepDV_params['uyl_zM_dict'],
-                                                 PrepDV_params['uyl_zM_dict'])
-            Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('y', 'y', PS_prepDV.l_array, PrepDV_params['byl_z_dict'],
-                                                 PrepDV_params['byl_z_dict'])
-            Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('y', 'y', Cl1h_j1j2, Cl2h_j1j2)
-            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_yy_l_array']
-
-            Cl_yy_dict['bin'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
-                                 'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
-                                 'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                 PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
-            Cl_result_dict['yy'] = Cl_yy_dict
-            if analysis_coords == 'real':
-                xi_yy_dict = {}
-                xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
-                                                                          Cltot_j1j2,
-                                                                          theta_array_arcmin=theta_array_arcmin)
-                xi_yy_dict['bin'] = xitot_j1j2
-                xi_yy_dict['theta'] = theta_array
-                xi_result_dict['yy'] = xi_yy_dict
-
-        if ('gg' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gg' in PS_prepDV.stats_analyze_pairs)):
-            Cl_gg_dict = {}
-            if analysis_coords == 'real':
-                xi_gg_dict = {}
-            for j1 in bins_lens:
-                for j2 in bins_lens:
-                    if gg_doauto:
+                    bin_combs = []
+                    if j2 >= j1:
+                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'k', PS_prepDV.l_array,
+                                                             PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                             PrepDV_params['ukl_zM_dict' + str(j2)])
+                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'k', PS_prepDV.l_array,
+                                                             PrepDV_params['bkl_z_dict' + str(j1)],
+                                                             PrepDV_params['bkl_z_dict' + str(j2)])
+                        Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'k', Cl1h_j1j2, Cl2h_j1j2)
                         if j1 == j2:
-                            runj1j2 = True
-                        else:
-                            runj1j2 = False
-                    else:
-                        runj1j2 = True
-                    if runj1j2:
-                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'g', PS_prepDV.l_array,
-                                                             PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                             PrepDV_params['ugl_zM_dict' + str(j2)])
-                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PS_prepDV.l_array,
-                                                             PrepDV_params['bgl_z_dict' + str(j1)],
-                                                             PrepDV_params['bgl_z_dict' + str(j2)])
-                        Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
-                        if j1 == j2:
-                            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
+                            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_kk_l_array' + str(j1)]
                         else:
                             Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
-
-                        Cl_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,
+                        bin_combs.append([j1, j2])
+                        Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,
                                                                         'tot': Cltot_j1j2,
                                                                         'tot_ellsurvey': Cltot_j1j2[
                                                                             PS_prepDV.ind_select_survey],
@@ -2621,49 +2522,165 @@ class DataVec:
                             xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
                                                                                       Cltot_j1j2,
                                                                                       theta_array_arcmin=theta_array_arcmin)
-                            xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                            if 'theta' not in xi_gg_dict.keys():
-                                xi_gg_dict['theta'] = theta_array
-
-            Cl_result_dict['gg'] = Cl_gg_dict
+                            xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                            if 'theta' not in xi_kk_dict.keys():
+                                xi_kk_dict['theta'] = theta_array
+            Cl_kk_dict['bin_combs'] = bin_combs
+            self.Cl_result_dict['kk'] = Cl_kk_dict
             if analysis_coords == 'real':
-                xi_result_dict['gg'] = xi_gg_dict
+                xi_kk_dict['bin_combs'] = bin_combs
+                self.xi_result_dict['kk'] = xi_kk_dict
 
-        if ('gy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gy' in PS_prepDV.stats_analyze_pairs)):
+        if ('ky' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('ky' in PS_prepDV.lss_probes_allcomb)):
+            Cl_ky_dict = {}
+            if analysis_coords == 'real':
+                # xi_ky_dict = {}
+                xi_gty_dict = {}
+            bin_combs = []
+            for j1 in bins_source:
+                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PS_prepDV.l_array,
+                                                     PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                     PrepDV_params['uyl_zM_dict0'])
+                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PS_prepDV.l_array, PrepDV_params['bkl_z_dict' + str(j1)],
+                                                     PrepDV_params['byl_z_dict0'])
+                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
+                Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                bin_combs.append([j1, 0])
+                Cl_ky_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                       'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                                       'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                       PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                if analysis_coords == 'real':
+                    # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                    #                                                           Cltot_j1j2,
+                    #                                                           theta_array_arcmin=theta_array_arcmin)
+                    gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PS_prepDV.l_array,
+                                                                               Cltot_j1j2,
+                                                                               theta_array_arcmin=theta_array_arcmin)
+                    # xi_ky_dict['bin_' + str(j1)] = xitot_j1j2
+                    xi_gty_dict['bin_' + str(j1) + '_0'] = gt_tot_j1j2
+                    if 'theta' not in xi_kk_dict.keys():
+                        # xi_ky_dict['theta'] = theta_array
+                        xi_gty_dict['theta'] = theta_array
+            Cl_ky_dict['bin_combs'] = bin_combs
+            self.Cl_result_dict['ky'] = Cl_ky_dict
+            # Cl_result_dict['yk'] = Cl_ky_dict
+            if analysis_coords == 'real':
+                # xi_result_dict['ky'] = xi_ky_dict
+                xi_gty_dict['bin_combs'] = bin_combs
+                self.xi_result_dict['gty'] = xi_gty_dict
+
+        if ('yy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('yy' in PS_prepDV.lss_probes_allcomb)):
+            Cl_yy_dict = {}
+            Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('y', 'y', PS_prepDV.l_array, PrepDV_params['uyl_zM_dict0'],
+                                                 PrepDV_params['uyl_zM_dict0'])
+            Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('y', 'y', PS_prepDV.l_array, PrepDV_params['byl_z_dict0'],
+                                                 PrepDV_params['byl_z_dict0'])
+            Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('y', 'y', Cl1h_j1j2, Cl2h_j1j2)
+            Cl_noise_ellsurvey = PrepDV_params['Cl_noise_yy_l_array']
+
+            Cl_yy_dict['bin_0_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                     'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                     'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                     PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+            Cl_yy_dict['bin_combs'] = [[0, 0]]
+            self.Cl_result_dict['yy'] = Cl_yy_dict
+            if analysis_coords == 'real':
+                xi_yy_dict = {}
+                xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                          Cltot_j1j2,
+                                                                          theta_array_arcmin=theta_array_arcmin)
+                xi_yy_dict['bin_0_0'] = xitot_j1j2
+                xi_yy_dict['theta'] = theta_array
+                xi_yy_dict['bin_combs'] = [[0, 0]]
+                self.xi_result_dict['yy'] = xi_yy_dict
+
+        if ('gg' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gg' in PS_prepDV.lss_probes_allcomb)):
+            Cl_gg_dict = {}
+            if analysis_coords == 'real':
+                xi_gg_dict = {}
+            bin_combs = []
+            for j1 in bins_lens:
+                for j2 in bins_lens:
+                    if j1 >= j2:
+                        if gg_doauto:
+                            if j1 == j2:
+                                runj1j2 = True
+                            else:
+                                runj1j2 = False
+                        else:
+                            runj1j2 = True
+                        if runj1j2:
+                            Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'g', PS_prepDV.l_array,
+                                                                 PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                                 PrepDV_params['ugl_zM_dict' + str(j2)])
+                            Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PS_prepDV.l_array,
+                                                                 PrepDV_params['bgl_z_dict' + str(j1)],
+                                                                 PrepDV_params['bgl_z_dict' + str(j2)])
+                            Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
+                            if j1 == j2:
+                                Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
+                            else:
+                                Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                            bin_combs.append([j1, j2])
+                            Cl_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,
+                                                                            'tot': Cltot_j1j2,
+                                                                            'tot_ellsurvey': Cltot_j1j2[
+                                                                                PS_prepDV.ind_select_survey],
+                                                                            'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                            PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                            if analysis_coords == 'real':
+                                xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
+                                                                                          Cltot_j1j2,
+                                                                                          theta_array_arcmin=theta_array_arcmin)
+                                xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                                if 'theta' not in xi_gg_dict.keys():
+                                    xi_gg_dict['theta'] = theta_array
+            Cl_gg_dict['bin_combs'] = bin_combs
+            self.Cl_result_dict['gg'] = Cl_gg_dict
+            if analysis_coords == 'real':
+                xi_gg_dict['bin_combs'] = bin_combs
+                self.xi_result_dict['gg'] = xi_gg_dict
+
+        if ('gy' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gy' in PS_prepDV.lss_probes_allcomb)):
             Cl_gy_dict = {}
             if analysis_coords == 'real':
                 xi_gy_dict = {}
+            bin_combs = []
             for j1 in bins_lens:
                 Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PS_prepDV.l_array,
                                                      PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                     PrepDV_params['uyl_zM_dict'])
+                                                     PrepDV_params['uyl_zM_dict0'])
                 Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PS_prepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
-                                                     PrepDV_params['byl_z_dict'])
+                                                     PrepDV_params['byl_z_dict0'])
                 Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
                 Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
-                Cl_gy_dict['bin_' + str(j1)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
-                                                'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
-                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                bin_combs.append([j1, 0])
+                Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                                                       'tot_ellsurvey': Cltot_j1j2[PS_prepDV.ind_select_survey],
+                                                       'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                       PS_prepDV.ind_select_survey] + Cl_noise_ellsurvey}
                 if analysis_coords == 'real':
                     xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PS_prepDV.l_array,
                                                                               Cltot_j1j2,
                                                                               theta_array_arcmin=theta_array_arcmin)
-                    xi_gy_dict['bin_' + str(j1)] = xitot_j1j2
+                    xi_gy_dict['bin_' + str(j1) + '_0'] = xitot_j1j2
 
                     if 'theta' not in xi_kk_dict.keys():
                         xi_gy_dict['theta'] = theta_array
-
-            Cl_result_dict['gy'] = Cl_gy_dict
-            Cl_result_dict['yg'] = Cl_gy_dict
+            Cl_gy_dict['bin_combs'] = bin_combs
+            self.Cl_result_dict['gy'] = Cl_gy_dict
+            # Cl_result_dict['yg'] = Cl_gy_dict
             if analysis_coords == 'real':
-                xi_result_dict['gy'] = xi_gy_dict
+                xi_gy_dict['bin_combs'] = bin_combs
+                self.xi_result_dict['gy'] = xi_gy_dict
 
-        if ('gk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gk' in PS_prepDV.stats_analyze_pairs)):
+        if ('gk' in PS_prepDV.stats_analyze) or (run_cov_pipe and ('gk' in PS_prepDV.lss_probes_allcomb)):
             Cl_gk_dict = {}
             if analysis_coords == 'real':
                 xi_gk_dict = {}
-                xi_ggty_dict = {}
+                xi_gtg_dict = {}
+            bin_combs = []
             for j1 in bins_lens:
                 for j2 in bins_source:
                     Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'k', PS_prepDV.l_array,
@@ -2674,6 +2691,7 @@ class DataVec:
                                                          PrepDV_params['ukl_zM_dict' + str(j2)])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
                     Cl_noise_ellsurvey = np.zeros_like(PS_prepDV.l_array_survey)
+                    bin_combs.append([j1, j2])
                     Cl_gk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
                                                                     'tot_ellsurvey': Cltot_j1j2[
                                                                         PS_prepDV.ind_select_survey],
@@ -2687,16 +2705,153 @@ class DataVec:
                                                                                    Cltot_j1j2,
                                                                                    theta_array_arcmin=theta_array_arcmin)
                         xi_gk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                        xi_ggty_dict['bin_' + str(j1) + '_' + str(j2)] = gt_tot_j1j2
+                        xi_gtg_dict['bin_' + str(j1) + '_' + str(j2)] = gt_tot_j1j2
                         if 'theta' not in xi_kk_dict.keys():
                             xi_gk_dict['theta'] = theta_array
-                            xi_ggty_dict['theta'] = theta_array
-
-            Cl_result_dict['gk'] = Cl_gk_dict
-            Cl_result_dict['kg'] = Cl_gk_dict
+                            xi_gtg_dict['theta'] = theta_array
+            Cl_gk_dict['bin_combs'] = bin_combs
+            self.Cl_result_dict['gk'] = Cl_gk_dict
+            # Cl_result_dict['kg'] = Cl_gk_dict
             if analysis_coords == 'real':
-                xi_result_dict['gk'] = xi_gk_dict
-                xi_result_dict['gtg'] = xi_ggty_dict
+                xi_gk_dict['bin_combs'] = bin_combs
+                xi_gtg_dict['bin_combs'] = bin_combs
+                self.xi_result_dict['gk'] = xi_gk_dict
+                self.xi_result_dict['gtg'] = xi_gtg_dict
 
         if run_cov_pipe:
+            if analysis_coords == 'real':
+                isodd = 0
+                ell_temp = PS_prepDV.l_array_survey
+
+                if np.mod(len(ell_temp), 2) > 0:
+                    isodd = 1
+                    ell = ell_temp[:-1]
+                    # print(len(ell), len(ell_temp))
+                else:
+                    ell = ell_temp
+
+                print(np.mod(len(ell_temp), 2))
+                # ell = log_extrap(ell, 10,10)
+                nl = len(ell)
+                dlnk = np.log(ell[1] / ell[0])
+                ell_mat = np.tile(ell.reshape(nl, 1), (1, nl))
+                ell1_ell2 = ell_mat * ell_mat.T
+                self.fftcovtot_dict = {}
+
+            self.covG_dict = {}
+            self.covNG_dict = {}
+            self.covtot_dict = {}
+            if analysis_coords == 'real':
+                self.fftcovG_dict = {}
+                self.fftcovNG_dict = {}
+                self.fftcovtot_dict = {}
+
+            for j in range(len(PS_prepDV.stats_analyze_pairs)):
+                stats_analyze_1, stats_analyze_2 = PS_prepDV.stats_analyze_pairs[j]
+                if stats_analyze_1 in self.Cl_result_dict.keys():
+                    stats_analyze_1_ordered = stats_analyze_1
+                else:
+                    stats_analyze_1_ordered = list(stats_analyze_1)[1] + list(stats_analyze_1)[0]
+                bin_combs_stat1 = self.Cl_result_dict[stats_analyze_1_ordered]['bin_combs']
+                bins1_stat1 = []
+                bins2_stat1 = []
+                for jb in bin_combs_stat1:
+                    bins1_stat1.append(bin_combs_stat1[jb][0])
+                    bins2_stat1.append(bin_combs_stat1[jb][1])
+
+                if stats_analyze_2 in self.Cl_result_dict.keys():
+                    stats_analyze_2_ordered = stats_analyze_2
+                else:
+                    stats_analyze_2_ordered = list(stats_analyze_2)[1] + list(stats_analyze_2)[0]
+                bin_combs_stat2 = self.Cl_result_dict[stats_analyze_2_ordered]['bin_combs']
+                bins1_stat2 = []
+                bins2_stat2 = []
+                for jb in bin_combs_stat2:
+                    bins1_stat2.append(bin_combs_stat2[jb][0])
+                    bins2_stat2.append(bin_combs_stat2[jb][1])
+
+                covG_stat12 = {}
+                covNG_stat12 = {}
+                covtot_stat12 = {}
+                if analysis_coords == 'real':
+                    fftcovtot_stat12 = {}
+                    if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
+                        gtfftcovtot_stat12 = {}
+                bins_comb = []
+                for jb1 in range(len(bins1_stat1)):
+                    for jb2 in range(len(bins1_stat2)):
+                        covG = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
+                                                     bins2_stat2[jb2], stats_analyze_1_ordered, stats_analyze_2_ordered,
+                                                     self.Cl_result_dict, fsky_dict)
+
+                        A, B = list(stats_analyze_1_ordered)
+                        C, D = list(stats_analyze_2_ordered)
+
+                        uAl_zM_dict = PrepDV_params['u' + A + 'l_zM_dict' + str(bins1_stat1[jb1])]
+                        uBl_zM_dict = PrepDV_params['u' + B + 'l_zM_dict' + str(bins2_stat1[jb1])]
+                        uCl_zM_dict = PrepDV_params['u' + C + 'l_zM_dict' + str(bins1_stat2[jb2])]
+                        uDl_zM_dict = PrepDV_params['u' + D + 'l_zM_dict' + str(bins2_stat2[jb2])]
+
+                        covNG = self.CalcDV.get_cov_NG(PS_prepDV.l_array_survey, stats_analyze_1_ordered,
+                                                       stats_analyze_2_ordered, PS_prepDV.use_only_halos, fsky_dict,
+                                                       uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict)
+
+                        covtot = covG + covNG
+                        bin_key = 'bin_' + str(bins1_stat1[jb1]) + '_' + str(bins2_stat1[jb1]) + '_' + str(bins1_stat2[jb2]) + '_' + str(bins2_stat2[jb2])
+                        covG_stat12[bin_key] = covG
+                        covNG_stat12[bin_key] = covNG
+                        covtot_stat12[bin_key] = covtot
+                        bins_comb.append([bins1_stat1[jb1],bins2_stat1[jb1],bins1_stat2[jb2],bins2_stat2[jb2]])
+                        if analysis_coords == 'real':
+                            newtwobessel = two_Bessel(ell, ell, covtot * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
+                                                      nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
+                                                      c_window_width=0.25,
+                                                      N_pad=1000)
+                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
+                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                            cov_tot_fft = cov_fft[:,:-1][:-1,:]
+                            fftcovtot_stat12[bin_key] = cov_tot_fft
+
+                            if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
+                                t1, t2, covgt_fft = newtwobessel.two_Bessel_binave(2, 2, dlnk, dlnk)
+                                gtfftcovtot_stat12[bin_key] = covgt_fft[:,:-1][:-1,:]
+
+                            if 'theta' not in fftcovtot_stat12.keys():
+                                fftcovtot_stat12['theta'] = theta_vals_arcmin_fft
+
+                covG_stat12['bins_comb'] = bins_comb
+                covNG_stat12['bins_comb'] = bins_comb
+                covtot_stat12['bins_comb'] = bins_comb
+                if analysis_coords == 'real':
+                    fftcovtot_stat12['bins_comb'] = bins_comb
+                    if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
+                        gtfftcovtot_stat12['bins_comb'] = bins_comb
+                        stat_analyze_key = 'gty_gty'
+                        self.fftcovG_dict[stat_analyze_key] = covG_stat12
+                        self.fftcovNG_dict[stat_analyze_key] = covNG_stat12
+                        self.fftcovtot_dict[stat_analyze_key] = covtot_stat12
+
+                    self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
+                    self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
+                    self.fftcovtot_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covtot_stat12
+
+                self.covG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
+                self.covNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
+                self.covtot_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covtot_stat12
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
