@@ -2774,8 +2774,8 @@ class DataVec:
             self.covNG_dict = {}
             self.covtot_dict = {}
             if analysis_coords == 'real':
-                self.fftcovG_dict = {}
-                self.fftcovNG_dict = {}
+                # self.fftcovG_dict = {}
+                # self.fftcovNG_dict = {}
                 self.fftcovtot_dict = {}
 
             for j in range(len(PrepDV.stats_analyze_pairs)):
@@ -2853,6 +2853,9 @@ class DataVec:
                             if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
                                 t1, t2, covgt_fft = newtwobessel.two_Bessel_binave(2, 2, dlnk, dlnk)
                                 gtfftcovtot_stat12[bin_key] = covgt_fft[:,:-1][:-1,:]
+                                theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                                if 'theta' not in gtfftcovtot_stat12.keys():
+                                    gtfftcovtot_stat12['theta'] = theta_vals_arcmin_fft
 
                             if 'theta' not in fftcovtot_stat12.keys():
                                 fftcovtot_stat12['theta'] = theta_vals_arcmin_fft
@@ -2865,13 +2868,11 @@ class DataVec:
                     if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
                         gtfftcovtot_stat12['bins_comb'] = bins_comb
                         stat_analyze_key = 'gty_gty'
-                        self.fftcovG_dict[stat_analyze_key] = covG_stat12
-                        self.fftcovNG_dict[stat_analyze_key] = covNG_stat12
-                        self.fftcovtot_dict[stat_analyze_key] = covtot_stat12
+                        self.fftcovtot_dict[stat_analyze_key] = gtfftcovtot_stat12
 
-                    self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
-                    self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
-                    self.fftcovtot_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covtot_stat12
+                    # self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
+                    # self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
+                    self.fftcovtot_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = fftcovtot_stat12
 
                 self.covG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
                 self.covNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
