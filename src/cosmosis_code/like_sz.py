@@ -45,7 +45,7 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
         for j in range(nbins):
             bin_j = bins_array[j]
 
-            corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+            corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(0))
             corrf_stat_temp = intspline(xcoord_array, corrf_stat)
             corrf_stat_f = corrf_stat_temp(xcoord_data[kbv])
             if len(corrf_theory_rdata) == 0:

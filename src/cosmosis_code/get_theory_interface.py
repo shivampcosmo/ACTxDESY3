@@ -9,7 +9,7 @@ import copy
 import pdb
 import ast
 import scipy as sp
-from cross_corr_funcs_cosmosis import DataVec, general_hm, PrepDataVec
+from cross_corr_funcs_cosmosis import Powerspec,DataVec, general_hm, PrepDataVec
 from scipy import interpolate
 from scipy.interpolate import RegularGridInterpolator
 import multiprocessing
@@ -236,6 +236,7 @@ def setup(options):
     twopt_file = ast.literal_eval(options.get_string(option_section, 'twopt_file','None'))
     do_use_measured_2pt = options.get_bool(option_section, "do_use_measured_2pt", default=False)
     get_bp = options.get_bool(option_section, "get_bp", default=False)
+    bp_model = options.get_string(option_section, "bp_model", default='linear')
     if do_use_measured_2pt:
         ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file,
                             twopt_file=twopt_file, get_bp=get_bp)
@@ -244,8 +245,8 @@ def setup(options):
 
     z_edges = ast.literal_eval(
         options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
-    bins_source = ast.literal_eval(options.get_string(option_section, "bins_source", default='[ 1 ]'))
-    bins_lens = options.get_int(option_section, "bins_lens", default='[ 1 ]')
+    bins_source = ast.literal_eval(options.get_string(option_section, "bins_source", default='[1]'))
+    bins_lens = ast.literal_eval(options.get_string(option_section, "bins_lens", default='[1]'))
     gg_doauto = options.get_bool(option_section, "gg_doauto", default=True)
     # if bins_lens is not None:
     #     bins_lens = int(bins_lens)
@@ -259,7 +260,7 @@ def setup(options):
 
     ntheta = options.get_int(option_section, "ntheta", default=0)
     # dlogtheta = ast.literal_eval(options.get_string(option_section, "dlogtheta", default=None))
-    dlogtheta = (options.get_string(option_section, "dlogtheta", default=None))
+    dlogtheta = options.get_string(option_section, "dlogtheta", default='')
     theta_min = options.get_double(option_section, "theta_min", default=1.0)
     theta_max = options.get_double(option_section, "theta_max", default=100.0)
     verbose = options.get_bool(option_section, "verbose", default=False)
@@ -267,7 +268,7 @@ def setup(options):
     returndict = {'bins_source': bins_source, 'bins_lens': bins_lens, 'z_edges': z_edges, 'twopt_file': twopt_file,
                   'sec_name': sec_name, 'sec_save_name': sec_save_name, 'save_cov_fname': save_cov_fname,
                   'save_block_fname': save_block_fname, 'save_real_space_cov': save_real_space_cov,
-                  'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'dlogtheta': dlogtheta,
+                  'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'bp_model':bp_model, 'dlogtheta': dlogtheta,
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
                   'verbose': verbose, 'gg_doauto':gg_doauto}
 
@@ -275,7 +276,6 @@ def setup(options):
 
 
 def execute(block, config):
-    # ini_info, bins_numbers, bins_lens, z_edges, twopt_file, sec_name, sec_save_name, save_cov_fname, save_block_fname, save_real_space_cov, do_use_measured_2pt, get_bp, dlogtheta, ntheta, theta_min, theta_max, analysis_coords, verbose = config
     ini_info, returndict = config
 
     bins_source, bins_lens, z_edges = returndict['bins_source'], returndict['bins_lens'], returndict['z_edges']
@@ -284,8 +284,8 @@ def execute(block, config):
     sec_name, sec_save_name, save_cov_fname, save_block_fname = returndict['sec_name'], returndict['sec_save_name'], \
                                                                 returndict['save_cov_fname'], returndict[
                                                                     'save_block_fname']
-    save_real_space_cov, do_use_measured_2pt, get_bp = returndict['save_real_space_cov'], returndict[
-        'do_use_measured_2pt'], returndict['get_bp']
+    save_real_space_cov, do_use_measured_2pt, get_bp, bp_model = returndict['save_real_space_cov'], returndict[
+        'do_use_measured_2pt'], returndict['get_bp'], returndict['bp_model']
     dlogtheta, ntheta, theta_min, theta_max = returndict['dlogtheta'], returndict['ntheta'], returndict['theta_min'], \
                                               returndict['theta_max']
     analysis_coords, verbose = returndict['analysis_coords'], returndict['verbose']
@@ -462,52 +462,76 @@ def execute(block, config):
                         other_params_dict['bkm_block_allinterp'] = bkm_block_allinterp
                         other_params_dict_bin['bkm_block_allinterp'] = bkm_block_allinterp
 
-            # import pdb; pdb.set_trace()
-            ti = time.time()
-            PrepDV_fid = PrepDataVec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
-            if verbose:
-                print('Setting up DV took : ' + str(time.time() - ti) + 's')
-
-            if 'uyl_zM_dict' not in other_params_dict.keys():
-                other_params_dict['uyl_zM_dict'] = PrepDV_fid.uyl_zM_dict
-                other_params_dict['byl_z_dict'] = PrepDV_fid.byl_z_dict
-
-            if 'uml_zM_dict' not in other_params_dict.keys():
-                other_params_dict['uml_zM_dict'] = PrepDV_fid.uml_zM_dict
-                other_params_dict['bml_z_dict'] = PrepDV_fid.bml_z_dict
-
-            # self.bgl_z_dict, self.bkl_z_dict
+            if get_bp:
+                PS = Powerspec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
+                if bp_model == 'const':
+                    bpz = block[sec_name, 'bp--' + str(binvs)]
+                    xi_ky_2h_array = np.zeros_like(theta_array)
+                    for jt in range(len(theta_array)):
+                        xi_ky_2h_array[jt] = PS.get_xi_kappy_2h(theta_array[jt], bpz_keVcm3=bpz,bp_model='const')
 
 
-            PrepDV_dict_allbins['ukl_zM_dict' + str(binvs)] = PrepDV_fid.ukl_zM_dict
-            PrepDV_dict_allbins['ugl_zM_dict' + str(binvl)] = PrepDV_fid.ugl_zM_dict
-            PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
-            PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
-            PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
-            PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
+                if bp_model == 'linear':
+                    bpz0 = block[sec_name, 'bpz0']
+                    bpalpha = block[sec_name, 'bpalpha']
+                    xi_ky_2h_array = np.zeros_like(theta_array)
+                    for jt in range(len(theta_array)):
+                        xi_ky_2h_array[jt] = PS.get_xi_kappy_2h(theta_array[jt], bpz0_keVcm3=bpz0, bpalpha=bpalpha,
+                                        bp_model='linear')
+                block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binvs) + '_' + str(0)] = xi_ky_2h_array
+                block[sec_save_name, 'xcoord'] = theta_array
+            else:
+                # import pdb; pdb.set_trace()
+                ti = time.time()
+                PrepDV_fid = PrepDataVec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
+                if verbose:
+                    print('Setting up DV took : ' + str(time.time() - ti) + 's')
 
-            if 'uyl_zM_dict' not in PrepDV_dict_allbins.keys():
-                PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
-                PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
-                PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
-                PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
-                PrepDV_dict_allbins['PrepDV_fid'] = PrepDV_fid
-                PrepDV_dict_allbins['Cl_noise_yy_l_array'] = PrepDV_fid.Cl_noise_yy_l_array
-                PrepDV_dict_allbins['bins_source'] = bins_source
-                PrepDV_dict_allbins['bins_lens'] = bins_lens
-                PrepDV_dict_allbins['run_cov_pipe'] = run_cov_pipe
-                PrepDV_dict_allbins['theta_min'] = theta_min
-                PrepDV_dict_allbins['theta_max'] = theta_max
-                PrepDV_dict_allbins['ntheta'] = ntheta
-                PrepDV_dict_allbins['theta_array'] = theta_array
-                PrepDV_dict_allbins['theta_array_all'] = theta_array_all
-                PrepDV_dict_allbins['analysis_coords'] = analysis_coords
-                PrepDV_dict_allbins['gg_doauto'] = gg_doauto
-                PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
+                if 'uyl_zM_dict' not in other_params_dict.keys():
+                    other_params_dict['uyl_zM_dict'] = PrepDV_fid.uyl_zM_dict
+                    other_params_dict['byl_z_dict'] = PrepDV_fid.byl_z_dict
 
-        DV = DataVec(PrepDV_dict_allbins)
-        import pdb; pdb.set_trace()
+                if 'uml_zM_dict' not in other_params_dict.keys():
+                    other_params_dict['uml_zM_dict'] = PrepDV_fid.uml_zM_dict
+                    other_params_dict['bml_z_dict'] = PrepDV_fid.bml_z_dict
 
+                # self.bgl_z_dict, self.bkl_z_dict
+
+
+                PrepDV_dict_allbins['ukl_zM_dict' + str(binvs)] = PrepDV_fid.ukl_zM_dict
+                PrepDV_dict_allbins['ugl_zM_dict' + str(binvl)] = PrepDV_fid.ugl_zM_dict
+                PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
+                PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
+                PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
+                PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
+
+                if 'uyl_zM_dict' not in PrepDV_dict_allbins.keys():
+                    PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
+                    PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
+                    PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
+                    PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
+                    PrepDV_dict_allbins['PrepDV_fid'] = PrepDV_fid
+                    PrepDV_dict_allbins['Cl_noise_yy_l_array'] = PrepDV_fid.Cl_noise_yy_l_array
+                    PrepDV_dict_allbins['bins_source'] = bins_source
+                    PrepDV_dict_allbins['bins_lens'] = bins_lens
+                    PrepDV_dict_allbins['run_cov_pipe'] = run_cov_pipe
+                    PrepDV_dict_allbins['theta_min'] = theta_min
+                    PrepDV_dict_allbins['theta_max'] = theta_max
+                    PrepDV_dict_allbins['ntheta'] = ntheta
+                    PrepDV_dict_allbins['theta_array'] = theta_array
+                    PrepDV_dict_allbins['theta_array_all'] = theta_array_all
+                    PrepDV_dict_allbins['analysis_coords'] = analysis_coords
+                    PrepDV_dict_allbins['gg_doauto'] = gg_doauto
+                    PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
+                    PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
+
+
+    DV = DataVec(PrepDV_dict_allbins)
+    with open(save_cov_fname,'wb') as f:
+        dill.dump(DV,f)
+
+    import pdb; pdb.set_trace()
+    return 0
         # DV_fid.save_diag('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/')
         # pdb.set_trace()
 
@@ -841,7 +865,7 @@ def execute(block, config):
         #     import pdb;
         #     pdb.set_trace()
 
-    return 0
+
 
 
 def cleanup(config):
