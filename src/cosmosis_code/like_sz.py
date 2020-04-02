@@ -52,6 +52,8 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
                 corrf_theory_rdata = corrf_stat_f
             else:
                 corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_stat_f))
+            kbv += 1
+            # import pdb; pdb.set_trace()
 
     # if stat_type == 'gy':
     #     nbins = len(bins_array)
@@ -280,7 +282,7 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, xcoord_data_array, corrf_data
     xcoord_data_comp = xcoord_data_all[selection]
     corrf_data_gtcut = corrf_data_full[selection]
     print('total number of data points=' + str(len(corrf_data_gtcut)))
-
+    # import pdb; pdb.set_trace()
     return corrf_data_gtcut, xcoord_data_comp, xcoord_data_comp_ll, incov_obs_comp, cov_obs_comp
 
 def import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, stat_type):
@@ -380,7 +382,7 @@ def import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_al
 
 
 def setup(options):
-    bins_all = ast.literal_eval(options.get_string(option_section, "bins_numbers", "[1, 2, 3, 4, 5]"))
+    bins_all = ast.literal_eval(options.get_string(option_section, "bins_source", "[1, 2, 3, 4, 5]"))
     bins_to_fit = ast.literal_eval(options.get_string(option_section, "bins_to_fit", "[1, 2, 3, 4, 5]"))
     xcoord_comp_min = ast.literal_eval(options.get_string(option_section, "xcoord_comp_min", "[0,0,0,0,0,0,0,0,0,0]"))
     xcoord_comp_max = ast.literal_eval(

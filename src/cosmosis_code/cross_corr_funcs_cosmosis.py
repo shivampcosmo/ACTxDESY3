@@ -15,7 +15,6 @@ from colossus.halo import mass_defs
 from colossus.halo import concentration
 import copy
 import itertools
-
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 # sys.path.insert(0, '../../helper/')
 import mycosmo as cosmodef
@@ -31,6 +30,9 @@ pi = np.pi
 
 
 class HOD:
+    """
+    Sets up the HOD class for the galaxies.
+    """
 
     def __init__(self, hod_params):
         self.hod_params = hod_params
@@ -89,6 +91,9 @@ class HOD:
 
 
 class Pressure:
+    """
+    Sets up the pressure profile functions.
+    """
     def __init__(self, cosmo_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
         self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
@@ -118,7 +123,7 @@ class Pressure:
             self.split_mass_bins_max = other_params['split_mass_bins_max']
             self.split_mass_bins_centers = other_params['split_mass_bins_centers']
 
-    # get generalized nfw profile for the pressure profile
+    # get generalized nfw profile for the pressure profile from Arnard et al 2010 paper
     def get_gnfwp_Arnaud10(self, x, M_mat_shape_nz_nm):
 
         params_names_gnfwp = copy.deepcopy(self.pressure_params_dict.keys())
@@ -1105,9 +1110,15 @@ class Powerspec:
 
         ng_zarray_source = other_params['ng_zarray_source']
         ng_value_source = other_params['ng_value_source']
-        ng_interp_source = interpolate.interp1d(ng_zarray_source, np.log(ng_value_source + 1e-40),
-                                                fill_value='extrapolate')
-        self.ng_array_source = np.exp(ng_interp_source(self.z_array))
+        # import pdb; pdb.set_trace()
+        if np.any(ng_value_source < 0.0):
+            ng_interp_source = interpolate.interp1d(ng_zarray_source, ng_value_source,
+                                                    fill_value=0.0, bounds_error=False)
+            self.ng_array_source = ng_interp_source(self.z_array)
+        else:
+            ng_interp_source = interpolate.interp1d(ng_zarray_source, np.log(ng_value_source + 1e-40),
+                                                    fill_value='extrapolate')
+            self.ng_array_source = np.exp(ng_interp_source(self.z_array))
 
         chi_lmat = np.tile(self.chi_array.reshape(len(self.z_array), 1), (1, len(self.z_array)))
         chi_smat = np.tile(self.chi_array.reshape(1, len(self.z_array)), (len(self.z_array), 1))
@@ -1145,10 +1156,11 @@ class Powerspec:
         m_e = const.m_e
         c = const.c
         coeff = sigmat / (m_e * (c ** 2))
-        oneMpc_h = (((10 ** 6) / self.PS.cosmo.h) * (u.pc).to(u.m)) * (u.m)
+        oneMpc_h = (((10 ** 6) / self.cosmo.h) * (u.pc).to(u.m)) * (u.m)
         const_coeff = ((coeff * oneMpc_h).to(((u.cm ** 3) / u.keV))).value
         theta_rad = theta_arcmin * (np.pi / 180.) * (1. / 60.)
         wp_chiz = np.zeros_like(self.z_array)
+
         for j in range(len(self.z_array)):
             wp_chiz[j] = np.exp(
                 self.wplin_interp.ev(np.log(self.z_array[j]), np.log(self.chi_array[j] * theta_rad)))
@@ -1157,7 +1169,7 @@ class Powerspec:
             bp_keVcm3 = bpz0_keVcm3 + bpalpha * self.z_array
         if bp_model == 'const':
             bp_keVcm3 = bpz_keVcm3
-        int_val = bp_keVcm3 * self.PS.dchi_dz_array * (self.PS.Wk_array / (1. + self.z_array)) * wp_chiz
+        int_val = bp_keVcm3 * self.dchi_dz_array * (self.Wk_array / (1. + self.z_array)) * wp_chiz
         value = const_coeff * sp.integrate.simps(int_val, self.z_array)
         # print('zmean=' + str(sp.integrate.simps(self.dchi_dz_array * self.Wk_array, self.z_array)))
         # import pdb; pdb.set_trace()
@@ -1230,7 +1242,6 @@ class Powerspec:
         #     uk_mat_normed = ukzm_mat * self.M_mat / self.rho_m_bar
         um_mat_normed = uml_zM_dict[round(l, 1)]
         coeff_mat = np.tile((self.Wk_array / self.chi_array ** 2).reshape(self.nz, 1), (1, self.nm))
-
         return coeff_mat * um_mat_normed
 
     # get spherical harmonic transform of the matter distribution
@@ -1303,265 +1314,6 @@ class Powerspec:
     def collect_uk(self, l_array, return_dict):
         for l in l_array:
             return_dict[round(l, 1)] = self.get_uk_l_zM(l)
-
-    #
-    # # 1-halo term of Cl galaxy-galaxy, eq 10 of Makiya et al
-    # def get_Cl_gg_1h(self, l, ugl_zM_dict1, ugl_zM_dict2):
-    #     if self.use_only_halos:
-    #         val = 0
-    #     else:
-    #         ugl_zM1 = ugl_zM_dict1[round(l, 1)]
-    #         ugl_zM2 = ugl_zM_dict2[round(l, 1)]
-    #         toint_M = (ugl_zM1 * ugl_zM2) * self.dndm_array * self.M_mat_cond_inbin
-    #         val_z = sp.integrate.simps(toint_M, self.M_array)
-    #         toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-    #         val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     return val
-    #
-    # # 2-halo term of Cl galaxy-galaxy, eq 11 of Makiya et al
-    # def get_Cl_gg_2h(self, l, bgl_z_dict1, bgl_z_dict2):
-    #     k_array = (l + 1. / 2.) / self.chi_array
-    #     bgl_z1 = bgl_z_dict1[round(l, 1)]
-    #     bgl_z2 = bgl_z_dict2[round(l, 1)]
-    #     toint_z = (bgl_z1 * bgl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # # 1-halo term of Cl y-y, eq 10 of Makiya et al
-    # def get_Cl_yy_1h(self, l, uyl_zM_dict1, uyl_zM_dict2):
-    #     # uyl_zM = self.get_uy_l_zM(l)
-    #     # self.uyl_zM_dict[l] = uyl_zM
-    #     uyl_zM1 = uyl_zM_dict1[round(l, 1)]
-    #     uyl_zM2 = uyl_zM_dict2[round(l, 1)]
-    #     toint_M = (uyl_zM1 * uyl_zM2) * self.dndm_array
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # # 2-halo term of Cl y-y, eq 11 of Makiya et al
-    # def get_Cl_yy_2h(self, l, byl_z_dict1, byl_z_dict2):
-    #     k_array = (l + 1. / 2.) / self.chi_array
-    #     byl_z1 = byl_z_dict1[round(l, 1)]
-    #     byl_z2 = byl_z_dict2[round(l, 1)]
-    #     # # print(l,[*byl_z_dict.keys()][0])
-    #     # if l in byl_z_dict.keys():
-    #     #     byl_z = byl_z_dict[l]
-    #     # else:
-    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
-    #     #     byl_z_dict[l] = byl_z
-    #     toint_z = (byl_z1 * byl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # def get_Cl_yg_1h(self, l, uyl_zM_dict, ugl_zM_dict):
-    #     # uyl_zM = self.uyl_zM_dict[l]
-    #     # ugl_zM = self.get_ug_l_zM(l)
-    #
-    #     ugl_zM = ugl_zM_dict[round(l, 1)]
-    #     uyl_zM = uyl_zM_dict[round(l, 1)]
-    #
-    #     toint_M = (uyl_zM * ugl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-    #
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-    #
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     return val
-    #
-    # def get_Cl_yg_2h(self, l, byl_z_dict, bgl_z_dict):
-    #     k_array = (l + 1. / 2.) / self.chi_array
-    #     # if l in byl_z_dict.keys():
-    #     #     byl_z = byl_z_dict[l]
-    #     # else:
-    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
-    #     #     byl_z_dict[l] = byl_z
-    #     # bgl_z = self.get_bg_l_z(l)
-    #     # bgl_z_dict[l] = bgl_z
-    #
-    #     byl_z = byl_z_dict[round(l, 1)]
-    #     bgl_z = bgl_z_dict[round(l, 1)]
-    #
-    #     toint_z = (byl_z * bgl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # def get_Cl_yk_1h(self, l, uyl_zM_dict, ukl_zM_dict):
-    #     ukl_zM = ukl_zM_dict[round(l, 1)]
-    #     uyl_zM = uyl_zM_dict[round(l, 1)]
-    #
-    #     # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-    #     toint_M = (uyl_zM * ukl_zM) * self.dndm_array
-    #
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-    #
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     return val
-    #
-    # def get_Cl_yk_2h(self, l, byl_z_dict, bkl_z_dict):
-    #     # k_array = (l + 1. / 2.) / self.chi_array
-    #     # if l in byl_z_dict.keys():
-    #     #     byl_z = byl_z_dict[l]
-    #     # else:
-    #     #     byl_z = self.get_by_l_z(l, uyl_zM_dict)
-    #     #     byl_z_dict[l] = byl_z
-    #     #
-    #     #
-    #     # if l in bml_z_dict.keys():
-    #     #     bml_z = bml_z_dict[l]
-    #     # else:
-    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
-    #     #     bml_z_dict[l] = bml_z
-    #     #
-    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
-    #     # bkl_z_dict[l] = bkl_z
-    #
-    #     byl_z = byl_z_dict[round(l, 1)]
-    #     bkl_z = bkl_z_dict[round(l, 1)]
-    #
-    #     toint_z = (byl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # def get_Cl_kg_1h(self, l, ukl_zM_dict, ugl_zM_dict):
-    #     ukl_zM = ukl_zM_dict[round(l, 1)]
-    #     ugl_zM = ugl_zM_dict[round(l, 1)]
-    #
-    #     # toint_M = (uyl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-    #     toint_M = (ugl_zM * ukl_zM) * self.dndm_array
-    #
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-    #
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     return val
-    #
-    # def get_Cl_kg_2h(self, l, bkl_z_dict, bgl_z_dict):
-    #     k_array = (l + 1. / 2.) / self.chi_array
-    #     # bgl_z = self.get_bg_l_z(l)
-    #     # if l not in bml_z_dict.keys():
-    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
-    #     #     bml_z_dict[l] = bml_z
-    #     #
-    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
-    #
-    #     bgl_z = bgl_z_dict[round(l, 1)]
-    #     bkl_z = bkl_z_dict[round(l, 1)]
-    #
-    #     # bkl_z_dict[l] = bkl_z
-    #     # bgl_z_dict[l] = bgl_z
-    #     toint_z = (bgl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    # def get_Cl_kk_1h(self, l, ukl_zM_dict1, ukl_zM_dict2):
-    #     ukl_zM1 = ukl_zM_dict1[round(l, 1)]
-    #     ukl_zM2 = ukl_zM_dict2[round(l, 1)]
-    #
-    #     # toint_M = (ukl_zM * ukl_zM) * self.dndm_array * self.M_mat_cond_inbin * self.int_prob
-    #     toint_M = (ukl_zM1 * ukl_zM2) * self.dndm_array
-    #
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     # toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array * self.z_array_cond_inbin
-    #     toint_z = val_z * (self.chi_array ** 2) * self.dchi_dz_array
-    #
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     return val
-    #
-    # def get_Cl_kk_2h(self, l, bkl_z_dict1, bkl_z_dict2):
-    #     # k_array = (l + 1. / 2.) / self.chi_array
-    #     # if l in bml_z_dict.keys():
-    #     #     bml_z = bml_z_dict[l]
-    #     # else:
-    #     #     bml_z = self.get_bm_l_z(l, uml_zM_dict)
-    #     #     bml_z_dict[l] = bml_z
-    #     #
-    #     # bkl_z = self.get_bk_l_z( l, bml_z_dict)
-    #     # toint_z = (bkl_z * bkl_z) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #     #     self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array))) * self.z_array_cond_inbin
-    #
-    #     bkl_z1 = bkl_z_dict1[round(l, 1)]
-    #     bkl_z2 = bkl_z_dict2[round(l, 1)]
-    #
-    #     toint_z = (bkl_z1 * bkl_z2) * (self.chi_array ** 2) * self.dchi_dz_array * np.exp(
-    #         self.pkzlin_interp.ev(np.log(self.z_array), np.log(k_array)))
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #     return val
-    #
-    #
-    # def get_Cl_yg_beamed(self, l_array, Cl_yg):
-    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-    #         Cl_yg = Cl_yg * Bl
-    #     return Cl_yg
-    #
-    # def get_Cl_yk_beamed(self, l_array, Cl_yk):
-    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-    #         Cl_yk = Cl_yk * Bl
-    #     return Cl_yk
-    #
-    # def get_Cl_yy_beamed(self, l_array, Cl_yy):
-    #     if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-    #         sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-    #         Bl = np.exp(-1. * l_array * (l_array + 1) * (sig_beam ** 2) / 2.)
-    #         Cl_yy = Cl_yy * (Bl ** 2)
-    #     return Cl_yy
-    #
-    #
-    # # See Makiya paper
-    # def get_T_ABCD_l_array(self, l_array_all, A, B, C, D, ugl_zM_dict, uyl_zM_dict, ukl_zM_dict):
-    #     nl = len(l_array_all)
-    #
-    #     ul_g_mat, ul_y_mat, ul_k_mat = np.zeros((nl, self.nz, self.nm)), np.zeros((nl, self.nz, self.nm)), np.zeros(
-    #         (nl, self.nz, self.nm))
-    #     for j in range(nl):
-    #         ul_g_mat[j, :, :] = ugl_zM_dict[round(l_array_all[j], 1)]
-    #         ul_y_mat[j, :, :] = uyl_zM_dict[round(l_array_all[j], 1)]
-    #         ul_k_mat[j, :, :] = ukl_zM_dict[round(l_array_all[j], 1)]
-    #
-    #     u_ABCD_dict = {}
-    #     if 'g' in [A, B, C, D]:
-    #         u_ABCD_dict['g'] = ul_g_mat
-    #     if 'y' in [A, B, C, D]:
-    #         u_ABCD_dict['y'] = ul_y_mat
-    #     if 'k' in [A, B, C, D]:
-    #         u_ABCD_dict['k'] = ul_k_mat
-    #
-    #     uAl1_uBl1 = u_ABCD_dict[A] * u_ABCD_dict[B]
-    #     uCl2_uDl2 = u_ABCD_dict[C] * u_ABCD_dict[D]
-    #     uAl1_uBl1_mat = np.tile(uAl1_uBl1.reshape(1, nl, self.nz, self.nm), (nl, 1, 1, 1))
-    #     uCl2_uDl2_mat = np.tile(uCl2_uDl2.reshape(nl, 1, self.nz, self.nm), (1, nl, 1, 1))
-    #     dndm_array_mat = np.tile(self.dndm_array.reshape(1, 1, self.nz, self.nm), (nl, nl, 1, 1))
-    #     if 'g' in [A, B, C, D]:
-    #         toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
-    #     else:
-    #         toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
-    #     val_z = sp.integrate.simps(toint_M, self.M_array)
-    #     chi2_array_mat = np.tile((self.chi_array ** 2).reshape(1, 1, self.nz), (nl, nl, 1))
-    #     dchi_dz_array_mat = np.tile(self.dchi_dz_array.reshape(1, 1, self.nz), (nl, nl, 1))
-    #     toint_z = val_z * chi2_array_mat * dchi_dz_array_mat
-    #     val = sp.integrate.simps(toint_z, self.z_array)
-    #
-    #     if self.use_only_halos:
-    #         if (A + B + C + D not in [''.join(elem) for elem in list(set(list(itertools.permutations('gyyy'))))]) and (
-    #                 A + B + C + D != 'yyyy'):
-    #             val = np.zeros(val.shape)
-    #
-    #     return val
 
 
 class PrepDataVec:
@@ -1842,358 +1594,12 @@ class PrepDataVec:
         if self.verbose:
             print('finished prep of DV')
 
-        # import pdb; pdb.set_trace()
-        # ell_tosave = np.array([10,100,1000,5000])
-        # self.binv = other_params['binv']
-        #
-        # save_dict_kk_M = {'M':self.PS.M_array}
-        # save_dict_ky_M = {'M':self.PS.M_array}
-        # save_dict_ky_M2 = {'M': self.PS.M_array}
-        #
-        # save_dict_kk_z = {'z':self.PS.z_array}
-        # save_dict_ky_z = {'z':self.PS.z_array}
-        #
-        # for ell in ell_tosave:
-        #     ell_calc = l_array[np.where(l_array > ell)[0][0]]
-        #     dlnCl1h_ky_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #     dlnCl1h_ky_dlnM2 = self.PS.get_Cl_yk_dM_1h(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #     dlnCl1h_ky_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, uyl_zM_dict)
-        #
-        #     dlnCl1h_kk_dlnM = self.PS.get_dlnCl1h_AB_dlnM(ell_calc, ukl_zM_dict, ukl_zM_dict)
-        #     dlnCl1h_kk_dlnz = self.PS.get_dlnCl1h_AB_dlnz(ell_calc, ukl_zM_dict, ukl_zM_dict)
-        #
-        #     save_dict_kk_M[ell_calc] =  dlnCl1h_kk_dlnM
-        #     save_dict_kk_z[ell_calc] =  dlnCl1h_kk_dlnz
-        #
-        #     save_dict_ky_M[ell_calc] =  dlnCl1h_ky_dlnM
-        #     save_dict_ky_M2[ell_calc] = dlnCl1h_ky_dlnM2
-        #     save_dict_ky_z[ell_calc] =  dlnCl1h_ky_dlnz
-        #
-        # save_dict_kk = {'dlnCl_dM':save_dict_kk_M,'dlnCl_dz':save_dict_kk_z}
-        # save_dict_ky = {'dlnCl_dM2':save_dict_ky_M2,'dlnCl_dM':save_dict_ky_M,'dlnCl_dz':save_dict_ky_z}
-        # import pickle as pk
-        # pk.dump(save_dict_kk,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_kk_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
-        # pk.dump(save_dict_ky,open('/global/cfs/cdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/dlnCl_dMz/dlnCl_ky_dMz_bin_' + str(self.binv) + '_LeBrunAGN8.pk','wb'),protocol=2)
-        # import pdb; pdb.set_trace()
-
-        # print len(ugl_zM_dict.keys()), np.sort(np.array(ugl_zM_dict.keys()))
-        # print len(uyl_zM_dict.keys()), np.sort(np.array(uyl_zM_dict.keys()))
-
-        # global bgl_z_dict, byl_z_dict, bkl_z_dict,bml_z_dict
-        # bgl_z_dict,  bkl_z_dict = {}, {}
-        #
-        # if 'byl_z_dict' in other_params.keys():
-        #     byl_z_dict = other_params['byl_z_dict']
-        # else:
-        #     byl_z_dict = {}
-        #
-        # if 'bml_z_dict' in other_params.keys():
-        #     bml_z_dict = other_params['bml_z_dict']
-        # else:
-        #     bml_z_dict = {}
-        #
-        # if self.verbose:
-        #     print('getting Cl arrays for gg, gy and yy')
-        # starttime = time.time()
-        # Cl_gg_1h_array, Cl_gg_2h_array, Cl_yg_1h_array, Cl_yg_2h_array, Cl_yy_1h_array, Cl_yy_2h_array = np.zeros(
-        #     len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(
-        #     len(l_array)), np.zeros(len(l_array))
-        # Cl_kk_1h_array, Cl_kk_2h_array, Cl_yk_1h_array, Cl_yk_2h_array = np.zeros(
-        #     len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array)), np.zeros(len(l_array))
-        # Cl_kg_1h_array, Cl_kg_2h_array = np.zeros(len(l_array)), np.zeros(len(l_array))
-        #
-        # for j in range(len(l_array)):
-        #     if self.verbose:
-        #         if np.mod(j, 40) == 0:
-        #             print(j)
-        #
-        #     starttime0 = time.time()
-        #     Cl_gg_1h_array[j] = self.PS.get_Cl_gg_1h(l_array[j], self.ugl_zM_dict)
-        #     Cl_gg_2h_array[j] = self.PS.get_Cl_gg_2h(l_array[j])
-        #     if self.verbose:
-        #         print('gg took {} seconds'.format(time.time() - starttime0))
-        #         starttime0 = time.time()
-        #
-        #     Cl_yy_1h_array[j] = self.PS.get_Cl_yy_1h(l_array[j], self.uyl_zM_dict)
-        #     Cl_yy_2h_array[j] = self.PS.get_Cl_yy_2h(l_array[j], self.uyl_zM_dict)
-        #     if self.verbose:
-        #         print('yy took {} seconds'.format(time.time() - starttime0))
-        #         starttime0 = time.time()
-        #
-        #     Cl_yg_1h_array[j] = self.PS.get_Cl_yg_1h(l_array[j], self.ugl_zM_dict, self.uyl_zM_dict)
-        #     Cl_yg_2h_array[j] = self.PS.get_Cl_yg_2h(l_array[j], self.uyl_zM_dict)
-        #     if self.verbose:
-        #         print('yg took {} seconds'.format(time.time() - starttime0))
-        #         starttime0 = time.time()
-        #
-        #     Cl_yk_1h_array[j] = self.PS.get_Cl_yk_1h(l_array[j], self.ukl_zM_dict, self.uyl_zM_dict)
-        #     Cl_yk_2h_array[j] = self.PS.get_Cl_yk_2h(l_array[j], self.uml_zM_dict, self.uyl_zM_dict)
-        #     if self.verbose:
-        #         print('yk took {} seconds'.format(time.time() - starttime0))
-        #         starttime0 = time.time()
-        #
-        #     Cl_kk_1h_array[j] = self.PS.get_Cl_kk_1h(l_array[j], self.ukl_zM_dict)
-        #     Cl_kk_2h_array[j] = self.PS.get_Cl_kk_2h(l_array[j], self.uml_zM_dict)
-        #     if self.verbose:
-        #         print('kk took {} seconds'.format(time.time() - starttime0))
-        #         starttime0 = time.time()
-        #
-        #     Cl_kg_1h_array[j] = self.PS.get_Cl_kg_1h(l_array[j], self.ukl_zM_dict, self.ugl_zM_dict)
-        #     Cl_kg_2h_array[j] = self.PS.get_Cl_kg_2h(l_array[j], self.uml_zM_dict)
-        #     if self.verbose:
-        #         print('kg took {} seconds'.format(time.time() - starttime0))
-        #
-        #
-        # if self.verbose:
-        #     print('That took {} seconds'.format(time.time() - starttime))
-        #
-        # self.bgl_z_dict, self.byl_z_dict, self.bkl_z_dict, self.bml_z_dict = bgl_z_dict, byl_z_dict, bkl_z_dict, bml_z_dict
-        #
-        # # Cl_yg_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_1h_array)
-        # # Cl_yg_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yg_2h_array)
-        #
-        # # Cl_yk_1h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_1h_array)
-        # # Cl_yk_2h_array = self.PS.get_Cl_yg_beamed(l_array, Cl_yk_2h_array)
-        #
-        # # Cl_yy_1h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_1h_array)
-        # # Cl_yy_2h_array = self.PS.get_Cl_yy_beamed(l_array, Cl_yy_2h_array)
-
-        # if self.PS.fmis > 0:
-        #     Cl_yg_total = self.PS.get_Cl_yg_miscentered(l_array, Cl_yg_1h_array + Cl_yg_2h_array)
-        # else:
-        #     Cl_yg_total = Cl_yg_1h_array + Cl_yg_2h_array
-
-        # self.Cl_dict = {'gg': {'1h': Cl_gg_1h_array, '2h': Cl_gg_2h_array, 'total': Cl_gg_1h_array + Cl_gg_2h_array},
-        #                 'yy': {'1h': Cl_yy_1h_array, '2h': Cl_yy_2h_array, 'total': Cl_yy_1h_array + Cl_yy_2h_array},
-        #                 'yg': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
-        #                 'gy': {'1h': Cl_yg_1h_array, '2h': Cl_yg_2h_array, 'total': Cl_yg_total},
-        #                 'kk': {'1h': Cl_kk_1h_array, '2h': Cl_kk_2h_array, 'total': Cl_kk_1h_array + Cl_kk_2h_array},
-        #                 'yk': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
-        #                 'ky': {'1h': Cl_yk_1h_array, '2h': Cl_yk_2h_array, 'total': Cl_yk_1h_array + Cl_yk_2h_array},
-        #                 'kg': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array},
-        #                 'gk': {'1h': Cl_kg_1h_array, '2h': Cl_kg_2h_array, 'total': Cl_kg_1h_array + Cl_kg_2h_array}}
-
-    def get_Cl_vector(self):
-
-        Cl_vec = []
-
-        for j in range(len(self.stats_analyze)):
-            if len(Cl_vec) == 0:
-                Cl_vec = self.Cl_dict[self.stats_analyze[j]]['total'][self.ind_select_survey]
-            else:
-                Cl_vec = np.hstack((Cl_vec, self.Cl_dict[self.stats_analyze[j]]['total'][self.ind_select_survey]))
-
-        return Cl_vec
-
-    def get_cov_G(self):
-
-        cov_dict_G = {}
-
-        for j in range(len(self.stats_analyze_pairs)):
-            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
-            A, B = list(stats_analyze_1)
-            C, D = list(stats_analyze_2)
-            stats_pairs = [A + C, B + D, A + D, B + C]
-            Cl_stats_dict = {}
-
-            for stat in stats_pairs:
-                if stat == 'yy':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_yy_l_array
-                elif stat == 'gg':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_gg_l_array
-                elif stat == 'kk':
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey] + self.Cl_noise_kk_l_array
-                else:
-                    Cl_stats_dict[stat] = self.Cl_dict[stat]['total'][self.ind_select_survey]
-            # import pdb;pdb.set_trace()
-            fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
-
-            val_diag = (1. / (fsky_j * (2 * self.l_array_survey + 1.) * self.dl_array_survey)) * (
-                    Cl_stats_dict[A + C] * Cl_stats_dict[B + D] + Cl_stats_dict[A + D] * Cl_stats_dict[B + C])
-
-            cov_dict_G[A + B + '_' + C + D] = np.diag(val_diag)
-            cov_dict_G[C + D + '_' + A + B] = np.diag(val_diag)
-
-        return cov_dict_G
-
-    def get_cov_NG(self):
-
-        cov_dict_NG = {}
-
-        for j in range(len(self.stats_analyze_pairs)):
-            stats_analyze_1, stats_analyze_2 = self.stats_analyze_pairs[j]
-
-            A, B = list(stats_analyze_1)
-            C, D = list(stats_analyze_2)
-
-            if self.PS.use_only_halos and (A + B + '_' + C + D != 'yy_yy'):
-                nl = len(self.l_array_survey, )
-                val_NG = np.zeros((nl, nl))
-            else:
-                T_l_ABCD = self.PS.get_T_ABCD_l_array(self.l_array_survey, A, B, C, D, self.ugl_zM_dict,
-                                                      self.uyl_zM_dict, self.ukl_zM_dict)
-                fsky_j = np.sqrt(self.fsky[A + B] * self.fsky[C + D])
-                # pdb.set_trace()
-                # fsky_j = np.min(np.array([self.fsky[A + B] , self.fsky[C + D]]))
-                val_NG = (1. / (4. * np.pi * fsky_j)) * T_l_ABCD
-
-            cov_dict_NG[A + B + '_' + C + D] = val_NG
-            cov_dict_NG[C + D + '_' + A + B] = val_NG
-
-        return cov_dict_NG
-
-    def plot(self, plot_dir='./', cov_fid_dict_G=None, cov_fid_dict_NG=None):
-        pf.plot_Cls(self.l_array, self.Cl_dict, self.Cl_noise_yy_l_array, self.Cl_noise_gg_l_array, self.save_suffix,
-                    plot_dir, cov_fid_dict_G=cov_fid_dict_G, cov_fid_dict_NG=cov_fid_dict_NG,
-                    ind_select_survey=self.ind_select_survey)
-        return 0
-
-    def do_Hankel_transform(self, nu, ell_array, Cell_array, theta_array_arcmin=None):
-        l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
-        Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
-                                           bounds_error=False)
-        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
-        theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full, extrap=True)
-        xi_out *= (1 / (2 * np.pi))
-        theta_out_arcmin = theta_out * (180. / np.pi) * 60.
-        if theta_array_arcmin is not None:
-            xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
-                                             bounds_error=False)
-            xi_final = np.exp(xi_interp(np.log(theta_array_arcmin)))
-        else:
-            xi_final = xi_out
-            theta_array_arcmin = theta_out_arcmin
-        return xi_final, theta_array_arcmin
-
-
-    def save_diag(self, save_dir):
-        pdb.set_trace()
-        save_dict = {}
-        for l in self.ugl_zM_dict.keys(): save_dict[str(l)] = self.ugl_zM_dict[l]
-        np.savez(save_dir + 'ug_l_z_' + self.save_suffix + '.npz', **save_dict)
-        save_dict = {}
-        for l in self.uyl_zM_dict.keys(): save_dict[str(l)] = self.uyl_zM_dict[l]
-        np.savez(save_dir + 'uy_l_z_' + self.save_suffix + '.npz', **save_dict)
-        save_dict = {}
-        for l in self.ukl_zM_dict.keys(): save_dict[str(l)] = self.ukl_zM_dict[l]
-        np.savez(save_dir + 'uk_l_z_' + self.save_suffix + '.npz', **save_dict)
-        save_dict = {}
-        for l in self.bgl_z_dict.keys(): save_dict[str(l)] = self.bgl_z_dict[l]
-        np.savez(save_dir + 'bg_l_z_' + self.save_suffix + '.npz', **save_dict)
-        save_dict = {}
-        for l in self.byl_z_dict.keys(): save_dict[str(l)] = self.byl_z_dict[l]
-        np.savez(save_dir + 'by_l_z_' + self.save_suffix + '.npz', **save_dict)
-        save_dict = {}
-        for l in self.bkl_z_dict.keys(): save_dict[str(l)] = self.bkl_z_dict[l]
-        np.savez(save_dir + 'bk_l_z_' + self.save_suffix + '.npz', **save_dict)
-        dndm_bias_pklin_dict = {'dndm': self.PS.dndm_array, 'bm': self.PS.bm_array,
-                                'pklin_interp': self.PS.pkzlin_interp, 'M_array': self.PS.M_array,
-                                'z_array': self.PS.z_array}
-        np.savez(save_dir + 'dndm_bm_pk_' + self.save_suffix + '.npz', **dndm_bias_pklin_dict)
-        return 0
-
-    def get_covdiag_wtheta(self, theta_min, theta_max, ntheta, l_array, cov_diag):
-        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
-        dtheta_array = (theta_array_all[1:] - theta_array_all[:-1]) / 2.
-        theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-        theta_plus_array = theta_array + dtheta_array / 2.
-        theta_minus_array = theta_array - dtheta_array / 2.
-        ntheta = len(theta_array)
-        nl = len(l_array)
-
-        theta_array_rad = theta_array * (np.pi / 180.) * (1. / 60.)
-        dtheta_array_rad = dtheta_array * (np.pi / 180.) * (1. / 60.)
-        thetaplus_array_rad = theta_plus_array * (np.pi / 180.) * (1. / 60.)
-        thetaminus_array_rad = theta_minus_array * (np.pi / 180.) * (1. / 60.)
-
-        # l_theta = (np.tile(l_array.reshape(1, nl), (ntheta, 1))) * (np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl)))
-        # J0_ltheta = sp.special.jv(0,l_theta)
-        # J0_ltheta_mat1 = np.tile(J0_ltheta.reshape(ntheta, 1, nl), (1, ntheta, 1))
-        # J0_ltheta_mat2 = np.tile(J0_ltheta.reshape( 1,ntheta, nl), (ntheta,1,  1))
-
-        l_mat = np.tile(l_array.reshape(1, nl), (ntheta, 1))
-        theta_mat = np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl))
-        dtheta_mat = np.tile(dtheta_array_rad.reshape(ntheta, 1), (1, nl))
-        thetaplus_mat = np.tile(thetaplus_array_rad.reshape(ntheta, 1), (1, nl))
-        thetaminus_mat = np.tile(thetaminus_array_rad.reshape(ntheta, 1), (1, nl))
-        l_thetaplus = l_mat * thetaplus_mat
-        l_thetaminus = l_mat * thetaminus_mat
-        J1_ltheta_plus = sp.special.jv(1, l_thetaplus)
-        J1_ltheta_minus = sp.special.jv(1, l_thetaminus)
-        J0_ltheta_binned = (1. / (l_mat * theta_mat * dtheta_mat)) * (
-                thetaplus_mat * J1_ltheta_plus - thetaminus_mat * J1_ltheta_minus)
-
-        J0_ltheta_binned_mat1 = np.tile(J0_ltheta_binned.reshape(ntheta, 1, nl), (1, ntheta, 1))
-        J0_ltheta_binned_mat2 = np.tile(J0_ltheta_binned.reshape(1, ntheta, nl), (ntheta, 1, 1))
-
-        cov_diag_mat = np.tile(cov_diag.reshape(1, 1, nl), (ntheta, ntheta, 1))
-        l_mat = np.tile(l_array.reshape(1, 1, nl), (ntheta, ntheta, 1))
-
-        integrand = (l_mat ** 2) * (J0_ltheta_binned_mat1 * J0_ltheta_binned_mat2) * cov_diag_mat
-        cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
-
-        # integrand2 = (l_mat ** 2) * (J0_ltheta_mat1 * J0_ltheta_mat2)  * cov_diag_mat
-        # cov_wtheta2 = (1. / (2 * np.pi) ** 2) * sp.integrate.simps(integrand2, l_array)
-
-        # pdb.set_trace()
-
-        return theta_array_rad, cov_wtheta
-
-    def get_covdiag_gammat(self, theta_min, theta_max, ntheta, l_array, cov_diag):
-        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
-        dtheta_array = (theta_array_all[1:] - theta_array_all[:-1]) / 2.
-        theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-        theta_plus_array = theta_array + dtheta_array / 2.
-        theta_minus_array = theta_array - dtheta_array / 2.
-        ntheta = len(theta_array)
-        nl = len(l_array)
-
-        theta_array_rad = theta_array * (np.pi / 180.) * (1. / 60.)
-        dtheta_array_rad = dtheta_array * (np.pi / 180.) * (1. / 60.)
-        thetaplus_array_rad = theta_plus_array * (np.pi / 180.) * (1. / 60.)
-        thetaminus_array_rad = theta_minus_array * (np.pi / 180.) * (1. / 60.)
-
-        l_mat = np.tile(l_array.reshape(1, nl), (ntheta, 1))
-        theta_mat = np.tile(theta_array_rad.reshape(ntheta, 1), (1, nl))
-        dtheta_mat = np.tile(dtheta_array_rad.reshape(ntheta, 1), (1, nl))
-        thetaplus_mat = np.tile(thetaplus_array_rad.reshape(ntheta, 1), (1, nl))
-        thetaminus_mat = np.tile(thetaminus_array_rad.reshape(ntheta, 1), (1, nl))
-        l_thetaplus = l_mat * thetaplus_mat
-        l_thetaminus = l_mat * thetaminus_mat
-
-        J2_ltheta_binned_coeff = (1. / ((l_mat ** 2) * theta_mat * dtheta_mat))
-        term1 = -2. * (sp.special.jv(0, l_thetaplus) - sp.special.jv(0, l_thetaminus))
-        term2 = -1. * l_mat * (
-                thetaplus_mat * sp.special.jv(1, l_thetaplus) - thetaminus_mat * sp.special.jv(1, l_thetaminus))
-        J2_ltheta_binned = J2_ltheta_binned_coeff * (term1 + term2)
-
-        J2_ltheta_binned_mat1 = np.tile(J2_ltheta_binned.reshape(ntheta, 1, nl), (1, ntheta, 1))
-        J2_ltheta_binned_mat2 = np.tile(J2_ltheta_binned.reshape(1, ntheta, nl), (ntheta, 1, 1))
-
-        cov_diag_mat = np.tile(cov_diag.reshape(1, 1, nl), (ntheta, ntheta, 1))
-        l_mat = np.tile(l_array.reshape(1, 1, nl), (ntheta, ntheta, 1))
-
-        integrand = (l_mat ** 2) * (J2_ltheta_binned_mat1 * J2_ltheta_binned_mat2) * cov_diag_mat
-        cov_wtheta = (1. / ((2 * np.pi) ** 2)) * sp.integrate.simps(integrand, l_array)
-
-        return theta_array_rad, cov_wtheta
 
 
 class CalcDataVec:
 
     def __init__(self, PrepDV_params):
         self.PS_prepDV = PrepDV_params['PrepDV_fid'].PS
-        # self.M_mat_cond_inbin = self.PS_prepDV.M_mat_cond_inbin
-        # self.z_array_cond_inbin = self.PS_prepDV.z_array_cond_inbin
-        # self.int_prob = self.PS_prepDV.int_prob
-        # self.dndm_array = self.PS_prepDV.dndm_array
-        # self.M_array = self.PS_prepDV.M_array
-        #
-        # self.chi_array = self.PS_prepDV.chi_array
-        # self.dchi_dz_array = self.PS_prepDV.dchi_dz_array
-        # self.z_array = self.PS_prepDV.z_array
-        # self.pkzlin_interp = self.PS_prepDV.pkzlin_interp
-        # self.use_only_halos = self.PS_prepDV.use_only_halos
 
     def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')
@@ -2494,7 +1900,7 @@ class CalcDataVec:
 
 
 class DataVec:
-    def __init__(self, PrepDV_params):
+    def __init__(self, PrepDV_params, block):
         self.CalcDV = CalcDataVec(PrepDV_params)
         PrepDV = PrepDV_params['PrepDV_fid']
         self.verbose = PrepDV_params['verbose']
@@ -2546,6 +1952,15 @@ class DataVec:
                             xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
                             if 'theta' not in xi_kk_dict.keys():
                                 xi_kk_dict['theta'] = theta_array
+                            if 'kk' in PrepDV.stats_analyze:
+                                block[sec_save_name, 'theory_corrf_' + 'kk' + '_' + 'bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                                block[sec_save_name, 'xcoord_' + 'kk' + '_' + 'bin_' + str(j1) + '_' + str(j2)] = theta_array
+                        else:
+                            if 'kk' in PrepDV.stats_analyze:
+                                block[sec_save_name, 'theory_corrf_' + 'kk' + '_' + 'bin_' + str(j1) + '_' + str(j2)] = Cltot_j1j2
+                                block[sec_save_name, 'xcoord_' + 'kk' + '_' + 'bin_' + str(j1) + '_' + str(j2)] = PrepDV.l_array
+
+
             Cl_kk_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['kk'] = Cl_kk_dict
             if analysis_coords == 'real':
@@ -2574,6 +1989,7 @@ class DataVec:
                                                        'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
                                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+
                 if analysis_coords == 'real':
                     # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                     #                                                           Cltot_j1j2,
@@ -2586,6 +2002,16 @@ class DataVec:
                     if 'theta' not in xi_kk_dict.keys():
                         # xi_ky_dict['theta'] = theta_array
                         xi_gty_dict['theta'] = theta_array
+                    if 'ky' in PrepDV.stats_analyze:
+                        block[
+                            sec_save_name, 'theory_corrf_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = gt_tot_j1j2
+                        block[sec_save_name, 'xcoord_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = theta_array
+                else:
+                    if 'ky' in PrepDV.stats_analyze:
+                        block[
+                            sec_save_name, 'theory_corrf_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = Cltot_j1j2
+                        block[sec_save_name, 'xcoord_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = PrepDV.l_array
+
             Cl_ky_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['ky'] = Cl_ky_dict
             # Cl_result_dict['yk'] = Cl_ky_dict
@@ -2621,6 +2047,17 @@ class DataVec:
                 xi_yy_dict['theta'] = theta_array
                 xi_yy_dict['bin_combs'] = [[0, 0]]
                 self.xi_result_dict['yy'] = xi_yy_dict
+
+                if 'yy' in PrepDV.stats_analyze:
+                    block[
+                        sec_save_name, 'theory_corrf_' + 'yy' + '_' + 'bin_' + str(0) + '_' + str(0)] = xitot_j1j2
+                    block[sec_save_name, 'xcoord_' + 'yy' + '_' + 'bin_' + str(0) + '_' + str(0)] = theta_array
+            else:
+                if 'yy' in PrepDV.stats_analyze:
+                    block[
+                        sec_save_name, 'theory_corrf_' + 'yy' + '_' + 'bin_' + str(0) + '_' + str(0)] = Cltot_j1j2
+                    block[sec_save_name, 'xcoord_' + 'yy' + '_' + 'bin_' + str(0) + '_' + str(0)] = PrepDV.l_array
+
 
             if self.verbose:
                 print('done y-y calculation')
@@ -2666,6 +2103,21 @@ class DataVec:
                                 xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
                                 if 'theta' not in xi_gg_dict.keys():
                                     xi_gg_dict['theta'] = theta_array
+
+                                if 'gg' in PrepDV.stats_analyze:
+                                    block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                        j2)] = xitot_j1j2
+
+                                    block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                        j2)] = theta_array
+                            else:
+                                if 'gg' in PrepDV.stats_analyze:
+                                    block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                        j2)] = Cltot_j1j2
+
+                                    block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                        j2)] = PrepDV.l_array
+
             Cl_gg_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['gg'] = Cl_gg_dict
             if analysis_coords == 'real':
@@ -2698,6 +2150,21 @@ class DataVec:
 
                     if 'theta' not in xi_kk_dict.keys():
                         xi_gy_dict['theta'] = theta_array
+
+                    if 'gy' in PrepDV.stats_analyze:
+                        block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                            0)] = xitot_j1j2
+
+                        block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                            0)] = theta_array
+                else:
+                    if 'gy' in PrepDV.stats_analyze:
+                        block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                            0)] = Cltot_j1j2
+
+                        block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                            0)] = PrepDV.l_array
+
             Cl_gy_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['gy'] = Cl_gy_dict
             # Cl_result_dict['yg'] = Cl_gy_dict
@@ -2739,6 +2206,23 @@ class DataVec:
                         if 'theta' not in xi_kk_dict.keys():
                             xi_gk_dict['theta'] = theta_array
                             xi_gtg_dict['theta'] = theta_array
+
+                        if 'gk' in PrepDV.stats_analyze:
+                            block[sec_save_name, 'theory_corrf_' + 'gtg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = gt_tot_j1j2
+                            block[sec_save_name, 'xcoord_' + 'gtg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = theta_array
+                            block[sec_save_name, 'theory_corrf_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = xitot_j1j2
+                            block[sec_save_name, 'xcoord_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = theta_array
+                    else:
+                        if 'gk' in PrepDV.stats_analyze:
+                            block[sec_save_name, 'theory_corrf_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = Cltot_j1j2
+                            block[sec_save_name, 'xcoord_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
+                                j2)] = PrepDV.l_array
+
             Cl_gk_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['gk'] = Cl_gk_dict
             # Cl_result_dict['kg'] = Cl_gk_dict
@@ -2811,6 +2295,10 @@ class DataVec:
                     fftcovtot_stat12 = {}
                     if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
                         gtfftcovtot_stat12 = {}
+                        isgtygty = True
+                    if ((stats_analyze_1_ordered == 'kk') and (stats_analyze_2_ordered == 'ky')) or ((stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'kk')):
+                        kkgtfftcovtot_stat12 = {}
+                        isgtykk = True
                 bins_comb = []
                 for jb1 in range(len(bins1_stat1)):
                     for jb2 in range(len(bins1_stat2)):
@@ -2850,12 +2338,19 @@ class DataVec:
                             cov_tot_fft = cov_fft[:,:-1][:-1,:]
                             fftcovtot_stat12[bin_key] = cov_tot_fft
 
-                            if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
+                            if isgtygty:
                                 t1, t2, covgt_fft = newtwobessel.two_Bessel_binave(2, 2, dlnk, dlnk)
                                 gtfftcovtot_stat12[bin_key] = covgt_fft[:,:-1][:-1,:]
                                 theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
                                 if 'theta' not in gtfftcovtot_stat12.keys():
                                     gtfftcovtot_stat12['theta'] = theta_vals_arcmin_fft
+
+                            if isgtykk:
+                                t1, t2, covgt_fft = newtwobessel.two_Bessel_binave(2, 0, dlnk, dlnk)
+                                kkgtfftcovtot_stat12[bin_key] = covgt_fft[:,:-1][:-1,:]
+                                theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                                if 'theta' not in kkgtfftcovtot_stat12.keys():
+                                    kkgtfftcovtot_stat12['theta'] = theta_vals_arcmin_fft
 
                             if 'theta' not in fftcovtot_stat12.keys():
                                 fftcovtot_stat12['theta'] = theta_vals_arcmin_fft
@@ -2865,10 +2360,15 @@ class DataVec:
                 covtot_stat12['bins_comb'] = bins_comb
                 if analysis_coords == 'real':
                     fftcovtot_stat12['bins_comb'] = bins_comb
-                    if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
+                    if isgtygty:
                         gtfftcovtot_stat12['bins_comb'] = bins_comb
                         stat_analyze_key = 'gty_gty'
                         self.fftcovtot_dict[stat_analyze_key] = gtfftcovtot_stat12
+
+                    if isgtykk:
+                        gtfftcovtot_stat12['bins_comb'] = bins_comb
+                        stat_analyze_key = 'gty_kk'
+                        self.fftcovtot_dict[stat_analyze_key] = kkgtfftcovtot_stat12
 
                     # self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
                     # self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
