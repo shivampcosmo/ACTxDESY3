@@ -9,7 +9,7 @@ import copy
 import pdb
 import ast
 import scipy as sp
-from cross_corr_funcs_cosmosis import Powerspec,DataVec, general_hm, PrepDataVec
+from cross_corr_funcs import Powerspec,DataVec, general_hm, PrepDataVec
 from scipy import interpolate
 from scipy.interpolate import RegularGridInterpolator
 import multiprocessing
