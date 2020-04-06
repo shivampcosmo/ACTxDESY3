@@ -473,10 +473,10 @@ def get_PkNL_zarray(z_mean_array, karr, current_cosmo=Planck15, Pklinz0=None):
     Omega_L = current_cosmo.Ode0
     Omlh2 = Omega_L * ((H0 / 100) ** 2)
 
-    if current_cosmo == 'MICEcosmo':
-        nsval = current_cosmo.ns
-    else:
-        nsval = 0.965
+    # if current_cosmo == 'MICEcosmo':
+    nsval = current_cosmo.ns
+    # else:
+    #     nsval = 0.965
 
     Pklinz_z0_test = get_Pklinz(0.0, karr, current_cosmo=current_cosmo)
 
@@ -591,6 +591,19 @@ def get_nfw_rm(r, m, halo_conc, rhovir):
 
     return rhorm
 
+
+def get_nfw_rm_full(r, m, halo_conc, rhovir):
+    # mstar = 0.2985*np.power(10,13)
+    c = halo_conc
+    rvir3 = 3 * m / (4 * np.pi * rhovir)
+    rvir = np.power(rvir3, 1. / 3.)
+
+    rs = rvir / c
+    rhos = m / (4 * np.pi * (rs ** 3) * (np.log(1 + c) - (c / (1 + c))))
+    denom = (r / rs) * ((1 + (r / rs)) * (1 + (r / rs)))
+    rhorm = rhos / denom
+
+    return rhorm
 
 # def rhoav(dndm, Marrh):
 #     valf = sp.integrate.simps(dndm * Marrh, Marrh)

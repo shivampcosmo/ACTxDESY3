@@ -530,6 +530,7 @@ def execute(block, config):
                     PrepDV_dict_allbins['gg_doauto'] = gg_doauto
                     PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
                     PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
+                    PrepDV_dict_allbins['sec_save_name'] = sec_save_name
 
     if not get_bp:
         DV = DataVec(PrepDV_dict_allbins, block)

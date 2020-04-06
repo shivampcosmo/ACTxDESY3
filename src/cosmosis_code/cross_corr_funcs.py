@@ -1911,6 +1911,7 @@ class DataVec:
         theta_array_arcmin = PrepDV_params['theta_array']
         gg_doauto = PrepDV_params['gg_doauto']
         fsky_dict = PrepDV_params['fsky_dict']
+        sec_save_name = PrepDV_params['sec_save_name']
         self.Cl_result_dict = {'l_array': PrepDV.l_array, 'l_array_survey': PrepDV.l_array_survey,
                           'ind_select_survey': PrepDV.ind_select_survey,
                           'dl_array_survey': PrepDV.dl_array_survey}
@@ -2291,6 +2292,7 @@ class DataVec:
                 covG_stat12 = {}
                 covNG_stat12 = {}
                 covtot_stat12 = {}
+                isgtykk, isgtygty = False, False
                 if analysis_coords == 'real':
                     fftcovtot_stat12 = {}
                     if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
@@ -2366,7 +2368,7 @@ class DataVec:
                         self.fftcovtot_dict[stat_analyze_key] = gtfftcovtot_stat12
 
                     if isgtykk:
-                        gtfftcovtot_stat12['bins_comb'] = bins_comb
+                        kkgtfftcovtot_stat12['bins_comb'] = bins_comb
                         stat_analyze_key = 'gty_kk'
                         self.fftcovtot_dict[stat_analyze_key] = kkgtfftcovtot_stat12
 
