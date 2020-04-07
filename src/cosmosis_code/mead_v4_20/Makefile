@@ -1,19 +1,20 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-all: libmhmcamb.a mead_interface_mod.so
+all: libmhmcamb_mod.a mead_interface_mod.so
 
-mead_interface_mod.so: libmhmcamb.a mead_interface_mod.f90
-	$(FC) $(FFLAGS) -shared -o $@ $+ -L. -lmhmcamb $(LDFLAGS) -lcosmosis_fortran -lcosmosis
+mead_interface_mod.so: libmhmcamb_mod.a mead_interface_mod.f90
+	$(FC) $(FFLAGS) -shared -o $@ $+ -L. -lmhmcamb_mod $(LDFLAGS) -lcosmosis_fortran -lcosmosis
 
 
 
-test: test.f90 libmhmcamb.a $(FC) $(FFLAGS) -o $@ $< -L. -lmhmcamb $(LDFLAGS)
+test: test.f90 libmhmcamb_mod.a $(FC) $(FFLAGS) -o $@ $< -L. -lmhmcamb_mod $(LDFLAGS)
 
 
 clean: 
-	rm -f mhmcamb 
+	rm -f mhmcamb_mod
 	rm -f libmhmcamb.a 
 	rm -f mhmcamb.o 
+	rm -f mhmcamb_mod.o 
 	rm -f mead_interface.so 
 	rm -f mead_interface_mod.so 
 	rm -rf test 
@@ -21,6 +22,6 @@ clean:
 	rm -rf *.dSYM/ 
 	rm -rf *.mod
 
-libmhmcamb.a: mhmcamb.f90
+libmhmcamb_mod.a: mhmcamb_mod.f90
 	$(FC) $(FFLAGS) -c  $+ $(LDFLAGS)
-	$(AR) rc $@ mhmcamb.o
+	$(AR) rc $@ mhmcamb_mod.o

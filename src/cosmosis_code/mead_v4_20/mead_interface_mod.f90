@@ -15,6 +15,7 @@ module mead_settings_mod
 
 end module mead_settings_mod
 
+
 function setup(options) result(result)
     use mead_settings_mod
     use cosmosis_modules
@@ -49,6 +50,8 @@ function setup(options) result(result)
 end function setup
 
 
+
+
 function execute(block,config) result(status)
     use mead_settings_mod
     use cosmosis_modules
@@ -65,19 +68,26 @@ function execute(block,config) result(status)
     integer, parameter :: LOG_SPACING = 1
     character(*), parameter :: cosmo = cosmological_parameters_section
     character(*), parameter :: halo = halo_model_parameters_section
-
+    real bthh
     real(4) :: p1h, p2h,pfull, plin, z
-    integer :: i,j,nk,nz, massive_nu
+    integer :: i,j,nk,nz, massive_nu,kk
     REAL, ALLOCATABLE :: k(:), ztab(:)
     TYPE(HM_cosmology) :: cosi
     TYPE(HM_tables) :: lut
     !CosmoSIS supplies double precision - need to convert
     real(8) :: om_m, om_v, om_b, h, w, n_s, om_nu
-    real(8) :: wa, t_cmb
+    real(8) :: wa, t_cmb,bth
     real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:)
     real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:)
     real(8) :: halo_as, halo_eta0
 
+    !Output added by MG
+    real(8), ALLOCATABLE ::  umh(:),g_array(:)
+    
+    real(4), ALLOCATABLE ::  massh(:)
+    real(8), ALLOCATABLE :: g_out(:,:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:), ind_lut(:,:)
+    
+    
     HM_verbose = .False.
     imead = 1
     status = 0
@@ -165,6 +175,9 @@ function execute(block,config) result(status)
     ALLOCATE(k(nk))
     ALLOCATE(ztab(nz))
         
+
+    
+    
     !Set the output ranges in k and z
     !this was not here previously, take care of output k and pk
     k = k_in
@@ -176,7 +189,33 @@ function execute(block,config) result(status)
         
     !Fill table for output power
     ALLOCATE(p_out(nk,nz))
- 
+    ALLOCATE(g_out(256, nk, settings%nz))
+    ALLOCATE(um_out(256, nk, settings%nz))
+    ALLOCATE(mass_out(256, settings%nz))
+    ALLOCATE(bt_out(nk, settings%nz))
+    ALLOCATE(umh(256))
+    ALLOCATE(g_array(256))
+    ALLOCATE(massh(256))
+    ALLOCATE(ind_lut(nk,settings%nz))
+    
+    DO kk=1,256
+    massh(kk)=0.
+    g_array(kk)=0.
+    umh(kk)=0.
+    DO j=1,nz
+    DO i=1,nk
+    
+    g_out(kk,i,j)=0.
+    um_out(kk,i,j)=0.
+    mass_out(kk,j)=0.
+    !bt_out(i,j)=0.
+
+    end do
+    end do
+    end do
+    
+
+    
     !Loop over redshifts
     DO j=1,nz
         CALL fill_plintab_cosmosis(j,cosi,real(k_in),real(z_in),real(p_in),size(k_in),size(z_in))
@@ -186,18 +225,28 @@ function execute(block,config) result(status)
 
         !Initialisation for the halomodel calcualtion
         !Also normalises power spectrum (via sigma_8)
-        !and fills sigma(R) tables 
+        ! and fills sigma(R) tables 
+        
         CALL halomod_init(z,lut,cosi)
-
+		DO kk=1,lut%n
+            mass_out(kk,j) = lut%m(kk)
+		END DO
         !Loop over k values
         DO i=1,nk
+            ind_lut(i,j)=(lut%n)*1.0
             plin = p_in(i,j)*(k(i)**3.0) / (2.*(pi**2.)) 
-            !plin=p_lin(k(i),z,0,cosi) using function in hmcode to calculate p_lin.
-            !not necessary any more, p_lin result and pk_lin in cosmosis has maximum diff ~1e-6
-            CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi)
+            CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,g_array)
             !This outputs k^3 P(k).  We convert back. (need to check for new version) 
             ! note, i,j are interchanged with respect to hm main program
+			DO kk=1,lut%n
+				um_out(kk,i,j) = umh(kk)
+                g_out(kk,i,j) = g_array(kk)
+            END DO
             p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.)) 
+            !bthh = bt(k(i),z,lut,plin,cosi)
+            !CALL bth_print(k(i),z,lut,plin,cosi)
+            CALL diocane()
+            bt_out(i,j) = bth
         END DO
 
         IF(j==1) THEN
@@ -215,7 +264,58 @@ function execute(block,config) result(status)
     !Convert k to k/h to match other modules
     !Output results to cosmosis
     status = datablock_put_double_grid(block, settings%output_section_name, "k_h", k_out, "z", z_out, "p_k", p_out)
-
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 3.0
+!	SP
+	status = datablock_put_double_array_2d(block, settings%output_section_name, "mass_h_um", mass_out)
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 4.0
+!	SP
+    status = datablock_put_double_array_2d(block, settings%output_section_name, "bt_out", bt_out)
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_1",um_out(:,:,1))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_5",um_out(:,:,5))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_10",um_out(:,:, 10))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_15",um_out(:,:, 15))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_20",um_out(:,:, 20))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_25",um_out(:,:, 25))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_30",um_out(:,:, 30))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_35",um_out(:,:, 35))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_40",um_out(:,:, 40))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_45",um_out(:,:, 45))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_50",um_out(:,:, 50))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_55",um_out(:,:, 55))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_60",um_out(:,:, 60))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_65",um_out(:,:, 65))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_70",um_out(:,:, 70))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_75",um_out(:,:, 75))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_80",um_out(:,:, 80))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_85",um_out(:,:, 85))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_90",um_out(:,:, 90))
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_95",um_out(:,:, 95))
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "um_100",um_out(:,:, 100))
+    
+    
+    
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_1",  g_out(:,:,1))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_5",  g_out(:,:,5))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_10", g_out(:,:, 10))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_15", g_out(:,:, 15))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_20", g_out(:,:, 20))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_25", g_out(:,:, 25))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_30", g_out(:,:, 30))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_35", g_out(:,:, 35))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_40", g_out(:,:, 40))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_45", g_out(:,:, 45))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_50", g_out(:,:, 50))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_55", g_out(:,:, 55))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_60", g_out(:,:, 60))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_65", g_out(:,:, 65))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_70", g_out(:,:, 70))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_75", g_out(:,:, 75))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_80", g_out(:,:, 80))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_85", g_out(:,:, 85))
+    status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_90", g_out(:,:, 90))
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_95", g_out(:,:, 95))
+	status = datablock_put_double_array_2d(block,settings%output_section_name,  "g_100",g_out(:,:, 100))
+	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 5.0
     !Free memory
     deallocate(k)
     deallocate(ztab)
@@ -226,6 +326,14 @@ function execute(block,config) result(status)
     deallocate(k_out)
     deallocate(z_out)
     call deallocate_LUT(lut)
+    deallocate(um_out)
+    deallocate(g_out)
+    deallocate(bt_out)
+    deallocate(umh)
+    deallocate(g_array)
+    deallocate(mass_out)
+    deallocate(massh)
+    deallocate(ind_lut)
     IF(ALLOCATED(cosi%k_plin)) DEALLOCATE(cosi%k_plin)
     IF(ALLOCATED(cosi%plin)) DEALLOCATE(cosi%plin)
     IF(ALLOCATED(cosi%plinc)) DEALLOCATE(cosi%plinc)   
