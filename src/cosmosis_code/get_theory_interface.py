@@ -447,7 +447,7 @@ def execute(block, config):
                             # um_block = np.stack(um_block, block[nl_power, 'um_' + str(int(array_num[j]))])
                         # print(np.amin(np.log(z_array_selum + 1e-80)))
                         um_block_allinterp = RegularGridInterpolator(
-                            ((z_array_selum), np.log(other_params_dict_bin['M_array']), np.log(k_array_block)),
+                            (z_array_selum, np.log(other_params_dict_bin['M_array']), np.log(k_array_block)),
                             np.log(um_block), fill_value=None, bounds_error=False)
 
                         # um_block_Minterp = interpolate.interp1d(np.log(M_array_block), um_block, axis=0)
@@ -462,9 +462,9 @@ def execute(block, config):
                         other_params_dict['um_block_allinterp'] = um_block_allinterp
                         other_params_dict_bin['um_block_allinterp'] = um_block_allinterp
 
-                        bmkz_block = block[nl_power, 'bt']
+                        bmkz_block = block[nl_power, 'bt_out']
                         # import pdb; pdb.set_trace()
-                        bkm_block_allinterp = RegularGridInterpolator(((z_array_block), np.log(k_array_block)),
+                        bkm_block_allinterp = RegularGridInterpolator((z_array_block, np.log(k_array_block)),
                                                                       np.log(bmkz_block), fill_value=None,
                                                                       bounds_error=False)
                         other_params_dict['bkm_block_allinterp'] = bkm_block_allinterp

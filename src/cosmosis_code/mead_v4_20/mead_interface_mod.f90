@@ -267,6 +267,7 @@ function execute(block,config) result(status)
 	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 3.0
 !	SP
 	status = datablock_put_double_array_2d(block, settings%output_section_name, "mass_h_um", mass_out)
+    status = datablock_put_double_array_2d(block, settings%output_section_name, "ind_lut", ind_lut)
 	if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') 0, 4.0
 !	SP
     status = datablock_put_double_array_2d(block, settings%output_section_name, "bt_out", bt_out)
