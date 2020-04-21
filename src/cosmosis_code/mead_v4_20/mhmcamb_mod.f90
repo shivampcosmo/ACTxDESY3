@@ -95,10 +95,16 @@
         TYPE(HM_cosmology), INTENT(IN) :: cosm
 
         frac=fdamp(z,lut,cosm)
-        IF(frac .NE. 0.) THEN
-           bt=(1.-frac*(tanh(k*lut%sigv/sqrt(ABS(frac))))**2.)**0.5
+!        IF(frac .NE. 0.) THEN
+!           bt=(1.-frac*(tanh(k*lut%sigv/sqrt(ABS(frac))))**2.)**0.5
+!        ELSE
+!           bt=1.
+!        END IF
+          
+        IF(imead==0 .OR. frac<1.e-3) THEN
+            bt=1.
         ELSE
-           bt=1.
+            bt=(1.-frac*(tanh(k*lut%sigv/sqrt(ABS(frac))))**2.)**0.5
         END IF
 
       END FUNCTION bt
@@ -137,10 +143,12 @@
     !Damping of the 1-halo term at very large scales
     ks=kstar(z,lut,cosm)
 
-    IF((k/ks)**2.>7.) THEN
-       fac=0.
+    IF(ks==0.) THEN
+        fac=0.
+    ELSE IF((k/ks)**2.>7.) THEN
+        fac=0.
     ELSE
-       fac=exp(-((k/ks)**2.))
+        fac=exp(-((k/ks)**2.))
     END IF
 
     DO i=1,lut%n
@@ -150,7 +158,7 @@
 !       integrand(i)=((lut%rv(i))**3.)*(wk(i))*Dv*4.*pi/3.
 !       integrand(i)=(wk(i))
 
-        u_m(i)=(wk(i))*((1.-fac)**(0.5))
+        u_m(i)=(wk(i))*((1.-fac)**(0.5))*(((4.*pi/(3.))*Dv*(lut%rv(i)**3.)))
     END DO
 !    Print *, k, z, u_m(500), lut%rv(750),lut%c(750),lut%nu(750)
     DEALLOCATE(integrand,wk)
@@ -246,6 +254,7 @@
         !One-halo cut-off wavenumber
         !Mead et al. (2015; arXiv 1505.07833) value
         kstar=0.584*(lut%sigv)**(-1.)
+!        kstar=0.
     END IF
 
     END FUNCTION kstar
@@ -308,6 +317,7 @@
         !This uses the top-hat defined neff (HALOFIT uses Gaussian filtered fields instead)
         !Mead et al. (2016; arXiv 1602.02154) value
         alpha=3.24*1.85**lut%neff
+!        alpha=1.
     END IF
 
     !Catches values of alpha that are crazy
