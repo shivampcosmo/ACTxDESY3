@@ -35,9 +35,10 @@ class HOD:
     Sets up the HOD class for the galaxies.
     """
 
-    def __init__(self, hod_params):
+    def __init__(self, hod_params, other_params):
         self.hod_params = hod_params
         self.hod_type = hod_params['hod_type']
+        self.z_array = other_params['z_array']
 
     # Average number of central galaxies
     def get_Nc(self, M_val):
@@ -47,14 +48,21 @@ class HOD:
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = 0.5 * (1 + erfval)
         elif self.hod_type == 'DES_MICE':
-            erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
-            Ncm = self.hod_params['fmaxcen'] * (
-                    1.0 - (1.0 - self.hod_params['fmincen'] / self.hod_params['fmaxcen']) / (1.0 + 10 ** (
-                    (2.0 / self.hod_params['fcen_k']) * (
-                    np.log10(M_val) - self.hod_params['log_mdrop'])))) * 0.5 * (1 + erfval)
+            Ncm =  0.5 * self.hod_params['fcen'] * (1. + sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM']))
+
+            # erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
+            # Ncm = self.hod_params['fmaxcen'] * (
+            #         1.0 - (1.0 - self.hod_params['fmincen'] / self.hod_params['fmaxcen']) / (1.0 + 10 ** (
+            #         (2.0 / self.hod_params['fcen_k']) * (
+            #         np.log10(M_val) - self.hod_params['log_mdrop'])))) * 0.5 * (1 + erfval)
         elif self.hod_type == 'DES_GGL':
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fcen'] * 0.5 * (1 + erfval)
+        elif self.hod_type == 'EVOLVE_HOD':
+            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
+            Ncm = np.zeros_like(M_val)
+            for j in range(len(self.z_array)):
+                Ncm[j,:] = np.exp(Ncm_interp((self.z_array[j]), np.log(M_val[j,:]),grid=False))
         else:
             print('give correct HOD type')
             sys.exit(1)
@@ -70,14 +78,22 @@ class HOD:
             val = 0.5 * (np.sign((M_val - M0)) + 1.) * ((M_val - M0) / M1)
             Nsm = np.power(val, self.hod_params['alpha_g'])
         elif self.hod_type == 'DES_MICE':
-            erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
-            Ncerf = 0.5 * (1 + erfval)
-            Ncm = get_Nc(self, M_val)
             M1 = 10 ** (self.hod_params['logM1'])
-            Nsm = (Ncerf / Ncm) * ((M_val / M1) ** self.hod_params['alpha_g'])
+            Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
+            # Nsm = (M_val / (10 ** (self.hod_params['logM1']))) ** self.hod_params['alpha_g'])
+            # erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
+            # Ncerf = 0.5 * (1 + erfval)
+            # Ncm = get_Nc(self, M_val)
+            # M1 = 10 ** (self.hod_params['logM1'])
+            # Nsm = (Ncerf / Ncm) * ((M_val / M1) ** self.hod_params['alpha_g'])
         elif self.hod_type == 'DES_GGL':
             M1 = 10 ** (self.hod_params['logM1'])
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
+        elif self.hod_type == 'EVOLVE_HOD':
+            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
+            Nsm = np.zeros_like(M_val)
+            for j in range(len(self.z_array)):
+                Nsm[j, :] = np.exp(Nsm_interp((self.z_array[j]), np.log(M_val[j, :]), grid=False))
         else:
             print('give correct HOD type')
             sys.exit(1)
@@ -104,7 +120,7 @@ class Pressure:
         self.cosmo = cosmo_func
         self.verbose = other_params['verbose']
 
-        self.z_array = np.linspace(other_params['z_array_min'], other_params['z_array_max'], other_params['num_z'])
+        self.z_array = other_params['z_array']
 
         self.do_split_params_massbins = other_params['do_split_params_massbins']
         self.pressure_params_dict = pressure_params
@@ -540,6 +556,7 @@ class Pressure:
 
         valf = P0_mat * val1 * val2
 
+
         return valf
 
     def get_Pe_mat_Battaglia12(self, M_mat_Delta, x_array, z_array, R_mat_Delta, M200c_mat=None, mdef_Delta=None,
@@ -595,7 +612,6 @@ class Pressure:
         M200c_mat_no_h = (M200c_mat / self.cosmo.h)
         M200c_mat_no_h_nz_nm_nx = np.tile(M200c_mat_no_h.reshape(nz, nm, 1), (1, 1, nx))
 
-        # import pdb; pdb.set_trace()
         if self.pressure_model_type == 'lowbroken_powerlaw':
             M_mat_cond_shape_nz_nm = []
             M_mat_cond_shape_nz_nm.append(
@@ -677,6 +693,7 @@ class Pressure:
 
         else:
             M_mat_coeff = np.ones((nz, nm, nx))
+
 
         Pe_mat = 0.518 * P_Delta * gnfw_P * M_mat_coeff
 
@@ -837,7 +854,9 @@ class general_hm:
         zmin, zmax = np.min(self.z_array), np.max(self.z_array)
         z_array = np.logspace(np.log10(zmin), np.log10(zmax), 100)
         Pklinz_2d_mat = sig8_ratio * (hmf.get_Pklinzarray(z_array, k_array, current_cosmo=self.cosmo))
-        Pklinz_2d_mat_interp = interpolate.RectBivariateSpline(np.log(z_array), np.log(k_array),
+        # Pklinz_2d_mat_interp = interpolate.RectBivariateSpline(np.log(z_array), np.log(k_array),
+        #                                                        np.log(Pklinz_2d_mat))
+        Pklinz_2d_mat_interp = interpolate.RectBivariateSpline((z_array), np.log(k_array),
                                                                np.log(Pklinz_2d_mat))
         return Pklinz_2d_mat_interp
 
@@ -888,15 +907,15 @@ class general_hm:
             for j in range(len(self.z_array)):
                 M_array = M_mat[j, :]
                 halo_conc_array_Mz[j, :] = concentration.concentration(M_array, mdef, self.z_array[j],model=self.conc_model)
-                # import pdb;
-                # pdb.set_trace()
-
+            # import ipdb;
+            # ipdb.set_trace()
         return halo_conc_array_Mz
 
     def get_wplin_interp(self, nu, pkzlin_interp):
         k_array = np.logspace(-5, 2.5, 30000)
         z_array = np.logspace(-3, 1, 100)
-        Pklinz0 = np.exp(pkzlin_interp.ev(np.log(z_array[0]), np.log(k_array)))
+        # Pklinz0 = np.exp(pkzlin_interp.ev(np.log(z_array[0]), np.log(k_array)))
+        Pklinz0 = np.exp(pkzlin_interp.ev((z_array[0]), np.log(k_array)))
         theta_out, xi_out = Hankel(k_array, nu=nu, q=1.0)(Pklinz0)
         xi_out *= (1 / (2 * np.pi))
         theta_out_arcmin = theta_out * (180. / np.pi) * 60.
@@ -954,7 +973,7 @@ class Powerspec:
 
         if self.verbose:
             print('setting up hod')
-        self.hod = HOD(hod_params)
+        self.hod = HOD(hod_params,other_params)
 
         if self.verbose:
             print('setting up general hmf')
@@ -996,20 +1015,24 @@ class Powerspec:
         # if other_params['pressure_model_name'] == 'Battaglia12':
         if self.verbose:
             print('changing mdef to 200c for battaglia profiles')
-        M_mat_200cP, R_mat_200cP_kpc_h = np.zeros(M_mat_mdef.shape), np.zeros(M_mat_mdef.shape)
-        for j in range(self.nz):
-            M_mat_200cP[j, :], R_mat_200cP_kpc_h[j, :], _ = mass_defs.changeMassDefinition(M_mat_mdef[j, :],
-                                                                                           self.halo_conc_mdef[j,
-                                                                                           :], self.z_array[j],
-                                                                                           self.mdef_analysis,
-                                                                                           '200c')
+        if self.mdef_analysis == '200c':
+            M_mat_200cP = M_mat_mdef
+        else:
+            M_mat_200cP, R_mat_200cP_kpc_h = np.zeros(M_mat_mdef.shape), np.zeros(M_mat_mdef.shape)
+            for j in range(self.nz):
+                M_mat_200cP[j, :], R_mat_200cP_kpc_h[j, :], _ = mass_defs.changeMassDefinition(M_mat_mdef[j, :],
+                                                                                               self.halo_conc_mdef[j,
+                                                                                               :], self.z_array[j],
+                                                                                               self.mdef_analysis,
+                                                                                               '200c')
+
 
         self.M_mat_200cP = M_mat_200cP / hydro_B
         self.r200cP_mat = hmf.get_R_from_M_mat(self.M_mat_200cP, 200 * self.rho_crit_array)
 
         # trying to test only single mdef
         M_mat_vir = M_mat_mdef
-        self.r_vir_mat = hmf.get_R_from_M_mat(M_mat_mdef, self.rho_vir_array)
+        self.r_vir_mat = hmf.get_R_from_M_mat(M_mat_mdef, 200 * self.rho_crit_array)
         self.halo_conc_vir = self.halo_conc_mdef
 
         # if self.mdef_analysis == 'vir':
@@ -1052,6 +1075,7 @@ class Powerspec:
         self.Ns_mat = self.hod.get_Ns(M_mat_vir)
         self.Ntotal_mat = self.hod.get_Ntotal(M_mat_vir)
         self.M_mat_vir = M_mat_vir
+        # import ipdb; ipdb.set_trace()
 
         self.mass_bias_type = other_params['mass_bias_type']
 
@@ -1107,6 +1131,8 @@ class Powerspec:
             ng_interp_source = interpolate.interp1d(ng_zarray_source, np.log(ng_value_source + 1e-40),
                                                     fill_value='extrapolate')
             self.ng_array_source = np.exp(ng_interp_source(self.z_array))
+        ind_ltlz = np.where(self.z_array < 1e-2)[0]
+        self.ng_array_source[ind_ltlz] = 0.0
 
         chi_lmat = np.tile(self.chi_array.reshape(len(self.z_array), 1), (1, len(self.z_array)))
         chi_smat = np.tile(self.chi_array.reshape(1, len(self.z_array)), (len(self.z_array), 1))
@@ -1126,6 +1152,9 @@ class Powerspec:
             self.pkzlin_interp = self.ghmf.get_Pklin_zk_interp()
         else:
             self.pkzlin_interp = other_params['pkzlin_interp']
+
+        self.suppress_1halo = other_params['suppress_1halo']
+        self.kstar = other_params['kstar']
 
         self.add_beam_to_theory = other_params['add_beam_to_theory']
         self.beam_fwhm_arcmin = other_params['beam_fwhm_arcmin']
@@ -1171,8 +1200,12 @@ class Powerspec:
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
             (1, self.nm))
-        # import pdb; pdb.set_trace()
-        return coeff_mat * val
+        if self.suppress_1halo:
+            k_mat = np.tile(k_array.reshape(self.nz,1),(1,self.nm))
+            suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**2))
+        else:
+            suppress_fac = 1.
+        return coeff_mat * val*suppress_fac
 
     # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
     def get_bg_l_z(self, l):
@@ -1182,11 +1215,12 @@ class Powerspec:
             toint = self.dndm_array * self.bm_array * self.M_mat_cond_inbin * self.int_prob
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
-            toint = self.dndm_array * (self.Nc_mat + self.Ns_mat * ukzm_mat) * self.bm_array * self.M_mat_cond_inbin
+            toint = self.dndm_array * (self.Nc_mat + self.Nc_mat*self.Ns_mat * ukzm_mat) * self.bm_array * self.M_mat_cond_inbin
 
         val = sp.integrate.simps(toint, self.M_array)
 
         coeff = self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)
+        # import ipdb; ipdb.set_trace()
         return coeff * val
 
     # # get spherical harmonic transform of the hot gas distribution, eq 12 of Makiya et al
@@ -1230,7 +1264,14 @@ class Powerspec:
                 ukzm_mat[j, :] = np.exp(self.um_block_allinterp(marray_insk))
         else:
             ukzm_mat = (hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)) * self.M_mat / self.rho_m_bar
-        return ukzm_mat
+
+        if self.suppress_1halo:
+            k_mat = np.tile(k_array.reshape(self.nz,1),(1,self.nm))
+            suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**2))
+        else:
+            suppress_fac = 1.
+
+        return ukzm_mat * suppress_fac
 
     # get spherical harmonic transform of the effective shear bias
     def get_bk_l_z(self, l, bm_l_z_dict):
@@ -1257,23 +1298,30 @@ class Powerspec:
 
             # val *= np.exp(self.bkm_block_allinterp(np.stack((self.z_array, np.log(k_array)), axis=-1)))
 
-            bkz_mat = np.exp(self.bkm_block_allinterp((self.z_array), np.log(k_array),grid=False))
+            val = np.exp(self.bkm_block_allinterp((self.z_array), np.log(k_array),grid=False))
 
         return val
 
-    def get_Pkmm1h_zM(self, k_array):
+    def get_Pkmm1h_zM(self, k_array, nu_mat, gm_mat, rhobar_M, um_block=None):
         nk = len(k_array)
-        if hasattr(self, 'um_block_allinterp'):
+        if um_block is None:
             arg_mat = np.meshgrid((self.z_array), np.log(self.M_array),np.log(k_array), indexing='ij')
             arg_mat_list = np.reshape(arg_mat, (3, -1), order='C').T
             ukzm_mat = np.exp(self.um_block_allinterp(arg_mat_list))
             ukzm_mat = ukzm_mat.reshape(self.nz, self.nm, nk)
-            ukzm_mat = ukzm_mat.transpose(0,2,1)
-            dndm_mat = np.tile(self.dndm_array.reshape(self.nz,1,self.nm),(1,nk,1))
-            Pk1h = sp.integrate.simps((ukzm_mat**2) * dndm_mat, self.M_array)
-        # else:
-        #     ukzm_mat = (hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)) * self.M_mat / self.rho_m_bar
-        return Pk1h
+        else:
+            ukzm_mat = um_block
+        ukzm_mat = ukzm_mat.transpose(0, 2, 1)
+        dndm_mat = np.tile(self.dndm_array.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        Pk1h = sp.integrate.simps((ukzm_mat ** 2) * dndm_mat, self.M_array)
+
+        Pk1h_bl = np.zeros(Pk1h.shape)
+        for j in range(len(self.z_array)):
+            gm_mat_j = np.tile(gm_mat[j,:].reshape(1,self.nm),(nk,1))
+            rhobar_M_j = np.tile(rhobar_M[j,:].reshape(1,self.nm),(nk,1))
+            Pk1h_bl[j,:] = sp.integrate.simps((ukzm_mat[j,:,:] ** 2) * gm_mat_j * rhobar_M_j, nu_mat[j,:])
+
+        return Pk1h, Pk1h_bl
 
     def get_Pkmm2h_zM(self, k_array):
         if hasattr(self, 'bkm_block_allinterp'):
@@ -1286,9 +1334,12 @@ class Powerspec:
             bkz_mat = np.exp(self.bkm_block_allinterp((self.z_array), np.log(k_array),grid=True))
 
             bkz_mat = bkz_mat.reshape(self.nz, nk)
-            Plin_kz = np.exp(self.pkzlin_interp(np.log(self.z_array), np.log(k_array),grid=True))
+            # Plin_kz = np.exp(self.pkzlin_interp(np.log(self.z_array), np.log(k_array),grid=True))
+            Plin_kz = np.exp(self.pkzlin_interp((self.z_array), np.log(k_array), grid=True))
             Pk2h = (bkz_mat**2) * Plin_kz
         return Pk2h
+
+
 
 class PrepDataVec:
 
@@ -1373,7 +1424,6 @@ class PrepDataVec:
             coeff_mat_y = 4 * np.pi * rmdefP_mat_coeff / (lmdefP_mat_coeff ** 2)
 
             x_mat2_y3d_mat = (x_mat ** 2) * y3d_mat
-
             del x_mat, y3d_mat
 
             if self.verbose:
@@ -1383,6 +1433,7 @@ class PrepDataVec:
             self.uyl_zM_dict = {}
             for j in range(len(l_array)):
                 self.uyl_zM_dict[round(l_array[j], 1)] = self.PS.get_uy_l_zM(l_array[j])
+
 
             if self.verbose:
                 print('that took ', time.time() - ti, 'seconds')
@@ -1498,16 +1549,23 @@ class PrepDataVec:
         if 'uyl_zM_dict' not in other_params.keys():
             del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
-        # getting the matter-matter power:
-        k_array = other_params['k_array_block']
-        Pkmm1h = self.PS.get_Pkmm1h_zM(k_array)
-        Pkmm2h = self.PS.get_Pkmm2h_zM(k_array)
-        Pkmmtot = Pkmm1h + Pkmm2h
-        outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot}
-        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/Pkmmdict_yx_rbvs_dndm_imead0.pk'
-        with open(savefname, 'wb') as f:
-            dill.dump(outdict, f)
-        import pdb; pdb.set_trace()
+        # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/Pkmmdict_yx_rbvs_dndm_imead1_um_interp.pk'
+        # if not os.path.isfile(savefname):
+        #     # getting the matter-matter power:
+        #     um_block = other_params['um_block']
+        #     nu_mat, gm_mat, rhobar_M = other_params['nu_block'], other_params['gm_block'], other_params['rhobar_M_block']
+        #     k_array = other_params['k_array_block']
+        #     # import pdb; pdb.set_trace()
+        #     # Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array,nu_mat, gm_mat, rhobar_M, um_block=um_block)
+        #     Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M)
+        #     # Pkmm1h = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M, um_block=um_block)
+        #     Pkmm2h = self.PS.get_Pkmm2h_zM(k_array)
+        #     Pkmmtot = Pkmm1h + Pkmm2h
+        #     outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot, 'Pk1h_block':Pkmm1h_block}
+        #
+        #     with open(savefname, 'wb') as f:
+        #         dill.dump(outdict, f)
+        #     import pdb; pdb.set_trace()
 
         if self.verbose:
             print('finished prep of DV')
@@ -1555,11 +1613,13 @@ class CalcDataVec:
         Cl_2h = np.zeros_like(l_array)
         for j in range(len(l_array)):
             l = l_array[j]
-            k_array = (l + 1. / 2.) / self.PS_prepDV.chi_array
+            k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
             bgl_z1 = bAl_z_dict[round(l, 1)]
             bgl_z2 = bBl_z_dict[round(l, 1)]
+            # toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
+            #     self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
             toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
-                self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
+                self.PS_prepDV.pkzlin_interp.ev((self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_2h[j] = val
         return Cl_2h
@@ -1875,6 +1935,7 @@ class DataVec:
             self.Cl_result_dict['kk'] = Cl_kk_dict
             if analysis_coords == 'real':
                 xi_kk_dict['bin_combs'] = bin_combs
+                xi_kk_dict['theta'] = theta_array
                 self.xi_result_dict['kk'] = xi_kk_dict
 
             if self.verbose:
@@ -1899,6 +1960,7 @@ class DataVec:
                                                        'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
                                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+
 
                 if analysis_coords == 'real':
                     # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
@@ -1927,6 +1989,7 @@ class DataVec:
             # Cl_result_dict['yk'] = Cl_ky_dict
             if analysis_coords == 'real':
                 # xi_result_dict['ky'] = xi_ky_dict
+                xi_gty_dict['theta'] = theta_array
                 xi_gty_dict['bin_combs'] = bin_combs
                 self.xi_result_dict['gty'] = xi_gty_dict
 
@@ -2032,7 +2095,11 @@ class DataVec:
             self.Cl_result_dict['gg'] = Cl_gg_dict
             if analysis_coords == 'real':
                 xi_gg_dict['bin_combs'] = bin_combs
+                xi_gg_dict['theta'] = theta_array
                 self.xi_result_dict['gg'] = xi_gg_dict
+
+            if self.verbose:
+                print('done galaxy-galaxy calculation')
 
         if ('gy' in PrepDV.stats_analyze) or (run_cov_pipe and ('gy' in PrepDV.lss_probes_allcomb)):
             Cl_gy_dict = {}
@@ -2080,7 +2147,11 @@ class DataVec:
             # Cl_result_dict['yg'] = Cl_gy_dict
             if analysis_coords == 'real':
                 xi_gy_dict['bin_combs'] = bin_combs
+                xi_gy_dict['theta'] = theta_array
                 self.xi_result_dict['gy'] = xi_gy_dict
+
+            if self.verbose:
+                print('done galaxy-y calculation')
 
         if ('gk' in PrepDV.stats_analyze) or (run_cov_pipe and ('gk' in PrepDV.lss_probes_allcomb)):
             Cl_gk_dict = {}
@@ -2095,7 +2166,7 @@ class DataVec:
                                                          PrepDV_params['ukl_zM_dict' + str(j2)])
                     Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'k', PrepDV.l_array,
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
-                                                         PrepDV_params['ukl_zM_dict' + str(j2)])
+                                                         PrepDV_params['bkl_z_dict' + str(j2)])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, j2])
@@ -2132,6 +2203,8 @@ class DataVec:
                                 j2)] = Cltot_j1j2
                             block[sec_save_name, 'xcoord_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
                                 j2)] = PrepDV.l_array
+                    # import ipdb; ipdb.set_trace()
+
 
             Cl_gk_dict['bin_combs'] = bin_combs
             self.Cl_result_dict['gk'] = Cl_gk_dict
@@ -2139,8 +2212,14 @@ class DataVec:
             if analysis_coords == 'real':
                 xi_gk_dict['bin_combs'] = bin_combs
                 xi_gtg_dict['bin_combs'] = bin_combs
+                xi_gk_dict['theta'] = theta_array
+                xi_gtg_dict['theta'] = theta_array
                 self.xi_result_dict['gk'] = xi_gk_dict
                 self.xi_result_dict['gtg'] = xi_gtg_dict
+
+            if self.verbose:
+                print('done galaxy-shear calculation')
+
 
         if run_cov_pipe:
             if self.verbose:

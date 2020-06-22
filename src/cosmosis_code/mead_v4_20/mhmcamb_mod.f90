@@ -203,10 +203,10 @@
         delta_c=1.59+0.0314*log(lut%sig8z)
         !Mead et al. (2016; arXiv 1602.02154) neutrino addition
         delta_c=delta_c*(1.+0.262*cosm%f_nu)
-    END IF
+        !Nakamura & Suto (1997) fitting formula for LCDM models
+        delta_c=delta_c*(1.+0.0123*log10(Omega_m_hm(z,cosm)))
 
-    !Nakamura & Suto (1997) fitting formula for LCDM models
-    delta_c=delta_c*(1.+0.0123*log10(Omega_m_hm(z,cosm)))
+    END IF
 
     END FUNCTION delta_c
 

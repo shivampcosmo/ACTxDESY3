@@ -210,7 +210,9 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
     ghmf = general_hm(cosmo_params_dict, pressure_params_dict, other_params_dict)
     if not use_conc_block:
         halo_conc_mdef = ghmf.get_halo_conc_Mz(M_mat_mdef, mdef_analysis)
+        import ipdb; ipdb.set_trace()
         other_params_dict['halo_conc_mdef'] = halo_conc_mdef
+
 
     if not use_dndm_block:
         dndm_array, bm_array = ghmf.get_dndm_bias(M_mat_mdef, mdef_analysis)
@@ -320,7 +322,7 @@ def execute(block, config):
     if use_Plin_block:
         lin_power = names.matter_power_lin
         z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
-        pkzlin_interp = interpolate.RectBivariateSpline(np.log(z_block + 1e-5), np.log(k_block), np.log(pk_block))
+        pkzlin_interp = interpolate.RectBivariateSpline(z_block, np.log(k_block), np.log(pk_block))
         if get_bp:
             wplin_interp = ghmf.get_wplin_interp(2, pkzlin_interp)
             other_params_dict['wplin_interp'] = wplin_interp
@@ -339,7 +341,6 @@ def execute(block, config):
                 np.arange(np.log(theta_min), np.log(theta_max), block[sec_save_name, 'dlogtheta']))
             ntheta = len(theta_array_all)
             theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-            # print(ntheta)
         else:
             theta_array = None
             theta_array_all = None
@@ -412,7 +413,8 @@ def execute(block, config):
                 del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                     'bm_array'], other_params_dict_bin['halo_conc_mdef']
 
-            if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys()) and ((nl_power, 'um_1') in block.keys()):
+            if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys())\
+                    and ((nl_power, 'um_1') in block.keys()):
                 z_array_block = block[nl_power, 'z']
                 array_num = np.arange(1, len(z_array_block) + 1, 1)
                 array_num_python = array_num - 1
@@ -425,13 +427,13 @@ def execute(block, config):
                 for j in range(len(array_num)):
                     um_block_j = block[nl_power, 'um_' + str(int(array_num[j]))]
                     um_block[j, :, :] = um_block_j.T
-
                 um_block_allinterp = RegularGridInterpolator(
-                    ((z_array_selum), np.log(M_array_block), np.log(k_array_block)),
+                    (z_array_selum, np.log(M_array_block), np.log(k_array_block)),
                     np.log(um_block + 1e-200), fill_value=None, bounds_error=False)
 
                 other_params_dict['um_block_allinterp'] = um_block_allinterp
                 other_params_dict_bin['um_block_allinterp'] = um_block_allinterp
+                other_params_dict_bin['um_block'] = um_block
 
                 bmkz_block = block[nl_power, 'bt_out']
 
@@ -444,12 +446,14 @@ def execute(block, config):
                 other_params_dict['bkm_block_allinterp'] = bkm_block_allinterp
                 other_params_dict_bin['bkm_block_allinterp'] = bkm_block_allinterp
 
-
                 other_params_dict['z_array_block'] = z_array_block
                 other_params_dict_bin['z_array_block'] = z_array_block
 
                 other_params_dict['k_array_block'] = k_array_block
                 other_params_dict_bin['k_array_block'] = k_array_block
+
+                other_params_dict['M_array_block'] = M_array_block
+                other_params_dict_bin['M_array_block'] = M_array_block
 
                 gm_block = np.zeros((len(z_array_selum), len(M_array_block)))
                 dndm_Marray = np.zeros((len(z_array_selum), len(other_params_dict['M_array'])))
@@ -458,14 +462,14 @@ def execute(block, config):
                 for j in range(len(array_num)):
                     gm_block_j = block[nl_power, 'g_' + str(int(array_num[j]))].T[:,0]
                     gm_block[j,:] =  gm_block_j
-                    gm_interp = interpolate.interp1d(np.log(M_array_block),np.log(gm_block_j+1e-300))
+                    gm_interp = interpolate.interp1d(np.log(M_array_block),np.log(gm_block_j+1e-300),fill_value='extrapolate')
                     gm_val_Marray = np.exp(gm_interp(np.log(other_params_dict['M_array'])))
 
                     nu_block_j = np.exp(0.5*(np.log(nu_mat_block[j,1:]) + np.log(nu_mat_block[j,:-1])))
                     M_block_j = np.exp(0.5*(np.log(M_mat_block[j,1:]) + np.log(M_mat_block[j,:-1])))
                     dlognu_dlogM = (np.log(nu_mat_block[j,1:]) - np.log(nu_mat_block[j,:-1]))/(np.log(M_mat_block[j,1:]) - np.log(M_mat_block[j,:-1]))
                     dnu_dM = (nu_block_j/M_block_j)*dlognu_dlogM
-                    dnu_dM_interp = interpolate.interp1d(np.log(M_block_j),np.log(dnu_dM))
+                    dnu_dM_interp = interpolate.interp1d(np.log(M_block_j),np.log(dnu_dM),fill_value='extrapolate')
                     dnu_dM_Marray = np.exp(dnu_dM_interp(np.log(other_params_dict['M_array'])))
                     dndm_Marray[j,:] = gm_val_Marray*dnu_dM_Marray*(rho_m/other_params_dict['M_array'])
 
@@ -476,16 +480,25 @@ def execute(block, config):
                 if use_dndm_block:
                     other_params_dict['dndm_array'] = dndm_Marray_yx
 
-                # dndmdict = {'nu_block':nu_mat_block,'gm_block':gm_block,'M_block':M_mat_block, 'z_block':z_array_block,'k_block':k_array_block}
+                other_params_dict_bin['nu_block'] = nu_mat_block
+                other_params_dict_bin['gm_block'] = gm_block
+                other_params_dict_bin['rhobar_M_block'] = rho_m/M_mat_block
+                # dndmdict = {'nu_block':nu_mat_block,'gm_block':gm_block,'M_block':M_mat_block, 'z_block':z_array_block,'k_block':k_array_block,'sigma_block':block[nl_power, 'sigma_out']}
                 # dndmdict['M_yx'] = other_params_dict['M_array']
                 # dndmdict['z_yx'] = other_params_dict['z_array']
                 # dndmdict['dndm_yx'] = other_params_dict['dndm_array']
+                #
+                # # dndmdict['']
+                #
                 # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/dndmdict_comp_interp.pk'
                 # with open(savefname, 'wb') as f:
                 #     dill.dump(dndmdict, f)
+
+                # savedict = {'other':other_params_dict_bin,'cosmo':cosmo_params_dict_bin}
+                # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/all_vars_dict.pk'
+                # with open(savefname, 'wb') as f:
+                #     dill.dump(savedict, f)
                 # import pdb; pdb.set_trace()
-
-
 
             if get_bp:
                 PS = Powerspec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
@@ -554,16 +567,14 @@ def execute(block, config):
         with open(save_data_fname,'wb') as f:
             dill.dump(DV,f)
 
-        z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
-        z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")
-        z_block, k_block, pk2h_block = block.get_grid(nl_power, "z", "k_h", "p_k_2h")
-        outdict = {'k':k_block, 'z':z_block,'Pk1h':pk1h_block,'Pk2h':pk2h_block,'Pktot':pktot_block}
-        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/Pkmmdict_cosmosis_imead0.pk'
-        with open(savefname, 'wb') as f:
-            dill.dump(outdict, f)
-
-
-        import pdb; pdb.set_trace()
+        # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
+        # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")
+        # z_block, k_block, pk2h_block = block.get_grid(nl_power, "z", "k_h", "p_k_2h")
+        # outdict = {'k':k_block, 'z':z_block,'Pk1h':pk1h_block,'Pk2h':pk2h_block,'Pktot':pktot_block}
+        # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/Pkmmdict_cosmosis_imead1.pk'
+        # with open(savefname, 'wb') as f:
+        #     dill.dump(outdict, f)
+        # import pdb; pdb.set_trace()
     return 0
 
 def cleanup(config):
