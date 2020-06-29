@@ -96,6 +96,7 @@ function execute(block,config) result(status)
     
     HM_verbose = .True.
     imead = 0
+    write(*,*) "imead is 0"
     status = 0
     call c_f_pointer(config, settings)
 

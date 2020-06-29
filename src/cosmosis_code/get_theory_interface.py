@@ -210,7 +210,7 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
     ghmf = general_hm(cosmo_params_dict, pressure_params_dict, other_params_dict)
     if not use_conc_block:
         halo_conc_mdef = ghmf.get_halo_conc_Mz(M_mat_mdef, mdef_analysis)
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         other_params_dict['halo_conc_mdef'] = halo_conc_mdef
 
 
@@ -320,8 +320,10 @@ def execute(block, config):
     hod_params_dict = ini_info['hod_params_dict']
 
     if use_Plin_block:
-        lin_power = names.matter_power_lin
-        z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
+#        lin_power = names.matter_power_lin
+        nl_power = names.matter_power_nl
+#        z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
+        z_block, k_block, pk_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         pkzlin_interp = interpolate.RectBivariateSpline(z_block, np.log(k_block), np.log(pk_block))
         if get_bp:
             wplin_interp = ghmf.get_wplin_interp(2, pkzlin_interp)
@@ -454,6 +456,7 @@ def execute(block, config):
 
                 other_params_dict['M_array_block'] = M_array_block
                 other_params_dict_bin['M_array_block'] = M_array_block
+#                import ipdb; ipdb.set_trace() # BREAKPOINT
 
                 gm_block = np.zeros((len(z_array_selum), len(M_array_block)))
                 dndm_Marray = np.zeros((len(z_array_selum), len(other_params_dict['M_array'])))
@@ -478,11 +481,16 @@ def execute(block, config):
 
                 dndm_Marray_yx = np.exp(dndm_Marray_allinterp(other_params_dict['z_array'], np.log(other_params_dict['M_array']),grid=True))
                 if use_dndm_block:
+                    other_params_dict_bin['dndm_array'] = dndm_Marray_yx
                     other_params_dict['dndm_array'] = dndm_Marray_yx
 
                 other_params_dict_bin['nu_block'] = nu_mat_block
                 other_params_dict_bin['gm_block'] = gm_block
                 other_params_dict_bin['rhobar_M_block'] = rho_m/M_mat_block
+
+                other_params_dict_bin['pkmm1h_cs'] = block[nl_power, 'p_k_1h']
+                other_params_dict_bin['pkmm2h_cs'] = block[nl_power, 'p_k_2h']
+                other_params_dict_bin['pkmmtot_cs'] = block[nl_power, 'p_k']
                 # dndmdict = {'nu_block':nu_mat_block,'gm_block':gm_block,'M_block':M_mat_block, 'z_block':z_array_block,'k_block':k_array_block,'sigma_block':block[nl_power, 'sigma_out']}
                 # dndmdict['M_yx'] = other_params_dict['M_array']
                 # dndmdict['z_yx'] = other_params_dict['z_array']

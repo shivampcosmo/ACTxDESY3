@@ -113,7 +113,8 @@ class Pressure:
     """
     def __init__(self, cosmo_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
                                           cosmo_params['sigma8'])
@@ -825,7 +826,8 @@ class general_hm:
 
     def __init__(self, cosmo_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
 
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
@@ -937,7 +939,8 @@ class Powerspec:
 
     def __init__(self, cosmo_params, hod_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
                                           cosmo_params['sigma8'])
@@ -1194,8 +1197,9 @@ class Powerspec:
             val = np.ones(self.Nc_mat.shape)
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
-            val = np.sqrt(
-                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+#            val = np.sqrt(
+#                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
@@ -1305,7 +1309,7 @@ class Powerspec:
     def get_Pkmm1h_zM(self, k_array, nu_mat, gm_mat, rhobar_M, um_block=None):
         nk = len(k_array)
         if um_block is None:
-            arg_mat = np.meshgrid((self.z_array), np.log(self.M_array),np.log(k_array), indexing='ij')
+            arg_mat = np.meshgrid(self.z_array, np.log(self.M_array),np.log(k_array), indexing='ij')
             arg_mat_list = np.reshape(arg_mat, (3, -1), order='C').T
             ukzm_mat = np.exp(self.um_block_allinterp(arg_mat_list))
             ukzm_mat = ukzm_mat.reshape(self.nz, self.nm, nk)
@@ -1314,16 +1318,18 @@ class Powerspec:
         ukzm_mat = ukzm_mat.transpose(0, 2, 1)
         dndm_mat = np.tile(self.dndm_array.reshape(self.nz, 1, self.nm), (1, nk, 1))
         Pk1h = sp.integrate.simps((ukzm_mat ** 2) * dndm_mat, self.M_array)
+#        import ipdb; ipdb.set_trace() # BREAKPOINT
 
         Pk1h_bl = np.zeros(Pk1h.shape)
-        for j in range(len(self.z_array)):
-            gm_mat_j = np.tile(gm_mat[j,:].reshape(1,self.nm),(nk,1))
-            rhobar_M_j = np.tile(rhobar_M[j,:].reshape(1,self.nm),(nk,1))
-            Pk1h_bl[j,:] = sp.integrate.simps((ukzm_mat[j,:,:] ** 2) * gm_mat_j * rhobar_M_j, nu_mat[j,:])
-
+#        for j in range(len(self.z_array)):
+#            gm_mat_j = np.tile(gm_mat[j,:].reshape(1,self.nm),(nk,1))
+#            rhobar_M_j = np.tile(rhobar_M[j,:].reshape(1,self.nm),(nk,1))
+#            Pk1h_bl[j,:] = sp.integrate.simps((ukzm_mat[j,:,:] ** 2) * gm_mat_j * rhobar_M_j, nu_mat[j,:])
+#
         return Pk1h, Pk1h_bl
 
     def get_Pkmm2h_zM(self, k_array):
+        Plin_kz = np.exp(self.pkzlin_interp((self.z_array), np.log(k_array), grid=True))
         if hasattr(self, 'bkm_block_allinterp'):
             nk = len(k_array)
 
@@ -1335,11 +1341,11 @@ class Powerspec:
 
             bkz_mat = bkz_mat.reshape(self.nz, nk)
             # Plin_kz = np.exp(self.pkzlin_interp(np.log(self.z_array), np.log(k_array),grid=True))
-            Plin_kz = np.exp(self.pkzlin_interp((self.z_array), np.log(k_array), grid=True))
+
             Pk2h = (bkz_mat**2) * Plin_kz
+        else:
+            Pk2h = Plin_kz
         return Pk2h
-
-
 
 class PrepDataVec:
 
@@ -1549,23 +1555,26 @@ class PrepDataVec:
         if 'uyl_zM_dict' not in other_params.keys():
             del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
-        # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/Pkmmdict_yx_rbvs_dndm_imead1_um_interp.pk'
-        # if not os.path.isfile(savefname):
-        #     # getting the matter-matter power:
-        #     um_block = other_params['um_block']
-        #     nu_mat, gm_mat, rhobar_M = other_params['nu_block'], other_params['gm_block'], other_params['rhobar_M_block']
-        #     k_array = other_params['k_array_block']
-        #     # import pdb; pdb.set_trace()
-        #     # Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array,nu_mat, gm_mat, rhobar_M, um_block=um_block)
-        #     Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M)
-        #     # Pkmm1h = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M, um_block=um_block)
-        #     Pkmm2h = self.PS.get_Pkmm2h_zM(k_array)
-        #     Pkmmtot = Pkmm1h + Pkmm2h
-        #     outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot, 'Pk1h_block':Pkmm1h_block}
-        #
-        #     with open(savefname, 'wb') as f:
-        #         dill.dump(outdict, f)
-        #     import pdb; pdb.set_trace()
+#        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/compare_pkmm_cs_yx_wdndm.pk'
+#        # getting the matter-matter power:
+#        # um_block = other_params['um_block']
+#        nu_mat, gm_mat, rhobar_M = other_params['nu_block'], other_params['gm_block'], other_params['rhobar_M_block']
+#        k_array = other_params['k_array_block']
+#        # import pdb; pdb.set_trace()
+#        # Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array,nu_mat, gm_mat, rhobar_M, um_block=um_block)
+#        print('getting 1h Pkmm')
+#        Pkmm1h, Pkmm1h_block = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M)
+#        # Pkmm1h = self.PS.get_Pkmm1h_zM(k_array, nu_mat, gm_mat, rhobar_M, um_block=um_block)
+#        print('getting 2h Pkmm')
+#        Pkmm2h = self.PS.get_Pkmm2h_zM(k_array)
+#        Pkmmtot = Pkmm1h + Pkmm2h
+#
+#        outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot, 'Pk1h_block':Pkmm1h_block,
+#                'Pk1h_cs':other_params['pkmm1h_cs'],'Pk2h_cs':other_params['pkmm2h_cs'],'Pktot_cs':other_params['pkmmtot_cs'],'dndm':other_params['dndm_array'],'nu':other_params['nu_block'],'M':other_params['M_array'],'gnu':other_params['gm_block']}
+#
+#        with open(savefname, 'wb') as f:
+#            dill.dump(outdict, f)
+#        import pdb; pdb.set_trace()
 
         if self.verbose:
             print('finished prep of DV')
@@ -1619,10 +1628,43 @@ class CalcDataVec:
             # toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
             #     self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
             toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
-                self.PS_prepDV.pkzlin_interp.ev((self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
+                self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array))) * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_2h[j] = val
         return Cl_2h
+
+    def get_Cl_AB_tot_model2(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
+        g_sum = (A == 'g') + (B == 'g')
+#        if g_sum == 2:
+#            if self.PS_prepDV.use_only_halos:
+#                return 0
+#            else:
+#                toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin
+#                toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
+#        elif g_sum == 1:
+#            toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin * self.PS_prepDV.int_prob
+#            toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
+#        else:
+#            toint_M_multfac = 1.
+#            toint_z_multfac = 1.
+        toint_M_multfac = 1.
+        toint_z_multfac = 1.
+        Cl_tot = np.zeros_like(l_array)
+        for j in range(len(l_array)):
+            l = l_array[j]
+            uAl_zM = uAl_zM_dict[round(l, 1)]
+            uBl_zM = uBl_zM_dict[round(l, 1)]
+            toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array * toint_M_multfac
+            val_z1h = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+            k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
+            bgl_z1 = bAl_z_dict[round(l, 1)]
+            bgl_z2 = bBl_z_dict[round(l, 1)]
+            val_z2h = (bgl_z1 * bgl_z2) *  np.exp(self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
+            val_z = np.maximum(val_z1h,val_z2h)
+            toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac
+            val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+            Cl_tot[j] = val
+        return Cl_tot
 
     def get_Cl_AB_tot(self, A, B, ClAB_1h, ClAB_2h):
         g_sum = (A == 'g') + (B == 'g')
@@ -2168,9 +2210,15 @@ class DataVec:
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
                                                          PrepDV_params['bkl_z_dict' + str(j2)])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
+                    Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'k', PrepDV.l_array,
+                                                         PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                         PrepDV_params['ukl_zM_dict' + str(j2)],
+                                                         PrepDV_params['bgl_z_dict' + str(j1)],
+                                                         PrepDV_params['bkl_z_dict' + str(j2)])
+
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, j2])
-                    Cl_gk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
+                    Cl_gk_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,'tot2': Cltot_j1j2_m2,
                                                                     'tot_ellsurvey': Cltot_j1j2[
                                                                         PrepDV.ind_select_survey],
                                                                     'tot_plus_noise_ellsurvey': Cltot_j1j2[
@@ -2179,11 +2227,20 @@ class DataVec:
                         xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                   Cltot_j1j2,
                                                                                   theta_array_arcmin=theta_array_arcmin)
+                        gt_1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                   Cl1h_j1j2,
+                                                                                   theta_array_arcmin=theta_array_arcmin)
+                        gt_2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                   Cl2h_j1j2,
+                                                                                   theta_array_arcmin=theta_array_arcmin)
                         gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                    Cltot_j1j2,
                                                                                    theta_array_arcmin=theta_array_arcmin)
+                        gt_tot_j1j2_m2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                   Cltot_j1j2_m2,
+                                                                                   theta_array_arcmin=theta_array_arcmin)
                         xi_gk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                        xi_gtg_dict['bin_' + str(j1) + '_' + str(j2)] = gt_tot_j1j2
+                        xi_gtg_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot':gt_tot_j1j2,'tot2':gt_tot_j1j2_m2,'1h':gt_1h_j1j2,'2h':gt_2h_j1j2}
                         if 'theta' not in xi_kk_dict.keys():
                             xi_gk_dict['theta'] = theta_array
                             xi_gtg_dict['theta'] = theta_array
