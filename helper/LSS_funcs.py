@@ -553,11 +553,28 @@ def get_ukm_g(r_max, k_val, conc):
     return valf
 
 
+## fourier transform of halo mass profile : notation adhere to Cooray-Sheth '01
+#def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
+#    nz, nm = conc_mat.shape
+#    k_mat = np.tile(k_array.reshape(nz, 1), (1, nm))
+#    rs_mat = rsg_rs * r_max_mat / conc_mat
+#    coeff = 1. / (np.log(1. + conc_mat) - (conc_mat / (1. + conc_mat)))
+#    (s1, c1) = sp.special.sici((1. + conc_mat) * rs_mat * k_mat)
+#    (s2, c2) = sp.special.sici(k_mat * rs_mat)
+#    sin1 = np.sin(k_mat * rs_mat)
+#    cos1 = np.cos(k_mat * rs_mat)
+#    sin2 = np.sin(conc_mat * k_mat * rs_mat)
+#    valf = coeff * (sin1 * (s1 - s2) - (sin2 / ((1. + conc_mat) * k_mat * rs_mat)) + cos1 * (c1 - c2))
+#    return valf
+#
+
 # fourier transform of halo mass profile : notation adhere to Cooray-Sheth '01
-def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
-    nz, nm = conc_mat.shape
+def get_ukmz_g_mat(r_max_mat, k_array, conc_mat_dm,rsg_rs):
+    nz, nm = conc_mat_dm.shape
     k_mat = np.tile(k_array.reshape(nz, 1), (1, nm))
-    rs_mat = rsg_rs * r_max_mat / conc_mat
+    rs_dm_mat = r_max_mat/conc_mat_dm
+    conc_mat = conc_mat_dm / rsg_rs
+    rs_mat =  r_max_mat / conc_mat
     coeff = 1. / (np.log(1. + conc_mat) - (conc_mat / (1. + conc_mat)))
     (s1, c1) = sp.special.sici((1. + conc_mat) * rs_mat * k_mat)
     (s2, c2) = sp.special.sici(k_mat * rs_mat)
@@ -566,7 +583,6 @@ def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
     sin2 = np.sin(conc_mat * k_mat * rs_mat)
     valf = coeff * (sin1 * (s1 - s2) - (sin2 / ((1. + conc_mat) * k_mat * rs_mat)) + cos1 * (c1 - c2))
     return valf
-
 
 def get_nz_g_2mrs(z, m, n, z0):
     val = (n / (z0 * sp.special.gamma((m + 1.) / n))) * ((z / z0) ** m) * np.exp(-1. * (z / z0) ** n)

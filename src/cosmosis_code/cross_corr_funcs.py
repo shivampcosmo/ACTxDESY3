@@ -1,4 +1,5 @@
 import sys, os
+import traceback
 import pdb
 import numpy as np
 import scipy as sp
@@ -59,7 +60,7 @@ class HOD:
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fcen'] * 0.5 * (1 + erfval)
         elif self.hod_type == 'EVOLVE_HOD':
-            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
+            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
             Ncm = np.zeros_like(M_val)
             for j in range(len(self.z_array)):
                 Ncm[j,:] = np.exp(Ncm_interp((self.z_array[j]), np.log(M_val[j,:]),grid=False))
@@ -90,7 +91,7 @@ class HOD:
             M1 = 10 ** (self.hod_params['logM1'])
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
         elif self.hod_type == 'EVOLVE_HOD':
-            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
+            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
             Nsm = np.zeros_like(M_val)
             for j in range(len(self.z_array)):
                 Nsm[j, :] = np.exp(Nsm_interp((self.z_array[j]), np.log(M_val[j, :]), grid=False))
@@ -113,8 +114,8 @@ class Pressure:
     """
     def __init__(self, cosmo_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
-        self.cosmo_colossus = cosmology.setCosmology('planck18')
+        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
                                           cosmo_params['sigma8'])
@@ -826,8 +827,8 @@ class general_hm:
 
     def __init__(self, cosmo_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
-        self.cosmo_colossus = cosmology.setCosmology('planck18')
+        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
 
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
@@ -870,6 +871,7 @@ class general_hm:
 
         for j in range(len(self.z_array)):
             M_array = M_mat[j, :]
+
             dndm_array_Mz[j, :] = (1. / M_array) * mass_function.massFunction(M_array, self.z_array[j],
                                                                               mdef=mdef, model=self.dndm_model,
                                                                               q_out='dndlnM')
@@ -908,9 +910,11 @@ class general_hm:
         else:
             for j in range(len(self.z_array)):
                 M_array = M_mat[j, :]
-                halo_conc_array_Mz[j, :] = concentration.concentration(M_array, mdef, self.z_array[j],model=self.conc_model)
-            # import ipdb;
-            # ipdb.set_trace()
+
+                if mdef == 'fof' and self.conc_model=='bullock01':
+                    halo_conc_array_Mz[j, :] = concentration.concentration(M_array, '200c', self.z_array[j],model=self.conc_model)
+                else:
+                    halo_conc_array_Mz[j, :] = concentration.concentration(M_array, mdef, self.z_array[j],model=self.conc_model)
         return halo_conc_array_Mz
 
     def get_wplin_interp(self, nu, pkzlin_interp):
@@ -939,8 +943,8 @@ class Powerspec:
 
     def __init__(self, cosmo_params, hod_params, pressure_params, other_params):
         cosmology.addCosmology('mock_cosmo', cosmo_params)
-#        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
-        self.cosmo_colossus = cosmology.setCosmology('planck18')
+        self.cosmo_colossus = cosmology.setCosmology('mock_cosmo')
+#        self.cosmo_colossus = cosmology.setCosmology('planck18')
         h = cosmo_params['H0'] / 100.
         cosmo_func = cosmodef.mynew_cosmo(h, cosmo_params['Om0'], cosmo_params['Ob0'], cosmo_params['ns'],
                                           cosmo_params['sigma8'])
@@ -995,7 +999,12 @@ class Powerspec:
             self.halo_conc_mdef = other_params['halo_conc_mdef']
 
         hydro_B = pressure_params['hydro_mb']
-        if self.mdef_analysis == other_params['pressure_model_mdef']:
+        if self.mdef_analysis == 'fof':
+#            self.M_mat_mdefP = M_mat_mdef / (1.4*hydro_B)
+            self.M_mat_mdefP = M_mat_mdef / (hydro_B)
+            self.rmdefP_mat = hmf.get_R_from_M_mat(self.M_mat_mdefP,
+                                                   200 * self.rho_crit_array)
+        elif self.mdef_analysis == other_params['pressure_model_mdef']:
             self.M_mat_mdefP = M_mat_mdef / hydro_B
             self.rmdefP_mat = hmf.get_R_from_M_mat(self.M_mat_mdefP,
                                                    other_params['pressure_model_delta'] * self.rho_crit_array)
@@ -1018,7 +1027,9 @@ class Powerspec:
         # if other_params['pressure_model_name'] == 'Battaglia12':
         if self.verbose:
             print('changing mdef to 200c for battaglia profiles')
-        if self.mdef_analysis == '200c':
+        if self.mdef_analysis == 'fof':
+            M_mat_200cP = M_mat_mdef*hydro_B    
+        elif self.mdef_analysis == '200c':
             M_mat_200cP = M_mat_mdef
         else:
             M_mat_200cP, R_mat_200cP_kpc_h = np.zeros(M_mat_mdef.shape), np.zeros(M_mat_mdef.shape)
@@ -1156,6 +1167,11 @@ class Powerspec:
         else:
             self.pkzlin_interp = other_params['pkzlin_interp']
 
+        if 'pkznl_interp' in other_params.keys():
+            self.pkznl_interp = other_params['pkznl_interp']
+        else:
+            import ipdb; ipdb.set_trace() # BREAKPOINT
+
         self.suppress_1halo = other_params['suppress_1halo']
         self.kstar = other_params['kstar']
 
@@ -1197,18 +1213,20 @@ class Powerspec:
             val = np.ones(self.Nc_mat.shape)
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
-#            val = np.sqrt(
-#                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
-            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
+            val = np.sqrt(
+                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Nc_mat**2) * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+#            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
             (1, self.nm))
         if self.suppress_1halo:
             k_mat = np.tile(k_array.reshape(self.nz,1),(1,self.nm))
-            suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**2))
+            suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**4))
         else:
             suppress_fac = 1.
+#        import ipdb; ipdb.set_trace() # BREAKPOINT
+
         return coeff_mat * val*suppress_fac
 
     # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
@@ -1216,6 +1234,7 @@ class Powerspec:
         k_array = (l + 1. / 2.) / self.chi_array
 
         if self.use_only_halos:
+
             toint = self.dndm_array * self.bm_array * self.M_mat_cond_inbin * self.int_prob
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
@@ -1470,6 +1489,8 @@ class PrepDataVec:
             if 'k' in self.lss_probes_analyze:
                 self.ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j], self.uml_zM_dict)
 
+#        import ipdb; ipdb.set_trace() # BREAKPOINT
+
         if self.verbose:
             print('that took ', time.time() - ti, 'seconds')
 
@@ -1611,6 +1632,8 @@ class CalcDataVec:
             toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_1h[j] = val
+#            import ipdb; ipdb.set_trace() # BREAKPOINT
+
         return Cl_1h
 
     def get_Cl_AB_2h(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
@@ -1633,34 +1656,55 @@ class CalcDataVec:
             Cl_2h[j] = val
         return Cl_2h
 
+    def get_Cl_AB_2h_nl(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
+        g_sum = (A == 'g') + (B == 'g')
+        if g_sum > 0:
+            toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
+        else:
+            toint_z_multfac = 1.
+        Cl_2h = np.zeros_like(l_array)
+        for j in range(len(l_array)):
+            l = l_array[j]
+            k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
+            bgl_z1 = bAl_z_dict[round(l, 1)]
+            bgl_z2 = bBl_z_dict[round(l, 1)]
+            toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
+                self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array))) * toint_z_multfac
+            val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+            Cl_2h[j] = val
+        return Cl_2h
+
     def get_Cl_AB_tot_model2(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
-#        if g_sum == 2:
-#            if self.PS_prepDV.use_only_halos:
-#                return 0
-#            else:
-#                toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin
-#                toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
-#        elif g_sum == 1:
-#            toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin * self.PS_prepDV.int_prob
-#            toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
-#        else:
-#            toint_M_multfac = 1.
-#            toint_z_multfac = 1.
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
         for j in range(len(l_array)):
             l = l_array[j]
             uAl_zM = uAl_zM_dict[round(l, 1)]
+            if g_sum == 2:
+                if self.PS_prepDV.use_only_halos:
+                    val_z1h = np.zeros_like(self.PS_prepDV.z_array)   
+                else:
+                    toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin
+                    toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
+            elif g_sum == 1:
+                toint_M_multfac = self.PS_prepDV.M_mat_cond_inbin * self.PS_prepDV.int_prob
+                toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
+            else:
+                toint_M_multfac = 1.
+                toint_z_multfac = 1.
             uBl_zM = uBl_zM_dict[round(l, 1)]
             toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array * toint_M_multfac
-            val_z1h = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+
+            if (g_sum < 2) or (not self.PS_prepDV.use_only_halos):
+                val_z1h = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
             k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
             bgl_z1 = bAl_z_dict[round(l, 1)]
             bgl_z2 = bBl_z_dict[round(l, 1)]
-            val_z2h = (bgl_z1 * bgl_z2) *  np.exp(self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
+            val_z2h = (bgl_z1 * bgl_z2) *  np.exp(self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
             val_z = np.maximum(val_z1h,val_z2h)
+
             toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_tot[j] = val
@@ -1900,6 +1944,8 @@ class CalcDataVec:
         theta_out, xi_out = Hankel(l_array_full, nu=nu, q=1.0)(Cell_full, extrap=True)
         xi_out *= (1 / (2 * np.pi))
         theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+#        import ipdb; ipdb.set_trace() # BREAKPOINT
+
         if theta_array_arcmin is not None:
             xi_interp = interpolate.interp1d(np.log(theta_out_arcmin), np.log(xi_out), fill_value='extrapolate',
                                              bounds_error=False)
@@ -2078,122 +2124,179 @@ class DataVec:
                 print('done y-y calculation')
 
         if ('gg' in PrepDV.stats_analyze) or (run_cov_pipe and ('gg' in PrepDV.lss_probes_allcomb)):
-            Cl_gg_dict = {}
-            if analysis_coords == 'real':
-                xi_gg_dict = {}
-            bin_combs = []
-            for j1 in bins_lens:
-                for j2 in bins_lens:
-                    if j1 >= j2:
-                        if gg_doauto:
-                            if j1 == j2:
+            try:
+                Cl_gg_dict = {}
+                if analysis_coords == 'real':
+                    xi_gg_dict = {}
+                bin_combs = []
+                for j1 in bins_lens:
+                    for j2 in bins_lens:
+                        if j1 >= j2:
+                            if gg_doauto:
+                                if j1 == j2:
+                                    runj1j2 = True
+                                else:
+                                    runj1j2 = False
+                            else:
                                 runj1j2 = True
-                            else:
-                                runj1j2 = False
-                        else:
-                            runj1j2 = True
-                        if runj1j2:
-                            Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'g', PrepDV.l_array,
-                                                                 PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                                 PrepDV_params['ugl_zM_dict' + str(j2)])
-                            Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PrepDV.l_array,
-                                                                 PrepDV_params['bgl_z_dict' + str(j1)],
-                                                                 PrepDV_params['bgl_z_dict' + str(j2)])
-                            Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
-                            if j1 == j2:
-                                Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
-                            else:
-                                Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
-                            bin_combs.append([j1, j2])
-                            Cl_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,
-                                                                            'tot': Cltot_j1j2,
-                                                                            'tot_ellsurvey': Cltot_j1j2[
-                                                                                PrepDV.ind_select_survey],
-                                                                            'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                                            PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
-                            if analysis_coords == 'real':
-                                xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                          Cltot_j1j2,
-                                                                                          theta_array_arcmin=theta_array_arcmin)
-                                xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                                if 'theta' not in xi_gg_dict.keys():
-                                    xi_gg_dict['theta'] = theta_array
+                            if runj1j2:
+                                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'g', PrepDV.l_array,
+                                                                    PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                                    PrepDV_params['ugl_zM_dict' + str(j2)])
+                                Cl2h_j1j2_nl = self.CalcDV.get_Cl_AB_2h_nl('g', 'g', PrepDV.l_array,
+                                                                    PrepDV_params['bgl_z_dict' + str(j1)],
+                                                                    PrepDV_params['bgl_z_dict' + str(j2)])
+                                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PrepDV.l_array,
+                                                                    PrepDV_params['bgl_z_dict' + str(j1)],
+                                                                    PrepDV_params['bgl_z_dict' + str(j2)])
+                                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
+                                Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'g', PrepDV.l_array,
+                                                                    PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                                    PrepDV_params['ugl_zM_dict' + str(j2)],
+                                                                    PrepDV_params['bgl_z_dict' + str(j1)],
+                                                                    PrepDV_params['bgl_z_dict' + str(j2)])
 
-                                if 'gg' in PrepDV.stats_analyze:
-                                    block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
-                                        j2)] = xitot_j1j2
+                                if j1 == j2:
+                                    Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
+                                else:
+                                    Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
+                                bin_combs.append([j1, j2])
+                                Cl_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,'2h_nl': Cl2h_j1j2_nl,
+                                                                                'tot': Cltot_j1j2,'tot2': Cltot_j1j2_m2,
+                                                                                'tot_ellsurvey': Cltot_j1j2[
+                                                                                    PrepDV.ind_select_survey],
+                                                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                                PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                                if analysis_coords == 'real':
+                                    xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cltot_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    if self.CalcDV.PS_prepDV.use_only_halos:
+                                        xi1h_j1j2 = np.zeros_like(theta_array)
+                                    else:
+                                        xi1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                                Cl1h_j1j2,
+                                                                                                theta_array_arcmin=theta_array_arcmin)
+                                    xi2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cl2h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xi2h_j1j2_nl, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cl2h_j1j2_nl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xitot2_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cltot_j1j2_m2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+#                                xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                                    xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h':xi1h_j1j2,'2h':xi2h_j1j2,'2h_nl':xi2h_j1j2_nl,'tot':xitot_j1j2,
+                                            'tot2':xitot2_j1j2}
+                                    if 'theta' not in xi_gg_dict.keys():
+                                        xi_gg_dict['theta'] = theta_array
 
-                                    block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
-                                        j2)] = theta_array
-                            else:
-                                if 'gg' in PrepDV.stats_analyze:
-                                    block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
-                                        j2)] = Cltot_j1j2
+                                    if 'gg' in PrepDV.stats_analyze:
+                                        block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                            j2)] = xitot_j1j2
 
-                                    block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
-                                        j2)] = PrepDV.l_array
+                                        block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                            j2)] = theta_array
+                                else:
+                                    if 'gg' in PrepDV.stats_analyze:
+                                        block[sec_save_name, 'theory_corrf_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                            j2)] = Cltot_j1j2
 
-            Cl_gg_dict['bin_combs'] = bin_combs
-            self.Cl_result_dict['gg'] = Cl_gg_dict
-            if analysis_coords == 'real':
-                xi_gg_dict['bin_combs'] = bin_combs
-                xi_gg_dict['theta'] = theta_array
-                self.xi_result_dict['gg'] = xi_gg_dict
+                                        block[sec_save_name, 'xcoord_' + 'gg' + '_' + 'bin_' + str(j1) + '_' + str(
+                                            j2)] = PrepDV.l_array
 
-            if self.verbose:
-                print('done galaxy-galaxy calculation')
+                Cl_gg_dict['bin_combs'] = bin_combs
+                self.Cl_result_dict['gg'] = Cl_gg_dict
+                if analysis_coords == 'real':
+                    xi_gg_dict['bin_combs'] = bin_combs
+                    xi_gg_dict['theta'] = theta_array
+                    self.xi_result_dict['gg'] = xi_gg_dict
+
+                if self.verbose:
+                    print('done galaxy-galaxy calculation')
+            except:
+                print(traceback.format_exc())
 
         if ('gy' in PrepDV.stats_analyze) or (run_cov_pipe and ('gy' in PrepDV.lss_probes_allcomb)):
-            Cl_gy_dict = {}
-            if analysis_coords == 'real':
-                xi_gy_dict = {}
-            bin_combs = []
-            for j1 in bins_lens:
-                Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PrepDV.l_array,
-                                                     PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                     PrepDV_params['uyl_zM_dict0'])
-                Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
-                                                     PrepDV_params['byl_z_dict0'])
-                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
-                Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
-                bin_combs.append([j1, 0])
-                Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,
-                                                       'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
-                                                       'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                       PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+            try:
+                Cl_gy_dict = {}
                 if analysis_coords == 'real':
-                    xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                              Cltot_j1j2,
-                                                                              theta_array_arcmin=theta_array_arcmin)
-                    xi_gy_dict['bin_' + str(j1) + '_0'] = xitot_j1j2
+                    xi_gy_dict = {}
+                bin_combs = []
+                for j1 in bins_lens:
+                    Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PrepDV.l_array,
+                                                        PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                        PrepDV_params['uyl_zM_dict0'])
+                    Cl2h_j1j2_nl = self.CalcDV.get_Cl_AB_2h_nl('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
+                                                        PrepDV_params['byl_z_dict0'])
+                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
+                                                        PrepDV_params['byl_z_dict0'])
+                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
+                    Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'y', PrepDV.l_array,
+                                                        PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                        PrepDV_params['ugl_zM_dict' + str(j2)],
+                                                        PrepDV_params['bgl_z_dict' + str(j1)],
+                                                        PrepDV_params['bgl_z_dict' + str(j2)])
 
-                    if 'theta' not in xi_kk_dict.keys():
-                        xi_gy_dict['theta'] = theta_array
+                    Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
+                    bin_combs.append([j1, 0])
+                    Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,'2h_nl': Cl2h_j1j2_nl, 'tot': Cltot_j1j2,'tot2': Cltot_j1j2_m2,
+                                                        'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
+                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                    if analysis_coords == 'real':
+                        xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                Cltot_j1j2,
+                                                                                theta_array_arcmin=theta_array_arcmin)
+#                    xi_gy_dict['bin_' + str(j1) + '_0'] = xitot_j1j2
 
-                    if 'gy' in PrepDV.stats_analyze:
-                        block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
-                            0)] = xitot_j1j2
+                        xi1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                    Cl1h_j1j2,
+                                                                                    theta_array_arcmin=theta_array_arcmin)
+                        xi2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                    Cl2h_j1j2,
+                                                                                    theta_array_arcmin=theta_array_arcmin)
+                        xi2h_j1j2_nl, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                    Cl2h_j1j2_nl,
+                                                                                    theta_array_arcmin=theta_array_arcmin)
+                        xitot2_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                    Cltot_j1j2_m2,
+                                                                                    theta_array_arcmin=theta_array_arcmin)
+#                                xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
+                        xi_gy_dict['bin_' + str(j1) + '_' + str(0)] = {'1h':xi1h_j1j2,'2h':xi2h_j1j2,'2h_nl':xi2h_j1j2_nl,'tot':xitot_j1j2,'tot2':xitot2_j1j2}
+                        if 'theta' not in xi_gy_dict.keys():
+                            xi_gy_dict['theta'] = theta_array
 
-                        block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
-                            0)] = theta_array
-                else:
-                    if 'gy' in PrepDV.stats_analyze:
-                        block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
-                            0)] = Cltot_j1j2
+                        if 'gy' in PrepDV.stats_analyze:
+                            block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                                0)] = xitot_j1j2
 
-                        block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
-                            0)] = PrepDV.l_array
+                            block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                                0)] = theta_array
+                    else:
+                        if 'gy' in PrepDV.stats_analyze:
+                            block[sec_save_name, 'theory_corrf_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                                0)] = Cltot_j1j2
 
-            Cl_gy_dict['bin_combs'] = bin_combs
-            self.Cl_result_dict['gy'] = Cl_gy_dict
-            # Cl_result_dict['yg'] = Cl_gy_dict
-            if analysis_coords == 'real':
-                xi_gy_dict['bin_combs'] = bin_combs
-                xi_gy_dict['theta'] = theta_array
-                self.xi_result_dict['gy'] = xi_gy_dict
+                            block[sec_save_name, 'xcoord_' + 'gy' + '_' + 'bin_' + str(j1) + '_' + str(
+                                0)] = PrepDV.l_array
 
-            if self.verbose:
-                print('done galaxy-y calculation')
+                Cl_gy_dict['bin_combs'] = bin_combs
+                self.Cl_result_dict['gy'] = Cl_gy_dict
+                # Cl_result_dict['yg'] = Cl_gy_dict
+                if analysis_coords == 'real':
+                    xi_gy_dict['bin_combs'] = bin_combs
+                    xi_gy_dict['theta'] = theta_array
+                    self.xi_result_dict['gy'] = xi_gy_dict
+
+                if self.verbose:
+                    print('done galaxy-y calculation')
+            
+            except:
+                print(traceback.format_exc())
+
+
 
         if ('gk' in PrepDV.stats_analyze) or (run_cov_pipe and ('gk' in PrepDV.lss_probes_allcomb)):
             Cl_gk_dict = {}

@@ -320,15 +320,17 @@ def execute(block, config):
     hod_params_dict = ini_info['hod_params_dict']
 
     if use_Plin_block:
-#        lin_power = names.matter_power_lin
+        lin_power = names.matter_power_lin
         nl_power = names.matter_power_nl
-#        z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
-        z_block, k_block, pk_block = block.get_grid(nl_power, "z", "k_h", "p_k")
+        z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
         pkzlin_interp = interpolate.RectBivariateSpline(z_block, np.log(k_block), np.log(pk_block))
         if get_bp:
             wplin_interp = ghmf.get_wplin_interp(2, pkzlin_interp)
             other_params_dict['wplin_interp'] = wplin_interp
         other_params_dict['pkzlin_interp'] = pkzlin_interp
+        z_block, k_block, pk_block = block.get_grid(nl_power, "z", "k_h", "p_k")
+        pkznl_interp = interpolate.RectBivariateSpline(z_block, np.log(k_block), np.log(pk_block))
+        other_params_dict['pkznl_interp'] = pkznl_interp
 
     nl_power = names.matter_power_nl
     PrepDV_dict_allbins = {}
