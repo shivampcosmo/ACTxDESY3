@@ -546,6 +546,7 @@ def execute(block, config):
 
                 PrepDV_dict_allbins['ukl_zM_dict' + str(binvs)] = PrepDV_fid.ukl_zM_dict
                 PrepDV_dict_allbins['ugl_zM_dict' + str(binvl)] = PrepDV_fid.ugl_zM_dict
+                PrepDV_dict_allbins['ugl_cross_zM_dict' + str(binvl)] = PrepDV_fid.ugl_cross_zM_dict
                 PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
                 PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
                 PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array

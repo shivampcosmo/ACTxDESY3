@@ -1229,6 +1229,29 @@ class Powerspec:
 
         return coeff_mat * val*suppress_fac
 
+
+    def get_ug_cross_l_zM(self, l):
+        k_array = (l + 1. / 2.) / self.chi_array
+        if self.use_only_halos:
+            val = np.ones(self.Nc_mat.shape)
+        else:
+            ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+#            val = np.sqrt(
+#                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Nc_mat**2) * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
+
+        coeff_mat = np.tile(
+            (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
+            (1, self.nm))
+        if self.suppress_1halo:
+            k_mat = np.tile(k_array.reshape(self.nz,1),(1,self.nm))
+            suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**4))
+        else:
+            suppress_fac = 1.
+#        import ipdb; ipdb.set_trace() # BREAKPOINT
+
+        return coeff_mat * val*suppress_fac
+
     # get spherical harmonic transform of the effective galaxy bias, eq 23 of Makiya et al
     def get_bg_l_z(self, l):
         k_array = (l + 1. / 2.) / self.chi_array
@@ -1482,14 +1505,14 @@ class PrepDataVec:
             print('getting ugl, ukl matrix')
             ti = time.time()
 
-        self.ugl_zM_dict, self.ukl_zM_dict = {}, {}
+        self.ugl_cross_zM_dict,self.ugl_zM_dict, self.ukl_zM_dict = {}, {}, {}
         for j in range(len(l_array)):
             if 'g' in self.lss_probes_analyze:
                 self.ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
+                self.ugl_cross_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_cross_l_zM(l_array[j])
             if 'k' in self.lss_probes_analyze:
                 self.ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j], self.uml_zM_dict)
 
-#        import ipdb; ipdb.set_trace() # BREAKPOINT
 
         if self.verbose:
             print('that took ', time.time() - ti, 'seconds')
@@ -2226,7 +2249,7 @@ class DataVec:
                 bin_combs = []
                 for j1 in bins_lens:
                     Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PrepDV.l_array,
-                                                        PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                        PrepDV_params['ugl_cross_zM_dict' + str(j1)],
                                                         PrepDV_params['uyl_zM_dict0'])
                     Cl2h_j1j2_nl = self.CalcDV.get_Cl_AB_2h_nl('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
                                                         PrepDV_params['byl_z_dict0'])
@@ -2234,8 +2257,8 @@ class DataVec:
                                                         PrepDV_params['byl_z_dict0'])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
                     Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'y', PrepDV.l_array,
-                                                        PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                        PrepDV_params['ugl_zM_dict' + str(j2)],
+                                                        PrepDV_params['ugl_cross_zM_dict' + str(j1)],
+                                                        PrepDV_params['ugl_cross_zM_dict' + str(j2)],
                                                         PrepDV_params['bgl_z_dict' + str(j1)],
                                                         PrepDV_params['bgl_z_dict' + str(j2)])
 
@@ -2307,14 +2330,14 @@ class DataVec:
             for j1 in bins_lens:
                 for j2 in bins_source:
                     Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'k', PrepDV.l_array,
-                                                         PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                         PrepDV_params['ugl_cross_zM_dict' + str(j1)],
                                                          PrepDV_params['ukl_zM_dict' + str(j2)])
                     Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'k', PrepDV.l_array,
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
                                                          PrepDV_params['bkl_z_dict' + str(j2)])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
                     Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'k', PrepDV.l_array,
-                                                         PrepDV_params['ugl_zM_dict' + str(j1)],
+                                                         PrepDV_params['ugl_cross_zM_dict' + str(j1)],
                                                          PrepDV_params['ukl_zM_dict' + str(j2)],
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
                                                          PrepDV_params['bkl_z_dict' + str(j2)])
