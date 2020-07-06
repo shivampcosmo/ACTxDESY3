@@ -6,8 +6,13 @@ import copy
 import pdb
 import ast
 import scipy as sp
-from cross_corr_funcs import Powerspec,DataVec, general_hm, PrepDataVec
 from scipy import interpolate
+from HOD import *
+from pressure import *
+from general_hm import *
+from Powerspec import *
+from PrepDataVec import *
+from DataVec import *
 from scipy.interpolate import RegularGridInterpolator
 import multiprocessing
 import dill
@@ -417,9 +422,15 @@ def execute(block, config):
                 del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                     'bm_array'], other_params_dict_bin['halo_conc_mdef']
 
+
+            other_params_dict['kk_hm_trans'] = 1.
             if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys())\
                     and ((nl_power, 'um_1') in block.keys()):
                 z_array_block = block[nl_power, 'z']
+                hm_1h2h_alpha = 2.93*(1.77**block[nl_power,'neff_out'])
+                
+                other_params_dict['kk_hm_trans'] = hm_1h2h_alpha
+                other_params_dict_bin['kk_hm_trans'] = hm_1h2h_alpha
                 array_num = np.arange(1, len(z_array_block) + 1, 1)
                 array_num_python = array_num - 1
                 M_mat_block = block[nl_power, 'mass_h_um']

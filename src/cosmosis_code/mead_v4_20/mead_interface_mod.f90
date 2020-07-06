@@ -91,11 +91,11 @@ function execute(block,config) result(status)
     real(8), ALLOCATABLE ::  umh(:),g_array(:)
     
     real(4), ALLOCATABLE ::  massh(:)
-    real(8), ALLOCATABLE :: g_out(:,:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:), ind_lut(:,:),nu_out(:,:),sigma_out(:,:),rv_out(:,:),c_out(:,:)
-    
+    real(8), ALLOCATABLE :: g_out(:,:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:),ind_lut(:,:),nu_out(:,:),sigma_out(:,:),rv_out(:,:),c_out(:,:)
+    real(8), ALLOCATABLE :: neff_out(:) 
     
     HM_verbose = .True.
-    imead = 0
+    imead = 1
     write(*,*) "imead is 0"
     status = 0
     call c_f_pointer(config, settings)
@@ -210,6 +210,7 @@ function execute(block,config) result(status)
     ALLOCATE(g_array(256))
     ALLOCATE(massh(256))
     ALLOCATE(ind_lut(nk,settings%nz))
+    ALLOCATE(neff_out(settings%nz))
     
     DO kk=1,256
     massh(kk)=0.
@@ -232,7 +233,10 @@ function execute(block,config) result(status)
     end do
     
 
-    
+    DO j=1,nz
+        neff_out(j)=0.
+    end do
+
     !Loop over redshifts
     DO j=1,nz
         CALL fill_plintab_cosmosis(j,cosi,real(k_in),real(z_in),real(p_in),size(k_in),size(z_in))
@@ -245,13 +249,15 @@ function execute(block,config) result(status)
         ! and fills sigma(R) tables 
         
         CALL halomod_init(z,lut,cosi)
-		DO kk=1,lut%n
+
+        neff_out(j) = lut%neff
+        DO kk=1,lut%n
             mass_out(kk,j) = lut%m(kk)
             nu_out(kk,j) = lut%nu(kk)
             sigma_out(kk,j) = lut%sig(kk)
             rv_out(kk,j) = lut%rv(kk)
             c_out(kk,j) = lut%c(kk)
-		END DO
+        END DO
         !Loop over k values
         DO i=1,nk
             ind_lut(i,j)=(lut%n)*1.0
@@ -259,10 +265,10 @@ function execute(block,config) result(status)
             CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi,umh,bth,g_array)
             !This outputs k^3 P(k).  We convert back. (need to check for new version) 
             ! note, i,j are interchanged with respect to hm main program
-			DO kk=1,lut%n
-				um_out(kk,i,j) = umh(kk)
+                DO kk=1,lut%n
+                um_out(kk,i,j) = umh(kk)
                 g_out(kk,i,j) = g_array(kk)
-            END DO
+                END DO
             p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.))
             p1h_out(i,j)=p1h / (k(i)**3.0) * (2.*(pi**2.))
             p2h_out(i,j)=p2h / (k(i)**3.0) * (2.*(pi**2.))
@@ -301,6 +307,7 @@ function execute(block,config) result(status)
 !	SP
 	status = datablock_put_double_array_2d(block, settings%output_section_name, "mass_h_um", mass_out)
     status = datablock_put_double_array_2d(block, settings%output_section_name, "nu_out", nu_out)
+    status = datablock_put_double_array_1d(block, settings%output_section_name, "neff_out", neff_out)
     status = datablock_put_double_array_2d(block, settings%output_section_name, "sigma_out", sigma_out)
     status = datablock_put_double_array_2d(block, settings%output_section_name, "rv_out", rv_out)
     status = datablock_put_double_array_2d(block, settings%output_section_name, "c_out", c_out)
