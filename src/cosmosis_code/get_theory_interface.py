@@ -21,7 +21,7 @@ from configparser import ConfigParser
 import pickle as pk
 import pdb
 import time
-
+import traceback as tb
 
 def get_value(section, value, config_run, config_def):
     if section in config_run.keys() and value in config_run[section].keys():
@@ -427,10 +427,15 @@ def execute(block, config):
             if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys())\
                     and ((nl_power, 'um_1') in block.keys()):
                 z_array_block = block[nl_power, 'z']
-                hm_1h2h_alpha = 2.93*(1.77**block[nl_power,'neff_out'])
-                
+                hm_1h2h_alpha_mead = 2.93*(1.77**block[nl_power,'neff_out'])
+                hm_interp = interpolate.interp1d(z_array_block, hm_1h2h_alpha_mead,fill_value='extrapolate')
+                hm_1h2h_alpha = hm_interp(other_params_dict['z_array'])
+
+
                 other_params_dict['kk_hm_trans'] = hm_1h2h_alpha
                 other_params_dict_bin['kk_hm_trans'] = hm_1h2h_alpha
+
+
                 array_num = np.arange(1, len(z_array_block) + 1, 1)
                 array_num_python = array_num - 1
                 M_mat_block = block[nl_power, 'mass_h_um']
@@ -543,7 +548,10 @@ def execute(block, config):
                 block[sec_save_name, 'xcoord_' + 'gty' + '_bin_' + str(binvs) + '_' + str(0)] = theta_array
             else:
                 ti = time.time()
-                PrepDV_fid = PrepDataVec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
+                try:
+                    PrepDV_fid = PrepDataVec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)
+                except:
+                    print(tb.format_exc())
                 if verbose:
                     print('Setting up DV took : ' + str(time.time() - ti) + 's')
 
@@ -563,7 +571,7 @@ def execute(block, config):
                 PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
                 PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
 
-                if 'uyl_zM_dict' not in PrepDV_dict_allbins.keys():
+                if 'uyl_zM_dict0' not in PrepDV_dict_allbins.keys():
                     PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
                     PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
                     PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
@@ -585,9 +593,12 @@ def execute(block, config):
                     PrepDV_dict_allbins['sec_save_name'] = sec_save_name
 
     if not get_bp:
-        DV = DataVec(PrepDV_dict_allbins, block)
-        with open(save_data_fname,'wb') as f:
-            dill.dump(DV,f)
+        try:
+            DV = DataVec(PrepDV_dict_allbins, block)
+        except:
+            print(tb.format_exc())
+#        with open(save_data_fname,'wb') as f:
+#            dill.dump(DV,f)
 
         # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")

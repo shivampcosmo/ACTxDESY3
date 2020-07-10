@@ -94,9 +94,8 @@ function execute(block,config) result(status)
     real(8), ALLOCATABLE :: g_out(:,:,:),um_out(:,:,:),bt_out(:,:),mass_out(:,:),ind_lut(:,:),nu_out(:,:),sigma_out(:,:),rv_out(:,:),c_out(:,:)
     real(8), ALLOCATABLE :: neff_out(:) 
     
-    HM_verbose = .True.
+    HM_verbose = .False.
     imead = 1
-    write(*,*) "imead is 0"
     status = 0
     call c_f_pointer(config, settings)
 

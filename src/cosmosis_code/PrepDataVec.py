@@ -41,6 +41,7 @@ class PrepDataVec:
 
         self.PS = Powerspec(cosmo_params, hod_params, pressure_params, other_params)
 
+        self.al_kk = self.PS.al_kk
         self.save_suffix = other_params['save_suffix']
         self.verbose = other_params['verbose']
 
@@ -97,7 +98,6 @@ class PrepDataVec:
             ti = time.time()
             if self.verbose:
                 print('getting y3d matrix')
-#            global x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
             y3d_mat = self.PS.Pressure.get_y3d(self.PS.M_mat_mdefP, self.PS.x_array, self.PS.z_array,
                                                self.PS.rmdefP_mat,
                                                M200c_mat=self.PS.M_mat_200cP, Mmat_cond=self.PS.M_mat_cond_inbin,
@@ -245,7 +245,7 @@ class PrepDataVec:
         if 'uyl_zM_dict' not in other_params.keys():
             del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
-#        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/compare_pkmm_cs_yx_wdndm.pk'
+#        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/compare_pkmm_cs_yx_wdndm_wmead.pk'
 #        # getting the matter-matter power:
 #        # um_block = other_params['um_block']
 #        nu_mat, gm_mat, rhobar_M = other_params['nu_block'], other_params['gm_block'], other_params['rhobar_M_block']
@@ -259,12 +259,12 @@ class PrepDataVec:
 #        Pkmm2h = self.PS.get_Pkmm2h_zM(k_array)
 #        Pkmmtot = Pkmm1h + Pkmm2h
 #
-#        outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot, 'Pk1h_block':Pkmm1h_block,
+#        outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pkmm1h,'Pk2h':Pkmm2h,'Pktot':Pkmmtot, 'Pk1h_block':Pkmm1h_block,'z_bl':other_params['z_array_block'],'k_bl':other_params['k_array_block'],
 #                'Pk1h_cs':other_params['pkmm1h_cs'],'Pk2h_cs':other_params['pkmm2h_cs'],'Pktot_cs':other_params['pkmmtot_cs'],'dndm':other_params['dndm_array'],'nu':other_params['nu_block'],'M':other_params['M_array'],'gnu':other_params['gm_block']}
 #
 #        with open(savefname, 'wb') as f:
 #            dill.dump(outdict, f)
-#        import pdb; pdb.set_trace()
+#        import ipdb; ipdb.set_trace()
 
         if self.verbose:
             print('finished prep of DV')
@@ -275,7 +275,7 @@ class CalcDataVec:
 
     def __init__(self, PrepDV_params):
         self.PS_prepDV = PrepDV_params['PrepDV_fid'].PS
-
+      
 
     def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')
@@ -382,12 +382,18 @@ class CalcDataVec:
 
     def get_Cl_AB_tot_modelmead(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
+        k_sum = (A == 'k') + (B == 'k')
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
+
+        if k_sum > 0:   
+            al = self.PS_prepDV.al_kk
+        else:
+            al = 1.
+
         for j in range(len(l_array)):
             l = l_array[j]
-            uAl_zM = uAl_zM_dict[round(l, 1)]
             if g_sum == 2:
                 if self.PS_prepDV.use_only_halos:
                     val_z1h = np.zeros_like(self.PS_prepDV.z_array)   
@@ -400,15 +406,29 @@ class CalcDataVec:
             else:
                 toint_M_multfac = 1.
                 toint_z_multfac = 1.
+
+            uAl_zM = uAl_zM_dict[round(l, 1)]
             uBl_zM = uBl_zM_dict[round(l, 1)]
             toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array * toint_M_multfac
-
             if (g_sum < 2) or (not self.PS_prepDV.use_only_halos):
                 val_z1h = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+
             k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
             bgl_z1 = bAl_z_dict[round(l, 1)]
             bgl_z2 = bBl_z_dict[round(l, 1)]
-            val_z2h = (bgl_z1 * bgl_z2) *  np.exp(self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
+            val_z2h = (bgl_z1 * bgl_z2) *  np.exp(self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
+
+#            if np.any(val_z1h < 0) or np.any(val_z2h < 0):
+#                import ipdb; ipdb.set_trace() # BREAKPOINT
+
+            if np.any(val_z1h < 0): 
+                ind_ltz = np.where(val_z1h < 0)[0]
+                val_z1h[ind_ltz]=0.0
+
+            if np.any(val_z2h < 0):
+                ind_ltz = np.where(val_z2h < 0)[0]
+                val_z2h[ind_ltz]=0.0
+
             val_z = (val_z1h**al + val_z2h**al)**(1./al)
 
             toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac

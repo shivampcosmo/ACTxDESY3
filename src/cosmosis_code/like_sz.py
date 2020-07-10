@@ -15,7 +15,7 @@ import dill
 import pickle as pk
 from configobj import ConfigObj
 from configparser import ConfigParser
-
+import traceback as tb
 
 
 def get_corr(cov):
@@ -44,8 +44,16 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
         kbv = 0
         for j in range(nbins):
             bin_j = bins_array[j]
-            xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(0))
-            corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(0))
+            try:
+                if stat == 'gty':
+                    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(0))
+                    corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(0))
+                else:
+                    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+                    corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+            except:
+                import ipdb; ipdb.set_trace() # BREAKPOINT
+
             corrf_stat_temp = intspline(xcoord_array, corrf_stat)
             corrf_stat_f = corrf_stat_temp(xcoord_data[kbv])
             if len(corrf_theory_rdata) == 0:
@@ -424,8 +432,10 @@ def setup(options):
 
 def execute(block, config):
     data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name = config
-
-    like3d, corrf_theory_rdata = lnprob_func(block, xcoord_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
+    try:
+        like3d, corrf_theory_rdata = lnprob_func(block, xcoord_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
+    except:
+        print(tb.format_exc())
     chi2 = -2. * like3d
 
     likes = names.likelihoods
