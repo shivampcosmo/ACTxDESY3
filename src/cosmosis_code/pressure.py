@@ -455,7 +455,7 @@ class Pressure:
         beta_Am = get_cond_var('beta-A_m') * (pivot_ratio ** get_cond_var('beta-alpha_m'))
         xc_Am = get_cond_var('xc-A_m') * (pivot_ratio ** get_cond_var('xc-alpha_m'))
         P0_Am = get_cond_var('P0-A_m') * (pivot_ratio ** get_cond_var('P0-alpha_m'))
-
+#        import ipdb; ipdb.set_trace()
         one_plus_z_mat = 1 + np.tile(z_array.reshape(nz, 1, 1), (1, nm, nx))
 
         gamma_mat = gamma_Am * (M_mat_no_h__Mstar ** get_cond_var('gamma-alpha_m')) * (
