@@ -61,7 +61,7 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
             else:
                 corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_stat_f))
             kbv += 1
-#            import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
 
     # if stat_type == 'gy':
     #     nbins = len(bins_array)
@@ -99,9 +99,11 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
 
 def lnprob_func(block, xcoord_data, corrf_data_gtcut, incov_obs_comp, stat_type, bins_array,sec_save_name):
     corrf_theory_rdata = get_theory_terms(block, xcoord_data, stat_type, bins_array,sec_savename=sec_save_name)
-#    import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
     valf = -0.5 * np.dot(np.dot(np.transpose((corrf_data_gtcut - corrf_theory_rdata)), incov_obs_comp),
                          (corrf_data_gtcut - corrf_theory_rdata))
+
+    # import ipdb; ipdb.set_trace()
     return valf, corrf_theory_rdata
 
 
@@ -437,7 +439,7 @@ def execute(block, config):
     except:
         print(tb.format_exc())
     chi2 = -2. * like3d
-#    print(block['theory_yx','P0-A_m--0'],block['theory_yx','beta-A_m--0'],like3d)
+    # print(block['theory_yx','P0-A_m--0'],block['theory_yx','beta-A_m--0'],like3d)
     likes = names.likelihoods
     block[likes, 'SZ_LIKE'] = like3d
     block[likes, 'SZ_CHI2'] = chi2

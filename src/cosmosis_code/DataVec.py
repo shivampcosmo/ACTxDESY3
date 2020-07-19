@@ -209,6 +209,7 @@ class DataVec:
                             block[
                                 sec_save_name, 'theory_corrf_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = gt_tot_j1j2
                             block[sec_save_name, 'xcoord_' + 'gty' + '_' + 'bin_' + str(j1) + '_' + str(0)] = theta_array
+
                     else:
                         if 'ky' in PrepDV.stats_analyze:
                             block[
@@ -230,6 +231,7 @@ class DataVec:
             if self.verbose:
                 print('done shear-y calculation')
 
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
         if ('yy' in PrepDV.stats_analyze) or (run_cov_pipe and ('yy' in PrepDV.lss_probes_allcomb)):
             Cl_yy_dict = {}
             Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('y', 'y', PrepDV.l_array, PrepDV_params['uyl_zM_dict0'],

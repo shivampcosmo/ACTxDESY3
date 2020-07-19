@@ -103,6 +103,8 @@ class PrepDataVec:
                                                M200c_mat=self.PS.M_mat_200cP, Mmat_cond=self.PS.M_mat_cond_inbin,
                                                zmat_cond=self.PS.z_mat_cond_inbin)
 
+            # import ipdb; ipdb.set_trace() # BREAKPOINT
+
             if self.verbose:
                 print('getting x matrix')
             nz, nm, nx = len(self.PS.z_array), len(self.PS.M_array), len(self.PS.x_array)

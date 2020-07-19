@@ -319,10 +319,10 @@ def execute(block, config):
         except:
             clf = pk.load(open(twopt_file, 'rb'), encoding='latin1')
 
-    other_params_dict = ini_info['other_params_dict']
-    cosmo_params_dict = ini_info['cosmo_params_dict']
-    pressure_params_dict = ini_info['pressure_params_dict']
-    hod_params_dict = ini_info['hod_params_dict']
+    other_params_dict = copy.deepcopy(ini_info['other_params_dict'])
+    cosmo_params_dict = copy.deepcopy(ini_info['cosmo_params_dict'])
+    pressure_params_dict = copy.deepcopy(ini_info['pressure_params_dict'])
+    hod_params_dict = copy.deepcopy(ini_info['hod_params_dict'])
 
     if use_Plin_block:
         lin_power = names.matter_power_lin
@@ -573,6 +573,8 @@ def execute(block, config):
 
                 if 'uyl_zM_dict0' not in PrepDV_dict_allbins.keys():
                     PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
+                    # import ipdb; ipdb.set_trace() # BREAKPOINT
+
                     PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
                     PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
                     PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
@@ -597,8 +599,9 @@ def execute(block, config):
             DV = DataVec(PrepDV_dict_allbins, block)
         except:
             print(tb.format_exc())
-#        with open(save_data_fname,'wb') as f:
-#            dill.dump(DV,f)
+        # with open(save_data_fname,'wb') as f:
+            # dill.dump(DV,f)
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")
