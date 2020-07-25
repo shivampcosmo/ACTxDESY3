@@ -312,7 +312,7 @@ class Powerspec:
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
             val = np.sqrt(
-                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Nc_mat**2) * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+                (2 * self.Ns_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
 #            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
 
         coeff_mat = np.tile(
@@ -336,7 +336,7 @@ class Powerspec:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
 #            val = np.sqrt(
 #                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Nc_mat**2) * (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
-            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
+            val = (self.Ns_mat * ukzm_mat + self.Nc_mat) 
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
@@ -359,7 +359,7 @@ class Powerspec:
             toint = self.dndm_array * self.bm_array * self.M_mat_cond_inbin * self.int_prob
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
-            toint = self.dndm_array * (self.Nc_mat + self.Nc_mat*self.Ns_mat * ukzm_mat) * self.bm_array * self.M_mat_cond_inbin
+            toint = self.dndm_array * (self.Nc_mat + self.Ns_mat * ukzm_mat) * self.bm_array * self.M_mat_cond_inbin
 
         val = sp.integrate.simps(toint, self.M_array)
 

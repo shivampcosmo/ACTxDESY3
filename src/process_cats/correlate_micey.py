@@ -47,11 +47,13 @@ def get_zmean(zcent,delz,nz_bin):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cat', required=True, type=str, help='Cat type')
-    parser.add_argument('--do_gg', required=True, type=str, help='Do gg corr')
+#     parser.add_argument('--do_gg', required=True, type=str, help='Do gg corr')
 #     parser.add_argument('--do_gy', required=True, type=str, help='Do gy corr')
     parser.add_argument('--mask', required=True, type=str, help='mask type')
     parser.add_argument('--logMmin', default=13.0)
     parser.add_argument('--logMmax', default=13.5)
+    parser.add_argument('--do_gg', default=0)
+    parser.add_argument('--beam', default=2.4)
     args_all = parser.parse_args()
     return args_all
 
@@ -66,6 +68,7 @@ if __name__ == "__main__":
     do_gg = args.do_gg
     logMmin = args.logMmin
     logMmax = args.logMmax
+    beam = args.beam
 #     do_gy = args.do_gy
     
     do_jk = True
@@ -92,7 +95,10 @@ if __name__ == "__main__":
     save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '.pk'
 
     ydir = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/'
-    true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside4096_v01.fits'
+    if beam == 0:
+        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside4096_v01.fits'
+    else:
+        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside4096_v01_beam_' + str(beam) + '_arcmin.fits'
 
     print('opening ymap and mask')
     ymap_truth = hp.read_map(true_y_file)
@@ -182,6 +188,7 @@ if __name__ == "__main__":
         datapoint_M_all = df[1].data['lmhalo']
         ind_sel = np.where((datapoint_M_all > logMmin) & (datapoint_M_all < logMmax))[0]
         datapoint_ra_all, datapoint_dec_all, datapoint_z_all = datapoint_ra_all[ind_sel], datapoint_dec_all[ind_sel], datapoint_z_all[ind_sel]
+    del df
         
     
     print('making randoms catalog')
@@ -191,6 +198,7 @@ if __name__ == "__main__":
     nz_normed = nz_unnorm/(integrate.simps(nz_unnorm,zarray))
     nz_normed_smooth = nz_unnorm_smooth/(integrate.simps(nz_unnorm_smooth,zarray))
     rand_ra_all, rand_dec_all, rand_z_all = CF_datapoint_all.create_random_cat_uniform_esutil(zarray=zarray, nz_normed=nz_normed_smooth,nrand_fac=10, ra_min=0, ra_max=90, dec_min=0, dec_max=90)
+    del CF_datapoint_all
         
     for jz in range(len(zmin_bins)):
 
@@ -198,7 +206,7 @@ if __name__ == "__main__":
         minz = zmin_bins[jz]
         maxz = zmax_bins[jz]
 
-        file_suffix_save = '_cat_' + str(cat_tocorr) + '_z_' + str(minz) + '_' + str(maxz) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints))
+        file_suffix_save = '_cat_' + str(cat_tocorr) + '_z_' + str(minz) + '_' + str(maxz) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints)) + '_beam' + str(beam)
         
         if cat_tocorr == 'halos':
             file_suffix_save += '_logMmin_' + str(logMmin) + '_' + str(logMmax)
@@ -295,8 +303,7 @@ if __name__ == "__main__":
                             rand_jk[ind_binh_js] = jkobj_map.find_nearest(
                                 np.array([rand_ra[ind_binh_js], rand_dec[ind_binh_js]]).T)
                     else:
-                        rand_radec = np.transpose([rand_ra, rand_dec])
-                        rand_jk = jkobj_map.find_nearest(rand_radec)
+                        rand_jk = jkobj_map.find_nearest(np.transpose([rand_ra, rand_dec]))
 
             index_rand = hp.ang2pix(nside_ymap, rand_theta, rand_phi)
             pix_area = hp.nside2pixarea(nside_ymap, degrees=True)
@@ -528,45 +535,5 @@ if __name__ == "__main__":
 
 
     pdb.set_trace()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

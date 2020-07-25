@@ -224,8 +224,9 @@ class PrepDataVec:
                     'Planck' in other_params['noise_Cl_filename'].split('/') or
                     'ACT' in other_params['noise_Cl_filename'].split('/')):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 1]
-                log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
-                                                              fill_value='extrapolate')
+                # log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),
+                                                              # fill_value='extrapolate')
+                log_Cl_noise_yy_interp = interpolate.interp1d(np.log(l_noise_yy_file), np.log(Cl_noise_yy_file),fill_value=-120.0,bounds_error=False)
             self.Cl_noise_yy_l_array = np.exp(log_Cl_noise_yy_interp(np.log(self.l_array_survey)))
             self.Cl_noise_gg_l_array = (1. / other_params['nbar']) * np.ones(self.nl_survey)
             self.Cl_noise_kk_l_array = (other_params['noise_kappa']) * np.ones(self.nl_survey)

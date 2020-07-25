@@ -45,7 +45,7 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
         for j in range(nbins):
             bin_j = bins_array[j]
             try:
-                if stat == 'gty':
+                if stat in ['gty','gy']:
                     xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(0))
                     corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(0))
                 else:
@@ -61,49 +61,15 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
             else:
                 corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_stat_f))
             kbv += 1
-    # import ipdb; ipdb.set_trace()
-
-    # if stat_type == 'gy':
-    #     nbins = len(bins_array)
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
-    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j])
-    #         if len(corrf_theory_rdata) == 0:
-    #             corrf_theory_rdata = corrf_gy_f
-    #         else:
-    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
-    #
-    # elif stat_type == 'gg_gy':
-    #     nbins = len(bins_array)
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gg = block.get_double_array_1d(sec_savename,'theory_corrfgg_bin_' + str(bin_j) + '_' + str(bin_j))
-    #         corrf_gg_temp = intspline(xcoord_array, corrf_gg)
-    #         corrf_gg_f = corrf_gg_temp(xcoord_data[j])
-    #         if len(corrf_theory_rdata) == 0:
-    #             corrf_theory_rdata = corrf_gg_f
-    #         else:
-    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gg_f ))
-    #
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
-    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j + nbins])
-    #         corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
 
     return corrf_theory_rdata
 
 
 def lnprob_func(block, xcoord_data, corrf_data_gtcut, incov_obs_comp, stat_type, bins_array,sec_save_name):
     corrf_theory_rdata = get_theory_terms(block, xcoord_data, stat_type, bins_array,sec_savename=sec_save_name)
-    # import ipdb; ipdb.set_trace()
     valf = -0.5 * np.dot(np.dot(np.transpose((corrf_data_gtcut - corrf_theory_rdata)), incov_obs_comp),
                          (corrf_data_gtcut - corrf_theory_rdata))
 
-    # import ipdb; ipdb.set_trace()
     return valf, corrf_theory_rdata
 
 

@@ -359,7 +359,7 @@ def execute(block, config):
         block[sec_save_name, 'ntheta'] = ntheta
         theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
         theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-
+    other_params_dict['kk_hm_trans'] = 1
     for binvs in bins_source:
         for binvl in bins_lens:
             if verbose:
@@ -381,6 +381,11 @@ def execute(block, config):
                             for pressure_keys in pressure_params_dict_bin.keys():
                                 if var_name == pressure_keys.lower():
                                     pressure_params_dict_bin[pressure_keys] = block[key]
+                             
+                            if hod_params_dict['hod_type'] == 'DES_maglim_exp_zev':
+                                for hod_keys in hod_params_dict_bin.keys():
+                                    if var_name == hod_keys.lower():
+                                        hod_params_dict_bin[hod_keys] = block[key]
 
                         if bin_n == binvl:
                             for hod_keys in hod_params_dict_bin.keys():
@@ -474,7 +479,6 @@ def execute(block, config):
 
                 other_params_dict['M_array_block'] = M_array_block
                 other_params_dict_bin['M_array_block'] = M_array_block
-#                import ipdb; ipdb.set_trace() # BREAKPOINT
 
                 gm_block = np.zeros((len(z_array_selum), len(M_array_block)))
                 dndm_Marray = np.zeros((len(z_array_selum), len(other_params_dict['M_array'])))
@@ -573,8 +577,6 @@ def execute(block, config):
 
                 if 'uyl_zM_dict0' not in PrepDV_dict_allbins.keys():
                     PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
-                    # import ipdb; ipdb.set_trace() # BREAKPOINT
-
                     PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
                     PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
                     PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
@@ -593,15 +595,17 @@ def execute(block, config):
                     PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
                     PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
                     PrepDV_dict_allbins['sec_save_name'] = sec_save_name
+                    PrepDV_dict_allbins['add_beam_to_theory'] = other_params_dict['add_beam_to_theory']
+                    PrepDV_dict_allbins['beam_fwhm_arcmin'] = other_params_dict['beam_fwhm_arcmin']
 
     if not get_bp:
         try:
             DV = DataVec(PrepDV_dict_allbins, block)
         except:
             print(tb.format_exc())
-        # with open(save_data_fname,'wb') as f:
-            # dill.dump(DV,f)
-        # import ipdb; ipdb.set_trace() # BREAKPOINT
+        with open(save_data_fname,'wb') as f:
+            dill.dump(DV,f)
+        import ipdb; ipdb.set_trace() # BREAKPOINT
 
         # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")
