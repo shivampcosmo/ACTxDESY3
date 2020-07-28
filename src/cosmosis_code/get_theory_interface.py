@@ -215,7 +215,6 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
     ghmf = general_hm(cosmo_params_dict, pressure_params_dict, other_params_dict)
     if not use_conc_block:
         halo_conc_mdef = ghmf.get_halo_conc_Mz(M_mat_mdef, mdef_analysis)
-        # import ipdb; ipdb.set_trace()
         other_params_dict['halo_conc_mdef'] = halo_conc_mdef
 
 
@@ -284,6 +283,7 @@ def setup(options):
     theta_max = options.get_double(option_section, "theta_max", default=100.0)
     verbose = options.get_bool(option_section, "verbose", default=False)
     run_cov_pipe = options.get_bool(option_section, "run_cov_pipe", default=False)
+    save_detailed_DV = options.get_bool(option_section, "save_detailed_DV", default=False)
 
     returndict = {'bins_source': bins_source, 'bins_lens': bins_lens, 'z_edges': z_edges, 'twopt_file': twopt_file,
                   'sec_name': sec_name, 'sec_save_name': sec_save_name, 'save_data_fname': save_data_fname,
@@ -291,7 +291,7 @@ def setup(options):
                   'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'bp_model':bp_model, 'dlogtheta': dlogtheta,
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
                   'verbose': verbose, 'gg_doauto':gg_doauto, 'use_Plin_block':use_Plin_block,
-                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block}
+                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV}
 
     return ini_info, returndict
 
@@ -312,7 +312,7 @@ def execute(block, config):
     analysis_coords, verbose = returndict['analysis_coords'], returndict['verbose']
 
     use_Plin_block, use_dndm_block, use_conc_block = returndict['use_Plin_block'], returndict['use_dndm_block'], returndict['use_conc_block']
-
+    save_detailed_DV = returndict['save_detailed_DV']
     if twopt_file is not None:
         try:
             clf = pk.load(open(twopt_file, 'rb'))
@@ -323,7 +323,7 @@ def execute(block, config):
     cosmo_params_dict = copy.deepcopy(ini_info['cosmo_params_dict'])
     pressure_params_dict = copy.deepcopy(ini_info['pressure_params_dict'])
     hod_params_dict = copy.deepcopy(ini_info['hod_params_dict'])
-
+    other_params_dict['z_edges'] = z_edges
     if use_Plin_block:
         lin_power = names.matter_power_lin
         nl_power = names.matter_power_nl
@@ -571,6 +571,7 @@ def execute(block, config):
                 PrepDV_dict_allbins['ugl_zM_dict' + str(binvl)] = PrepDV_fid.ugl_zM_dict
                 PrepDV_dict_allbins['ugl_cross_zM_dict' + str(binvl)] = PrepDV_fid.ugl_cross_zM_dict
                 PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
+                PrepDV_dict_allbins['bIl_z_dict' + str(binvs)] = PrepDV_fid.bIl_z_dict
                 PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
                 PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
                 PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
@@ -593,8 +594,11 @@ def execute(block, config):
                     PrepDV_dict_allbins['analysis_coords'] = analysis_coords
                     PrepDV_dict_allbins['gg_doauto'] = gg_doauto
                     PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
-                    PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
+                    # PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
+                    PrepDV_dict_allbins['verbose'] = verbose
+                    PrepDV_dict_allbins['put_IA'] = other_params_dict['put_IA']
                     PrepDV_dict_allbins['sec_save_name'] = sec_save_name
+                    PrepDV_dict_allbins['save_detailed_DV'] = save_detailed_DV
                     PrepDV_dict_allbins['add_beam_to_theory'] = other_params_dict['add_beam_to_theory']
                     PrepDV_dict_allbins['beam_fwhm_arcmin'] = other_params_dict['beam_fwhm_arcmin']
 

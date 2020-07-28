@@ -40,6 +40,9 @@ class HOD:
         self.hod_params = hod_params
         self.hod_type = hod_params['hod_type']
         self.z_array = other_params['z_array']
+        self.z_edges = np.array(other_params['z_edges'])
+        self.zcen = 0.5*(self.z_edges[1:] + self.z_edges[:-1])
+        self.binvl = other_params['binvl']
         self.nz = len(self.z_array)
         self.nm = len(other_params['M_array'])
 
@@ -64,16 +67,27 @@ class HOD:
             Ncm =  0.5 * exp_fac * (1. + sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM']))
 
         elif self.hod_type == 'DES_maglim_exp_zev':
-            logmmin = self.hod_params['logMmin_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMmin_alpha_z'])) 
-            logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
-            siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['sig_logM_alpha_z'])) 
-            siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
-            logmstar = self.hod_params['logMstar_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMstar_alpha_z'])) 
-            logmstar = np.tile(logmstar.reshape(self.nz, 1), (1, self.nm))
-            n = self.hod_params['n_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['n_alpha_z'])) 
-            n = np.tile(n.reshape(self.nz, 1), (1, self.nm))
+            # logmmin = self.hod_params['logMmin_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMmin_alpha_z'])) 
+            # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
+            # siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['sig_logM_alpha_z'])) 
+            # siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
+            # logmstar = self.hod_params['logMstar_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMstar_alpha_z'])) 
+            # logmstar = np.tile(logmstar.reshape(self.nz, 1), (1, self.nm))
+            # n = self.hod_params['n_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['n_alpha_z'])) 
+            # n = np.tile(n.reshape(self.nz, 1), (1, self.nm))
+
+            logmmin = self.hod_params['logMmin_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logMmin_alpha_z']) 
+            # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
+            siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['sig_logM_alpha_z']) 
+            # siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
+            logmstar = self.hod_params['logMstar_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logMstar_alpha_z']) 
+            # logmstar = np.tile(logmstar.reshape(self.nz, 1), (1, self.nm))
+            n = self.hod_params['n_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['n_alpha_z']) 
+            # n = np.tile(n.reshape(self.nz, 1), (1, self.nm))
+
             exp_fac = (np.exp(-1.* np.power((np.log10(M_val) /logmstar),n)))
-            Ncm =  0.5 * exp_fac * ((1. + sp.special.erf(np.log10(M_val) - logmmin)/siglogm) )
+            Ncm =  0.5 * exp_fac * (1. + sp.special.erf((np.log10(M_val) - logmmin)/siglogm))
+
 
         elif self.hod_type == 'DES_GGL':
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
@@ -116,15 +130,25 @@ class HOD:
             Nsm = Ncm * ((M_val / M1) ** self.hod_params['alpha_g'])
 
         elif self.hod_type == 'DES_maglim_exp_zev':
-            logmmin = self.hod_params['logMmin_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMmin_alpha_z'])) 
-            logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
-            siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['sig_logM_alpha_z'])) 
-            siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
-            logM1 = self.hod_params['logM1_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logM1_alpha_z'])) 
-            logM1 = np.tile(logM1.reshape(self.nz, 1), (1, self.nm))
-            alpha = self.hod_params['alpha_g_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['alpha_g_alpha_z'])) 
-            alpha = np.tile(alpha.reshape(self.nz, 1), (1, self.nm))
-            Ncm =  0.5 * ((1. + sp.special.erf(np.log10(M_val) - logmmin)/siglogm) )
+            # logmmin = self.hod_params['logMmin_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logMmin_alpha_z'])) 
+            # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
+            # siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['sig_logM_alpha_z'])) 
+            # siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
+            # logM1 = self.hod_params['logM1_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['logM1_alpha_z'])) 
+            # logM1 = np.tile(logM1.reshape(self.nz, 1), (1, self.nm))
+            # alpha = self.hod_params['alpha_g_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['alpha_g_alpha_z'])) 
+            # alpha = np.tile(alpha.reshape(self.nz, 1), (1, self.nm))
+
+
+            logmmin = self.hod_params['logMmin_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logMmin_alpha_z']) 
+            # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
+            siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['sig_logM_alpha_z']) 
+            # siglogm = np.tile(siglogm.reshape(self.nz, 1), (1, self.nm))
+            logM1 = self.hod_params['logM1_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logM1_alpha_z']) 
+            # logM1 = np.tile(logM1.reshape(self.nz, 1), (1, self.nm))
+            alpha = self.hod_params['alpha_g_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['alpha_g_alpha_z']) 
+            # alpha = np.tile(alpha.reshape(self.nz, 1), (1, self.nm))
+            Ncm =  0.5 * (1. + sp.special.erf((np.log10(M_val) - logmmin)/siglogm))
             Nsm = Ncm * ( M_val / 10**logM1)**alpha
 
         elif self.hod_type == 'DES_GGL':

@@ -184,7 +184,6 @@ class Powerspec:
         self.Ns_mat = self.hod.get_Ns(M_mat_vir)
         self.Ntotal_mat = self.hod.get_Ntotal(M_mat_vir)
         self.M_mat_vir = M_mat_vir
-        # import ipdb; ipdb.set_trace()
 
         self.mass_bias_type = other_params['mass_bias_type']
 
@@ -240,6 +239,8 @@ class Powerspec:
             ng_interp_source = interpolate.interp1d(ng_zarray_source, np.log(ng_value_source + 1e-40),
                                                     fill_value='extrapolate')
             self.ng_array_source = np.exp(ng_interp_source(self.z_array))
+            
+
         ind_ltlz = np.where(self.z_array < 1e-2)[0]
         self.ng_array_source[ind_ltlz] = 0.0
 
@@ -255,6 +256,15 @@ class Powerspec:
         H0 = 100. * (u.km / (u.s * u.Mpc))
         G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
         self.rho_m_bar = ((cosmo_params['Om0'] * 3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
+
+        if other_params['put_IA']:
+            Dz_array = 1./(1. + self.z_array)
+            C1_bar = other_params['C1_bar']
+            z0_IA = other_params['z0_IA']
+            eta_IA = other_params['eta_IA']
+            A_IA = other_params['A_IA']
+            self.Az_IA = A_IA * self.rho_m_bar * C1_bar * (1./Dz_array) * ((1. + self.z_array)/(1. + z0_IA))**eta_IA
+
         if 'pkzlin_interp' not in other_params.keys():
             if self.verbose:
                 print('getting pkzlin interp')
@@ -421,6 +431,13 @@ class Powerspec:
     def get_bk_l_z(self, l, bm_l_z_dict):
         bm_l_z = bm_l_z_dict[round(l, 1)]
         coeff = (self.Wk_array / self.chi_array ** 2)
+        return coeff * bm_l_z
+
+
+    # get spherical harmonic transform of the IA bias 
+    def get_bI_l_z(self, l, bm_l_z_dict):
+        bm_l_z = bm_l_z_dict[round(l, 1)]
+        coeff = self.Az_IA * self.ng_array_source / ((self.chi_array ** 2) * self.dchi_dz_array)
         return coeff * bm_l_z
 
     # get spherical harmonic transform of the effective shear bias

@@ -200,12 +200,14 @@ class PrepDataVec:
             print('getting bgl, bkl matrix')
             ti = time.time()
 
-        self.bgl_z_dict, self.bkl_z_dict = {}, {}
+        self.bgl_z_dict, self.bkl_z_dict, self.bIl_z_dict = {}, {}, {}
         for j in range(len(l_array)):
             if 'g' in self.lss_probes_analyze:
                 self.bgl_z_dict[round(l_array[j], 1)] = self.PS.get_bg_l_z(l_array[j])
             if 'k' in self.lss_probes_analyze:
                 self.bkl_z_dict[round(l_array[j], 1)] = self.PS.get_bk_l_z(l_array[j], self.bml_z_dict)
+            if other_params['put_IA']:
+                self.bIl_z_dict[round(l_array[j], 1)] = self.PS.get_bI_l_z(l_array[j], self.bml_z_dict)
 
         if self.verbose:
             print('that took ', time.time() - ti, 'seconds')
@@ -625,6 +627,7 @@ class CalcDataVec:
         bin_pairs = [[bin1_stat1, bin1_stat2], [bin2_stat1, bin2_stat2], [bin1_stat1, bin2_stat2],
                      [bin2_stat1, bin1_stat2]]
         Cl_stats_dict = {}
+       
 
         for j in range(len(stats_pairs)):
             stat = stats_pairs[j]
@@ -633,21 +636,22 @@ class CalcDataVec:
             Atemp, Btemp = list(stat)
             if Atemp == Btemp:
                 try:
-                    Cl_stats_dict[stat] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
                 except:
                     bin_key = 'bin_' + str(bin_pair[1]) + '_' + str(bin_pair[0])
-                    Cl_stats_dict[stat] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
             else:
                 try:
-                    Cl_stats_dict[stat] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
                 except:
                     bin_key = 'bin_' + str(bin_pair[1]) + '_' + str(bin_pair[0])
-                    Cl_stats_dict[stat] = Cl_result_dict[Btemp + Atemp][bin_key]['tot_plus_noise_ellsurvey']
+                    Cl_stats_dict[j] = Cl_result_dict[Btemp + Atemp][bin_key]['tot_plus_noise_ellsurvey']
 
         fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
 
         val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
-                Cl_stats_dict[A + C] * Cl_stats_dict[B + D] + Cl_stats_dict[A + D] * Cl_stats_dict[B + C])
+                Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3])
+
 
         return np.diag(val_diag)
 
