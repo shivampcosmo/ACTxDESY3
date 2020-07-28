@@ -377,22 +377,21 @@ class Powerspec:
         # import ipdb; ipdb.set_trace()
         return coeff * val
 
-    # # get spherical harmonic transform of the hot gas distribution, eq 12 of Makiya et al
+    # get spherical harmonic transform of the hot gas distribution, eq 12 of Makiya et al
     def get_uy_l_zM(self, l, x_mat_lmdefP_mat,x_mat2_y3d_mat,coeff_mat_y ):
         temp_mat = l * x_mat_lmdefP_mat
         # val = sp.integrate.romb(x_mat2_y3d_mat * np.sin(temp_mat) / temp_mat,
         #                         self.x_array[1] - self.x_array[0])
         val = sp.integrate.simps(x_mat2_y3d_mat * np.sin(temp_mat) / temp_mat, self.x_array)
 
-        if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
-            sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-            Bl = np.exp(-1. * l * (l + 1) * (sig_beam ** 2) / 2.)
-            val = val * Bl
+        # if self.add_beam_to_theory and (self.beam_fwhm_arcmin > 0):
+            # sig_beam = self.beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
+            # Bl = np.exp(-1. * l * (l + 1) * (sig_beam ** 2) / 2.)
+            # val = val * Bl
 
         return coeff_mat_y * val
 
-        # get spherical harmonic transform of the effective hot gas bias, eq 16 of Makiya et al
-
+    # get spherical harmonic transform of the effective hot gas bias, eq 16 of Makiya et al
     def get_by_l_z(self, l, uyl_zM_dict):
         uyl_zM = uyl_zM_dict[round(l, 1)]
         toint = uyl_zM * self.dndm_array * self.bm_array

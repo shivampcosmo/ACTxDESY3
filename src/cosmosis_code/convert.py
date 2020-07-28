@@ -25,9 +25,9 @@ def execute(block, config):
     if config['verbose']:
         print ('*******  CONVERSION MODULE *********')
     conversion_dict = dict()
-    conversion_dict['gty']  = ['shear_compton_xi','bins_source',0]
-    conversion_dict['yy']   = ['compton_compton_xi',0,0]
-    conversion_dict['gy']   = ['galaxy_compton_xi','bins_source',0]
+    conversion_dict['gty1']  = ['shear_compton_xi','bins_source',0]
+    conversion_dict['yy1']   = ['compton_compton_xi',0,0]
+    conversion_dict['gy1']   = ['galaxy_compton_xi','bins_source',0]
     conversion_dict['gg']   = ['galaxy_xi','bins_lens','bins_lens']
     conversion_dict['gk']   = ['galaxy_shear_xi','bins_lens','bins_source']
     conversion_dict['kk']   = ['shear_xi_plus','bins_source','bins_source']
@@ -52,9 +52,11 @@ def execute(block, config):
                     # save to block.
                     name = 'bin_%d_%d' % (np.int(ix), np.int(jx))
                     block[name_stat, name] = corrf_stat
+                    name = 'bin_%d_%d' % (np.int(jx), np.int(ix))
+                    block[name_stat, name] = corrf_stat
                 except:
                     pass
-                    #print ('warning': key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
+                    # print ('warning'+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
         try:
             block[name_stat, "nbin_a"] = len(conversion_dict[key][0])
         except:
@@ -83,6 +85,7 @@ def execute(block, config):
         block[name_stat, "sep_name"] = "theta"
         block[name_stat, "save_name"] = name_stat
         block[name_stat, "bin_avg"] = False
+    # import ipdb; ipdb.set_trace() # BREAKPOINT
 
     if config['verbose']:
         print ('done conversion module')

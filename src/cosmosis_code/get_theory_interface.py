@@ -607,9 +607,9 @@ def execute(block, config):
             DV = DataVec(PrepDV_dict_allbins, block)
         except:
             print(tb.format_exc())
-        with open(save_data_fname,'wb') as f:
-            dill.dump(DV,f)
-        import ipdb; ipdb.set_trace() # BREAKPOINT
+        # with open(save_data_fname,'wb') as f:
+            # dill.dump(DV,f)
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")

@@ -280,10 +280,12 @@ class CalcDataVec:
 
     def __init__(self, PrepDV_params):
         self.PS_prepDV = PrepDV_params['PrepDV_fid'].PS
+        self.add_beam_to_theory = self.PS_prepDV.add_beam_to_theory 
       
 
     def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')
+        y_sum = (A == 'y') + (B == 'y')
         if g_sum == 2:
             if self.PS_prepDV.use_only_halos:
                 return 0
@@ -306,12 +308,12 @@ class CalcDataVec:
             toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_1h[j] = val
-#            import ipdb; ipdb.set_trace() # BREAKPOINT
 
         return Cl_1h
 
     def get_Cl_AB_2h(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
+        y_sum = (A == 'y') + (B == 'y')
         if g_sum > 0:
             toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         else:
@@ -332,6 +334,7 @@ class CalcDataVec:
 
     def get_Cl_AB_2h_nl(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
+        y_sum = (A == 'y') + (B == 'y')
         if g_sum > 0:
             toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         else:
@@ -350,6 +353,7 @@ class CalcDataVec:
 
     def get_Cl_AB_tot_modelNL(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
+        y_sum = (A == 'y') + (B == 'y')
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
@@ -388,6 +392,7 @@ class CalcDataVec:
     def get_Cl_AB_tot_modelmead(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
         k_sum = (A == 'k') + (B == 'k')
+        y_sum = (A == 'y') + (B == 'y')
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
@@ -452,17 +457,25 @@ class CalcDataVec:
         return Cl_AB_tot
 
     # See Makiya paper
-    def get_T_ABCD_NG(self, l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict):
+    def get_T_ABCD_NG(self, l_array_all, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict, beam_fwhm_arcmin):
         nl = len(l_array_all)
+
+        addb = self.add_beam_to_theory
+        sig_beam = beam_fwhm_arcmin * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
 
         ul_A_mat, ul_B_mat, ul_C_mat, ul_D_mat = np.zeros((nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros(
             (nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros((nl, self.PS_prepDV.nz, self.PS_prepDV.nm)), np.zeros(
             (nl, self.PS_prepDV.nz, self.PS_prepDV.nm))
         for j in range(nl):
-            ul_A_mat[j, :, :] = uAl_zM_dict[round(l_array_all[j], 1)]
-            ul_B_mat[j, :, :] = uBl_zM_dict[round(l_array_all[j], 1)]
-            ul_C_mat[j, :, :] = uCl_zM_dict[round(l_array_all[j], 1)]
-            ul_D_mat[j, :, :] = uDl_zM_dict[round(l_array_all[j], 1)]
+            Bl = np.exp(-1. * l_array_all[j] * (l_array_all[j] + 1) * (sig_beam ** 2) / 2.)
+            isy = (A == 'y')
+            ul_A_mat[j, :, :] = (uAl_zM_dict[round(l_array_all[j], 1)]) * (Bl ** (isy * addb))
+            isy = (B == 'y')
+            ul_B_mat[j, :, :] = (uBl_zM_dict[round(l_array_all[j], 1)]) * (Bl ** (isy * addb))
+            isy = (C == 'y')
+            ul_C_mat[j, :, :] = (uCl_zM_dict[round(l_array_all[j], 1)]) * (Bl ** (isy * addb))
+            isy = (D == 'y')
+            ul_D_mat[j, :, :] = (uDl_zM_dict[round(l_array_all[j], 1)]) * (Bl ** (isy * addb))
 
         uAl1_uBl1 = ul_A_mat * ul_B_mat
         uCl2_uDl2 = ul_C_mat * ul_D_mat
@@ -656,7 +669,7 @@ class CalcDataVec:
         return np.diag(val_diag)
 
     def get_cov_NG(self, l_array_survey, stats_analyze_1, stats_analyze_2, use_only_halos, fsky_dict, uAl_zM_dict,
-                   uBl_zM_dict, uCl_zM_dict, uDl_zM_dict):
+                   uBl_zM_dict, uCl_zM_dict, uDl_zM_dict, beam_fwhm_arcmin):
         A, B = list(stats_analyze_1)
         C, D = list(stats_analyze_2)
 
@@ -665,7 +678,7 @@ class CalcDataVec:
             val_NG = np.zeros((nl, nl))
         else:
             T_l_ABCD = self.get_T_ABCD_NG(l_array_survey, A, B, C, D, uAl_zM_dict, uBl_zM_dict, uCl_zM_dict,
-                                          uDl_zM_dict)
+                                          uDl_zM_dict, beam_fwhm_arcmin)
             fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
             val_NG = (1. / (4. * np.pi * fsky_j)) * T_l_ABCD
 

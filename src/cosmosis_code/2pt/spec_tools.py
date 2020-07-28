@@ -11,6 +11,7 @@ import os
 dirname = os.path.split(__file__)[0]
 fullsky_path = os.path.join(dirname,"..","..","shear","cl_to_xi_fullsky")
 sys.path.append(fullsky_path)
+sys.path.append(os.environ['COSMOSIS_SRC_DIR'] + '/cosmosis-standard-library/shear/cl_to_xi_fullsky')
 import legendre
 from collections import OrderedDict
 
