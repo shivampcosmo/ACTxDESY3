@@ -153,14 +153,15 @@ class PrepDataVec:
             print('getting ugl, ukl matrix')
             ti = time.time()
 
-        self.ugl_cross_zM_dict,self.ugl_zM_dict, self.ukl_zM_dict = {}, {}, {}
+        self.ugl_cross_zM_dict,self.ugl_zM_dict, self.ukl_zM_dict, self.uIl_zM_dict  = {}, {}, {}, {}
         for j in range(len(l_array)):
             if 'g' in self.lss_probes_analyze:
                 self.ugl_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_l_zM(l_array[j])
                 self.ugl_cross_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_cross_l_zM(l_array[j])
             if 'k' in self.lss_probes_analyze:
                 self.ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j], self.uml_zM_dict)
-
+            if other_params['put_IA']:
+                self.uIl_zM_dict[round(l_array[j], 1)] = self.PS.get_uI_l_zM(l_array[j])
 
         if self.verbose:
             print('that took ', time.time() - ti, 'seconds')
@@ -214,9 +215,10 @@ class PrepDataVec:
 
         if self.verbose:
             print('done getting all the uk and bk')
-
+        self.has_yy_noise = True
+        self.Cl_tot_yy_l_array  = np.zeros_like(self.l_array_survey)
+        self.Cl_noise_yy_l_array  = np.zeros_like(self.l_array_survey)
         if other_params['noise_Cl_filename'] is not None:
-
             self.noise_yy_Cl_file = np.loadtxt(other_params['noise_Cl_filename'])
             if 'S4' in other_params['noise_Cl_filename'].split('/'):
                 l_noise_yy_file, Cl_noise_yy_file = self.noise_yy_Cl_file[:, 0], self.noise_yy_Cl_file[:, 2]
@@ -233,19 +235,28 @@ class PrepDataVec:
             self.Cl_noise_gg_l_array = (1. / other_params['nbar']) * np.ones(self.nl_survey)
             self.Cl_noise_kk_l_array = (other_params['noise_kappa']) * np.ones(self.nl_survey)
         else:
-            self.ell_measured = other_params['ell_measured']
-            if len(self.Cl_dict['yy']['total']) == len(self.ell_measured):
-                self.Cl_noise_yy_l_array = other_params['Clyy_measured'] - self.Cl_dict['yy']['total']
-                self.Cl_noise_gg_l_array = other_params['Clgg_measured'] - self.Cl_dict['gg']['total']
+            if other_params['total_Clyy_filename'] is not None:
+                self.has_yy_noise = False
+                self.tot_yy_Cl_file = np.loadtxt(other_params['total_Clyy_filename'])
+                l_tot_yy_file, Cl_tot_yy_file = self.tot_yy_Cl_file[:, 0], self.tot_yy_Cl_file[:, 1]
+                log_Cl_tot_yy_interp = interpolate.interp1d(np.log(l_tot_yy_file), np.log(Cl_tot_yy_file),fill_value=-120.0,bounds_error=False)
+                self.Cl_tot_yy_l_array = np.exp(log_Cl_tot_yy_interp(np.log(self.l_array_survey)))
+                self.Cl_noise_gg_l_array = (1. / other_params['nbar']) * np.ones(self.nl_survey)
+                self.Cl_noise_kk_l_array = (other_params['noise_kappa']) * np.ones(self.nl_survey)
             else:
-                Cl_yy_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clyy_measured'],
-                                                    fill_value=0.0,
-                                                    bounds_error=False)
-                self.Cl_noise_yy_l_array = Cl_yy_interp(np.log(self.l_array)) - self.Cl_dict['yy']['total']
-                Cl_gg_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clgg_measured'],
-                                                    fill_value=0.0,
-                                                    bounds_error=False)
-                self.Cl_noise_gg_l_array = Cl_gg_interp(np.log(self.l_array)) - self.Cl_dict['gg']['total']
+                self.ell_measured = other_params['ell_measured']
+                if len(self.Cl_dict['yy']['total']) == len(self.ell_measured):
+                    self.Cl_noise_yy_l_array = other_params['Clyy_measured'] - self.Cl_dict['yy']['total']
+                    self.Cl_noise_gg_l_array = other_params['Clgg_measured'] - self.Cl_dict['gg']['total']
+                else:
+                    Cl_yy_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clyy_measured'],
+                                                        fill_value=0.0,
+                                                        bounds_error=False)
+                    self.Cl_noise_yy_l_array = Cl_yy_interp(np.log(self.l_array)) - self.Cl_dict['yy']['total']
+                    Cl_gg_interp = interpolate.interp1d(np.log(self.ell_measured), other_params['Clgg_measured'],
+                                                        fill_value=0.0,
+                                                        bounds_error=False)
+                    self.Cl_noise_gg_l_array = Cl_gg_interp(np.log(self.l_array)) - self.Cl_dict['gg']['total']
 
         if 'uyl_zM_dict' not in other_params.keys():
             del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
@@ -484,7 +495,7 @@ class CalcDataVec:
         dndm_array_mat = np.tile(self.PS_prepDV.dndm_array.reshape(1, 1, self.PS_prepDV.nz, self.PS_prepDV.nm),
                                  (nl, nl, 1, 1))
         if 'g' in [A, B, C, D]:
-            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.M_mat_cond_inbin * self.z_mat_cond_inbin
+            toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat * self.PS_prepDV.M_mat_cond_inbin * self.PS_prepDV.z_mat_cond_inbin
         else:
             toint_M = (uAl1_uBl1_mat * uCl2_uDl2_mat) * dndm_array_mat
         val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)

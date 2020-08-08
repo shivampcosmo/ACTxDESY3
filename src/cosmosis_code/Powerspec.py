@@ -256,6 +256,7 @@ class Powerspec:
         H0 = 100. * (u.km / (u.s * u.Mpc))
         G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
         self.rho_m_bar = ((cosmo_params['Om0'] * 3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         if other_params['put_IA']:
             Dz_array = 1./(1. + self.z_array)
@@ -264,6 +265,7 @@ class Powerspec:
             eta_IA = other_params['eta_IA']
             A_IA = other_params['A_IA']
             self.Az_IA = A_IA * self.rho_m_bar * C1_bar * (1./Dz_array) * ((1. + self.z_array)/(1. + z0_IA))**eta_IA
+            self.gammaIA_allinterp = other_params['gammaIA_allinterp']
 
         if 'pkzlin_interp' not in other_params.keys():
             if self.verbose:
@@ -431,6 +433,27 @@ class Powerspec:
         bm_l_z = bm_l_z_dict[round(l, 1)]
         coeff = (self.Wk_array / self.chi_array ** 2)
         return coeff * bm_l_z
+
+    # get spherical harmonic transform of the matter distribution
+    def get_uI_l_zM(self, l):
+        k_array = (l + 1. / 2.) / self.chi_array
+        gammaIA_mat = np.zeros((self.nz, self.nm))
+        for j in range(len(k_array)):
+            kv = k_array[j]
+            marray_rs = np.log(np.reshape(self.M_array, (1, self.nm, 1)))
+            marray_insz = np.insert(marray_rs, 0, (self.z_array[j]), axis=-1)
+            marray_insk = np.insert(marray_insz, 2, np.log(kv), axis=-1)[0]
+            gammaIA_mat[j, :] = np.exp(self.gammaIA_allinterp(marray_insk))
+        fsIz = 0.25 - 0.2*self.z_array
+        ind_gt1 = np.where(self.z_array > 1.)[0]
+        fsIz[ind_gt1] = 0.05
+
+        nbar = hmf.get_nbar_z(self.M_array, self.dndm_array, self.Ns_mat, self.M_mat_cond_inbin)
+        coeff_mat = np.tile(
+            (fsIz * self.ng_array_source / ((self.chi_array ** 2) * self.dchi_dz_array * nbar)).reshape(self.nz, 1),
+            (1, self.nm))
+
+        return self.Ns_mat * coeff_mat * gammaIA_mat 
 
 
     # get spherical harmonic transform of the IA bias 

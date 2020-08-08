@@ -82,18 +82,42 @@ class DataVec:
                                                             PrepDV_params['bkl_z_dict' + str(j1)],
                                                             PrepDV_params['bkl_z_dict' + str(j2)])
                         if put_IA:
+                            ClII1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'I', PrepDV.l_array,
+                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                            PrepDV_params['uIl_zM_dict' + str(j2)])
+                            ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
+                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                            PrepDV_params['ukl_zM_dict' + str(j2)])
+                            ClGI1h_j2j1 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
+                                                            PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                            PrepDV_params['uIl_zM_dict' + str(j2)])
 
-                            ClII_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'I', PrepDV.l_array,
+
+                            ClII2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'I', PrepDV.l_array,
                                                                     PrepDV_params['bIl_z_dict' + str(j1)],
                                                                     PrepDV_params['bIl_z_dict' + str(j2)])
-                            ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('G', 'I', PrepDV.l_array,
+                            ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('G', 'I', PrepDV.l_array,
                                                                     PrepDV_params['bIl_z_dict' + str(j1)],
                                                                     PrepDV_params['bkl_z_dict' + str(j2)])
-                            ClGI_j2j1 = self.CalcDV.get_Cl_AB_2h_nl('G', 'I', PrepDV.l_array,
+                            ClGI2h_j2j1 = self.CalcDV.get_Cl_AB_2h('G', 'I', PrepDV.l_array,
                                                                     PrepDV_params['bkl_z_dict' + str(j1)],
                                                                     PrepDV_params['bIl_z_dict' + str(j2)])
+                            
+                            
+                            # ClII_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'I', PrepDV.l_array,
+                                                                    # PrepDV_params['bIl_z_dict' + str(j1)],
+                                                                    # PrepDV_params['bIl_z_dict' + str(j2)])
+                            # ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('G', 'I', PrepDV.l_array,
+                                                                    # PrepDV_params['bIl_z_dict' + str(j1)],
+                                                                    # PrepDV_params['bkl_z_dict' + str(j2)])
+                            # ClGI_j2j1 = self.CalcDV.get_Cl_AB_2h_nl('G', 'I', PrepDV.l_array,
+                                                                    # PrepDV_params['bkl_z_dict' + str(j1)],
+                                                                    # PrepDV_params['bIl_z_dict' + str(j2)])
 
-                            Clintrinsic_j1j2 =  ClII_j1j2 + ClGI_j1j2 + ClGI_j2j1
+                            # Clintrinsic_j1j2 =  ClII_j1j2 + ClGI_j1j2 + ClGI_j2j1
+                            Clintrinsic1h_j1j2 =  ClII1h_j1j2 + ClGI1h_j1j2 + ClGI1h_j2j1 
+                            Clintrinsic2h_j1j2 =  ClII2h_j1j2 + ClGI2h_j1j2 + ClGI2h_j2j1 
+                            Clintrinsic_j1j2 =  Clintrinsic1h_j1j2 + Clintrinsic2h_j1j2
                             Cltot_j1j2 = Cltotmead_j1j2 + Clintrinsic_j1j2
                         else:
                             Cltot_j1j2 = Cltotmead_j1j2
@@ -113,7 +137,7 @@ class DataVec:
 #
                         if save_detailed_DV:
                             if put_IA:
-                                Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot_phy': Cltotmead_j1j2,'tot_II': ClII_j1j2,'tot_GI': ClGI_j1j2 + ClGI_j2j1,
+                                Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot_phy': Cltotmead_j1j2,'tot_II': ClII1h_j1j2 + ClII2h_j1j2 ,'tot_GI': ClGI1h_j1j2 + ClGI1h_j2j1 + ClGI2h_j1j2 + ClGI2h_j2j1,
                                                                                 'tot':Cltot_j1j2,
                                                                                 'tot_ellsurvey': Cltot_j1j2[
                                                                                     PrepDV.ind_select_survey],
@@ -160,10 +184,33 @@ class DataVec:
                                     xiGG_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                             Cltotmead_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
+                                    xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Clintrinsic1h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xi2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Clintrinsic2h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
                                     xiint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2 }
+
+
+                                    ximGG_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
+                                                                                            Cltotmead_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xim1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
+                                                                                            Clintrinsic1h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xim2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
+                                                                                            Clintrinsic2h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    ximint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
+                                                                                            Clintrinsic_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+
+
+                                    xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
+                                            'phym':ximGG_j1j2,'intm':ximint_j1j2 ,'1hintm':xim1hint_j1j2 ,'2hintm':xim2hint_j1j2 }
                                 else:
                                     xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'tot':xitot_j1j2, 'totm':ximtot_j1j2 }
                             else:
@@ -212,9 +259,15 @@ class DataVec:
                                                         PrepDV_params['byl_z_dict0'])
 
                     if put_IA:
-                        ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'y', PrepDV.l_array,
-                                                                PrepDV_params['bIl_z_dict' + str(j1)],
-                                                                PrepDV_params['byl_z_dict' + str(0)])
+                        ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'y', PrepDV.l_array,
+                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                            PrepDV_params['uyl_zM_dict0'])
+                        ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'y', PrepDV.l_array, PrepDV_params['bIl_z_dict' + str(j1)],
+                                                            PrepDV_params['byl_z_dict0'])
+                        ClGI_j1j2 = self.CalcDV.get_Cl_AB_tot('I', 'y', ClGI1h_j1j2, ClGI2h_j1j2)
+                        # ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'y', PrepDV.l_array,
+                                                                # PrepDV_params['bIl_z_dict' + str(j1)],
+                                                                # PrepDV_params['byl_z_dict' + str(0)])
 
                         Clintrinsic_j1j2 =  ClGI_j1j2
                         Cltot_j1j2 = Cltotmead_j1j2 + Clintrinsic_j1j2
@@ -281,7 +334,13 @@ class DataVec:
                                     xiint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2*Bl,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2}
+                                    xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                            ClGI1h_j1j2 *Bl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xi2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                            ClGI2h_j1j2*Bl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2}
                                 else:
                                     xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
                             else:
@@ -316,7 +375,6 @@ class DataVec:
             if self.verbose:
                 print('done shear-y calculation')
 
-        # import ipdb; ipdb.set_trace() # BREAKPOINT
         if ('yy' in PrepDV.stats_analyze) or (run_cov_pipe and ('yy' in PrepDV.lss_probes_allcomb)):
             Cl_yy_dict = {}
             Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('y', 'y', PrepDV.l_array, PrepDV_params['uyl_zM_dict0'],
@@ -329,11 +387,14 @@ class DataVec:
             for jb in range(len(beam_fwhm_arcmin)):
                 sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
                 Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(2 * addbth)
+                if PrepDV_params['PrepDV_fid'].has_yy_noise:
+                    Cl_yy_tot_plus_noise = (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey] + Cl_noise_ellsurvey
+                else:
+                    Cl_yy_tot_plus_noise = PrepDV_params['Cl_tot_yy_l_array']  
 
                 Cl_yy_dict['bin_0_0'] = {'1h': Cl1h_j1j2 * Bl, '2h': Cl2h_j1j2 * Bl, 'tot': Cltot_j1j2 * Bl,
                                         'tot_ellsurvey': (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey],
-                                        'tot_plus_noise_ellsurvey': (Cltot_j1j2 * Bl)[
-                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                                        'tot_plus_noise_ellsurvey': Cl_yy_tot_plus_noise}
                 Cl_yy_dict['bin_combs'] = [[0, 0]]
                 self.Cl_result_dict['yy'] = Cl_yy_dict
                 if analysis_coords == 'real':
@@ -434,7 +495,6 @@ class DataVec:
                                     # xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = {'1h':xi1h_j1j2,'2h':xi2h_j1j2,'2h_nl':xi2h_j1j2_nl,'tot':xitot_j1j2,
                                             # 'tot2':xitot2_j1j2}
 
-                                    xitot_j1j2 = np.maximum(xi1h_j1j2,xi2h_j1j2)
                                     ind_gt = np.where(xi1h_j1j2>xi2h_j1j2 )[0]
                                     if len(ind_gt) > 0:
                                         xitot_j1j2 = np.hstack((xi1h_j1j2[:ind_gt[-1]+1] , xi2h_j1j2[ind_gt[-1]+1:]))
@@ -479,19 +539,21 @@ class DataVec:
                     xi_gy_dict = {}
                 bin_combs = []
                 for j1 in bins_lens:
-                    # Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PrepDV.l_array,
-                                                        # PrepDV_params['ugl_cross_zM_dict' + str(j1)],
-                                                        # PrepDV_params['uyl_zM_dict0'])
-                    # Cl2h_j1j2_nl = self.CalcDV.get_Cl_AB_2h_nl('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
-                                                        # PrepDV_params['byl_z_dict0'])
-                    # Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
-                                                        # PrepDV_params['byl_z_dict0'])
-                    # Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
-                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot_modelmead('g', 'y', PrepDV.l_array,
-                                                        PrepDV_params['ugl_cross_zM_dict' + str(j1)],
-                                                        PrepDV_params['uyl_zM_dict' + str(0)],
-                                                        PrepDV_params['bgl_z_dict' + str(j1)],
-                                                        PrepDV_params['byl_z_dict' + str(0)])
+                    if save_detailed_DV:
+                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'y', PrepDV.l_array,
+                                                            PrepDV_params['ugl_cross_zM_dict' + str(j1)],
+                                                            PrepDV_params['uyl_zM_dict0'])
+                        Cl2h_j1j2_nl = self.CalcDV.get_Cl_AB_2h_nl('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
+                                                            PrepDV_params['byl_z_dict0'])
+                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'y', PrepDV.l_array, PrepDV_params['bgl_z_dict' + str(j1)],
+                                                            PrepDV_params['byl_z_dict0'])
+                        Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'y', Cl1h_j1j2, Cl2h_j1j2)
+                    else:
+                        Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot_modelmead('g', 'y', PrepDV.l_array,
+                                                            PrepDV_params['ugl_cross_zM_dict' + str(j1)],
+                                                            PrepDV_params['uyl_zM_dict' + str(0)],
+                                                            PrepDV_params['bgl_z_dict' + str(j1)],
+                                                            PrepDV_params['byl_z_dict' + str(0)])
 
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, 0])
@@ -512,24 +574,19 @@ class DataVec:
                             xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                     Cltot_j1j2 * Bl,
                                                                                     theta_array_arcmin=theta_array_arcmin)
-#                    xi_gy_dict['bin_' + str(j1) + '_0'] = xitot_j1j2
-
-                            # xi1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                        # Cl1h_j1j2,
-                                                                                        # theta_array_arcmin=theta_array_arcmin)
-                            # xi2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                        # Cl2h_j1j2,
-                                                                                        # theta_array_arcmin=theta_array_arcmin)
-                            # xi2h_j1j2_nl, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                        # Cl2h_j1j2_nl,
-                                                                                        # theta_array_arcmin=theta_array_arcmin)
-                            # xitot2_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                        # Cltot_j1j2_m2,
-                                                                                        # theta_array_arcmin=theta_array_arcmin)
-#                                xi_gg_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
-                            # xi_gy_dict['bin_' + str(j1) + '_' + str(0)] = {'1h':xi1h_j1j2,'2h':xi2h_j1j2,'2h_nl':xi2h_j1j2_nl,'tot':xitot_j1j2,'tot2':xitot2_j1j2}
-
-                            xi_gy_dict['bin_' + str(j1) + '_' + str(0)] = {'tot':xitot_j1j2}
+                            if save_detailed_DV:
+                                xi1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cl1h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                xi2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cl2h_j1j2,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                xi2h_j1j2_nl, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                            Cl2h_j1j2_nl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                xi_gy_dict['bin_' + str(j1) + '_' + str(0)] = {'1h':xi1h_j1j2,'2h':xi2h_j1j2,'2h_nl':xi2h_j1j2_nl,'tot':xitot_j1j2,'tot2':xitot2_j1j2}
+                            else:
+                                xi_gy_dict['bin_' + str(j1) + '_' + str(0)] = {'tot':xitot_j1j2}
                             if 'theta' not in xi_gy_dict.keys():
                                 xi_gy_dict['theta'] = theta_array
 
@@ -549,7 +606,6 @@ class DataVec:
 
                     Cl_gy_dict['bin_combs'] = bin_combs
                     self.Cl_result_dict['gy'] = Cl_gy_dict
-                    # Cl_result_dict['yg'] = Cl_gy_dict
                     if analysis_coords == 'real':
                         xi_gy_dict['bin_combs'] = bin_combs
                         xi_gy_dict['theta'] = theta_array
@@ -704,13 +760,18 @@ class DataVec:
                 covG_stat12 = {}
                 covNG_stat12 = {}
                 covtot_stat12 = {}
-                isgtykk, isgtygty = False, False
+                isgtykk, isgtygty, iskkkk, isgygy = False, False, False, False
                 if analysis_coords == 'real':
                     fftcovtot_stat12 = {}
                     fftmcovtot_stat12 = {}
+                    fftpmcovtot_stat12 = {}
                     if (stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'ky'):
                         gtfftcovtot_stat12 = {}
                         isgtygty = True
+                    if (stats_analyze_1_ordered == 'gy') and (stats_analyze_2_ordered == 'gy'):
+                        isgygy = True
+                    if (stats_analyze_1_ordered == 'kk') and (stats_analyze_2_ordered == 'kk'):
+                        iskkkk = True
                     if ((stats_analyze_1_ordered == 'kk') and (stats_analyze_2_ordered == 'ky')) or ((stats_analyze_1_ordered == 'ky') and (stats_analyze_2_ordered == 'kk')):
                         kkgtfftcovtot_stat12 = {}
                         kkmgtfftcovtot_stat12 = {}
@@ -739,6 +800,7 @@ class DataVec:
                                                        uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict, beam_fwhm_arcmin[0])
 
                         covtot = covG + covNG
+                        # covtot = covNG 
                         bin_key = 'bin_' + str(bins1_stat1[jb1]) + '_' + str(bins2_stat1[jb1]) + '_' + str(bins1_stat2[jb2]) + '_' + str(bins2_stat2[jb2])
                         covG_stat12[bin_key] = covG
                         covNG_stat12[bin_key] = covNG
@@ -758,10 +820,16 @@ class DataVec:
                             cov_tot_fft = cov_fft[:,:-1][:-1,:]
                             fftcovtot_stat12[bin_key] = cov_tot_fft
 
-                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(4, 4, dlnk, dlnk)
-                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
-                            cov_tot_fftm = cov_fft[:,:-1][:-1,:]
-                            fftmcovtot_stat12[bin_key] = cov_tot_fftm
+                            if iskkkk:
+                                t1, t2, cov_fft = newtwobessel.two_Bessel_binave(4, 4, dlnk, dlnk)
+                                theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                                cov_tot_fftm = cov_fft[:,:-1][:-1,:]
+                                fftmcovtot_stat12[bin_key] = cov_tot_fftm
+
+                                t1, t2, cov_fft = newtwobessel.two_Bessel_binave(4, 0, dlnk, dlnk)
+                                theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                                cov_tot_fftm = cov_fft[:,:-1][:-1,:]
+                                fftpmcovtot_stat12[bin_key] = cov_tot_fftm
 
                             if isgtygty:
                                 t1, t2, covgt_fft = newtwobessel.two_Bessel_binave(2, 2, dlnk, dlnk)
@@ -786,8 +854,10 @@ class DataVec:
 
                             if 'theta' not in fftcovtot_stat12.keys():
                                 fftcovtot_stat12['theta'] = theta_vals_arcmin_fft
-                            if 'theta' not in fftcovtot_stat12.keys():
+                            if 'theta' not in fftmcovtot_stat12.keys():
                                 fftmcovtot_stat12['theta'] = theta_vals_arcmin_fft
+                            if 'theta' not in fftpmcovtot_stat12.keys():
+                                fftpmcovtot_stat12['theta'] = theta_vals_arcmin_fft
 
                 covG_stat12['bins_comb'] = bins_comb
                 covNG_stat12['bins_comb'] = bins_comb
@@ -795,6 +865,7 @@ class DataVec:
                 if analysis_coords == 'real':
                     fftcovtot_stat12['bins_comb'] = bins_comb
                     fftmcovtot_stat12['bins_comb'] = bins_comb
+                    fftpmcovtot_stat12['bins_comb'] = bins_comb
                     if isgtygty:
                         gtfftcovtot_stat12['bins_comb'] = bins_comb
                         stat_analyze_key = 'gty_gty'
@@ -811,7 +882,9 @@ class DataVec:
                     # self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
                     # self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12
                     self.fftcovtot_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = fftcovtot_stat12
-                    self.fftcovtot_dict['kkm_kkm'] = fftmcovtot_stat12
+                    if iskkkk:
+                        self.fftcovtot_dict['kkm_kkm'] = fftmcovtot_stat12
+                        self.fftcovtot_dict['kk_kkm'] = fftpmcovtot_stat12
 
                 self.covG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
                 self.covNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12

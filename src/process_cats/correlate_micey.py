@@ -47,13 +47,12 @@ def get_zmean(zcent,delz,nz_bin):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cat', required=True, type=str, help='Cat type')
-#     parser.add_argument('--do_gg', required=True, type=str, help='Do gg corr')
-#     parser.add_argument('--do_gy', required=True, type=str, help='Do gy corr')
     parser.add_argument('--mask', required=True, type=str, help='mask type')
     parser.add_argument('--logMmin', default=13.0)
     parser.add_argument('--logMmax', default=13.5)
-    parser.add_argument('--do_gg', default=0)
-    parser.add_argument('--beam', default=2.4)
+    parser.add_argument('--do_gg', type=bool, default=False)
+    parser.add_argument('--nside', default=2048)
+    parser.add_argument('--beam', default=10.0)
     args_all = parser.parse_args()
     return args_all
 
@@ -69,6 +68,7 @@ if __name__ == "__main__":
     logMmin = args.logMmin
     logMmax = args.logMmax
     beam = args.beam
+    nside = args.nside
 #     do_gy = args.do_gy
     
     do_jk = True
@@ -78,7 +78,10 @@ if __name__ == "__main__":
         njk = 150
     
     if mask_type == 'oct':
-        njk = 500
+        njk = 300
+        
+    if mask_type == 'diff':
+        njk = 300
 
     njk_radec = njk
     njk_z = 1
@@ -92,13 +95,14 @@ if __name__ == "__main__":
     nrad = 26
 
     save_dir = '/global/project/projectdirs/des/shivamp/cosmosis/ACTxDESY3/src/results/'
-    save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '.pk'
+#     save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '.pk'
+    save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '_mask_' + str(mask_type) + '.pk'
 
     ydir = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/'
     if beam == 0:
-        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside4096_v01.fits'
+        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside' + str(nside) + '_v01.fits'
     else:
-        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside4096_v01_beam_' + str(beam) + '_arcmin.fits'
+        true_y_file = ydir + 'ymap_mice_splitCOMBINED_NM50_Nz16_nside' + str(nside) + '_v01_beam_' + str(beam) + '_arcmin.fits'
 
     print('opening ymap and mask')
     ymap_truth = hp.read_map(true_y_file)
@@ -107,10 +111,13 @@ if __name__ == "__main__":
     mask_final = []
     
     if mask_type == 'act':
-        filename_mask = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/ACT_D56_mask_inMICE.fits'
+        filename_mask = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/ACT_D56_mask_ns2048_inMICE.fits'
     
     if mask_type == 'oct':
-        filename_mask = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/octant_mask_inMICE.fits'
+        filename_mask = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/octant_mask_ns2048_inMICE.fits'
+    
+    if mask_type == 'diff':
+        filename_mask = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/octant_minus_ACT_D56_mask_inMICE.fits'
         
     gal_mask_input_orig = hp.read_map(filename_mask)
     
@@ -201,7 +208,6 @@ if __name__ == "__main__":
     del CF_datapoint_all
         
     for jz in range(len(zmin_bins)):
-
         print('doing z bin:' + str(jz))
         minz = zmin_bins[jz]
         maxz = zmax_bins[jz]
@@ -212,9 +218,9 @@ if __name__ == "__main__":
             file_suffix_save += '_logMmin_' + str(logMmin) + '_' + str(logMmax)
         
         if do_gg:
-            filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
+            filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '.pk'
         else:
-            filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
+            filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '.pk'
             
         if not os.path.isfile(filename):
 
@@ -254,6 +260,7 @@ if __name__ == "__main__":
             # if len(selection_rand) < 15* ndatapoint:
             rand_theta, rand_phi = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
             rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
+            del selection_z_rand, rand_theta_all, rand_phi_all, ind_rand, 
             # else:
             #     rand_theta_all, rand_phi_all = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
             #     rand_index_rand = np.unique(np.random.randint(0, len(rand_theta_all), 15 * ndatapoint))
@@ -271,7 +278,6 @@ if __name__ == "__main__":
 
             print('getting JK')
             if do_jk:
-                datapoint_radec = np.transpose([datapoint_ra, datapoint_dec])
                 # jkobj_map = kmeans_radec.kmeans_sample(datapoint_radec, njk)
                 if os.path.isfile(save_dir + save_filename_jk_obj):
                     try:
@@ -283,11 +289,13 @@ if __name__ == "__main__":
                     jkobj_map = KMeans(jkobj_map_radec_centers)
                 else:
                     # datapoint_radec = np.transpose([datapoint_ra, datapoint_dec])
-                    jkobj_map = kmeans_radec.kmeans_sample(datapoint_radec, njk)
+                    selection_z_jk = np.where((datapoint_z > 0.2) & (datapoint_z < 0.22))[0]
+                    jkobj_map = kmeans_radec.kmeans_sample(np.transpose([datapoint_ra[selection_z_jk], datapoint_dec[selection_z_jk]]), njk)
                     jk_dict = {'jkobj_map_radec_centers': jkobj_map.centers}
                     pk.dump(jk_dict, open(save_dir + save_filename_jk_obj, 'wb'), protocol=2)
 
-                datapoint_jk = jkobj_map.find_nearest(datapoint_radec)
+                datapoint_jk = jkobj_map.find_nearest(np.transpose([datapoint_ra, datapoint_dec]))
+                
 
                 if do_randy_sub:
 

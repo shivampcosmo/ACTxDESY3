@@ -284,6 +284,7 @@ def setup(options):
     verbose = options.get_bool(option_section, "verbose", default=False)
     run_cov_pipe = options.get_bool(option_section, "run_cov_pipe", default=False)
     save_detailed_DV = options.get_bool(option_section, "save_detailed_DV", default=False)
+    save_DV = options.get_bool(option_section, "save_DV", default=False)
 
     returndict = {'bins_source': bins_source, 'bins_lens': bins_lens, 'z_edges': z_edges, 'twopt_file': twopt_file,
                   'sec_name': sec_name, 'sec_save_name': sec_save_name, 'save_data_fname': save_data_fname,
@@ -291,7 +292,7 @@ def setup(options):
                   'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'bp_model':bp_model, 'dlogtheta': dlogtheta,
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
                   'verbose': verbose, 'gg_doauto':gg_doauto, 'use_Plin_block':use_Plin_block,
-                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV}
+                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV, 'save_DV':save_DV}
 
     return ini_info, returndict
 
@@ -313,6 +314,7 @@ def execute(block, config):
 
     use_Plin_block, use_dndm_block, use_conc_block = returndict['use_Plin_block'], returndict['use_dndm_block'], returndict['use_conc_block']
     save_detailed_DV = returndict['save_detailed_DV']
+    save_DV = returndict['save_DV']
     if twopt_file is not None:
         try:
             clf = pk.load(open(twopt_file, 'rb'))
@@ -345,11 +347,13 @@ def execute(block, config):
         if dlogtheta == 'uselarray':
             block[sec_save_name, 'theory_min'] = theta_min
             block[sec_save_name, 'theory_max'] = theta_max
-            block[sec_save_name, 'dlogtheta'] = np.log(other_params_dict['l_array'][1] / other_params_dict['l_array'][0])
+            dlogtheta = np.log(other_params_dict['l_array'][1] / other_params_dict['l_array'][0])
+            block[sec_save_name, 'dlogtheta'] = dlogtheta
             theta_array_all = np.exp(
-                np.arange(np.log(theta_min), np.log(theta_max), block[sec_save_name, 'dlogtheta']))
+                np.arange(np.log(theta_min) - dlogtheta/2., np.log(theta_max) + dlogtheta/2, block[sec_save_name, 'dlogtheta']))
             ntheta = len(theta_array_all)
             theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+
         else:
             theta_array = None
             theta_array_all = None
@@ -426,7 +430,31 @@ def execute(block, config):
             if other_params_dict_bin['do_vary_cosmo']:
                 del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                     'bm_array'], other_params_dict_bin['halo_conc_mdef']
+            if verbose:
+                print('getting IA interpolated object')
+            if other_params_dict['put_IA'] and ('gammaIA_allinterp' not in other_params_dict.keys()):
+                nk_temp = 100000
+                gammaIA_block = np.zeros((len(other_params_dict['z_array']), len(other_params_dict['M_array']), nk_temp))
+                a1h_IA = other_params_dict['a1h_IA']
 
+                H0 = 100. * (u.km / (u.s * u.Mpc))
+                G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
+                rho_crit = ((3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
+                for jz in range(len(other_params_dict['z_array'])):
+                    for jM in range(len(other_params_dict['M_array'])):
+                        cv = other_params_dict['halo_conc_mdef'][jz, jM]
+                        gv, kv = hmf.compute_gamma_k_m(a1h_IA,other_params_dict['M_array'][jM],cv,rho_crit,Dv=200, nk=nk_temp)
+                        gammaIA_block[jz, jM, :] = gv
+                ind_nz = np.where(gammaIA_block <= 0)
+                gammaIA_block[ind_nz] = 1e-200
+                gammaIA_allinterp = RegularGridInterpolator(
+                    (other_params_dict['z_array'], np.log(other_params_dict['M_array']), np.log(kv)),
+                    np.log(gammaIA_block), fill_value=-200, bounds_error=False)
+                other_params_dict['gammaIA_allinterp'] = gammaIA_allinterp
+                other_params_dict_bin['gammaIA_allinterp'] = gammaIA_allinterp
+            
+            if verbose:
+                print('done getting IA interpolated object')
 
             other_params_dict['kk_hm_trans'] = 1.
             if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys())\
@@ -568,6 +596,7 @@ def execute(block, config):
                     other_params_dict['bml_z_dict'] = PrepDV_fid.bml_z_dict
 
                 PrepDV_dict_allbins['ukl_zM_dict' + str(binvs)] = PrepDV_fid.ukl_zM_dict
+                PrepDV_dict_allbins['uIl_zM_dict' + str(binvs)] = PrepDV_fid.uIl_zM_dict
                 PrepDV_dict_allbins['ugl_zM_dict' + str(binvl)] = PrepDV_fid.ugl_zM_dict
                 PrepDV_dict_allbins['ugl_cross_zM_dict' + str(binvl)] = PrepDV_fid.ugl_cross_zM_dict
                 PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
@@ -583,6 +612,7 @@ def execute(block, config):
                     PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
                     PrepDV_dict_allbins['PrepDV_fid'] = PrepDV_fid
                     PrepDV_dict_allbins['Cl_noise_yy_l_array'] = PrepDV_fid.Cl_noise_yy_l_array
+                    PrepDV_dict_allbins['Cl_tot_yy_l_array'] = PrepDV_fid.Cl_tot_yy_l_array
                     PrepDV_dict_allbins['bins_source'] = bins_source
                     PrepDV_dict_allbins['bins_lens'] = bins_lens
                     PrepDV_dict_allbins['run_cov_pipe'] = run_cov_pipe
@@ -607,9 +637,10 @@ def execute(block, config):
             DV = DataVec(PrepDV_dict_allbins, block)
         except:
             print(tb.format_exc())
-        # with open(save_data_fname,'wb') as f:
-            # dill.dump(DV,f)
-        # import ipdb; ipdb.set_trace() # BREAKPOINT
+        if save_DV:
+            with open(save_data_fname,'wb') as f:
+                dill.dump(DV,f)
+            import ipdb; ipdb.set_trace() # BREAKPOINT
 
         # z_block, k_block, pktot_block = block.get_grid(nl_power, "z", "k_h", "p_k")
         # z_block, k_block, pk1h_block = block.get_grid(nl_power, "z", "k_h", "p_k_1h")

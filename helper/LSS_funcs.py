@@ -9,6 +9,11 @@ from camb import model
 from scipy.integrate import simps as _simps
 from scipy.interpolate import InterpolatedUnivariateSpline as _spline
 import pdb
+import numpy as np
+import scipy
+import cmath
+from mcfit import xi2P
+from mcfit import P2xi
 # from numba import vectorize, float64
 # from numba import jit
 
@@ -790,4 +795,52 @@ def get_wplin_interp(nu, pkzlin_interp):
 #     temp_mat = l * x_mat / l500c_mat
 #     val = (x_mat ** 2) * y3d_mat * np.sin(temp_mat) / temp_mat
 #     return val
+
+def g_n(n,phi):
+    x = np.linspace(0,2*np.pi,1000)
+    f = np.cos(2*x)*(np.cos(phi-x))**n
+    return np.trapz(f,x)/np.cos(2*phi)
+
+def I(a,b):
+    x = np.linspace(-1,1,10000)
+    f = (1-x**2)**(0.5*a)*x**b
+    return np.trapz(f,x)
+
+def fl(l,theta,phi):
+    wm = 0
+    for m in range(l+1):
+        wg = 0.
+        for j in range(m+1):
+            wg+= scipy.special.binom(m,j)*g_n(j,phi)*I(j+1,m-j)*np.sin(theta)**j*np.cos(theta)**(m-j)
+        wm += scipy.special.binom(l, m)*scipy.special.binom(0.5*(l+m-1.),l)*wg
+    return 2**l* cmath.exp(1j*2*phi)*wm
+
+def gamma_r(A_IA,r,r_vir):
+    gr = A_IA*(r/r_vir)**(-2)
+    gr[r<0.06] = A_IA*(0.06/r_vir)**(-2)
+    gr[gr>0.3] = 0.3
+    return gr
+
+def takefft(A_IA,M,c,rho_crit, Dv=200, nk=2000):
+    r_array = np.logspace(-3.0,3.0,nk)
+    rv = (M/(Dv * rho_crit * 4*np.pi/3.))**(1./3.)
+    rs = rv/c
+    rho_s = (M/(4.*np.pi*rs**3))*(np.log(1. + c) - c/(1.+c))
+    u_rm = (1./M) * rho_s*((r_array/rs)**-1)*((1. + (r_array/rs))**-3)
+    ind_gtrv = np.where(r_array > rv)[0]
+    u_rm[ind_gtrv] = 0.
+    ell_array = np.arange(6)
+    ulkm_all = []
+    for ell in ell_array:
+        k, ulkm = xi2P(r_array, l=ell)(u_rm*gamma_r(A_IA,r_array,rv))
+        ulkm_all.append(ulkm)
+    return ulkm_all,k
+
+
+def compute_gamma_k_m(A_IA,M,c,rho_crit,Dv=200, nk=2000):
+    ulkm_all,k = takefft(A_IA,M,c,rho_crit, Dv=Dv, nk=nk)
+    gammakm = 0j*ulkm_all[0]
+    for l in range(6):
+        gammakm+=(fl(l,np.pi/2.,0.))*ulkm_all[l]*(1j**l)*(2.*l+1.)
+    return gammakm.real,k
 

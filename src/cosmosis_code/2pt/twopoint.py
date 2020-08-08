@@ -75,6 +75,7 @@ class Types(Enum):
     galaxy_shear_minus_real = "G-R"
     cmb_kappa_real = "CKR"
     compton = 'compton'
+    compton1 = 'compton1'
 
     @classmethod
     def lookup(cls, value):

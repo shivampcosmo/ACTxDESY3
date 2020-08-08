@@ -27,7 +27,10 @@ def execute(block, config):
     conversion_dict = dict()
     conversion_dict['gty1']  = ['shear_compton_xi','bins_source',0]
     conversion_dict['yy1']   = ['compton_compton_xi',0,0]
-    conversion_dict['gy1']   = ['galaxy_compton_xi','bins_source',0]
+    conversion_dict['gy1']   = ['galaxy_compton_xi','bins_lens',0]
+    conversion_dict['gty2']  = ['shear_compton1_xi','bins_source',0]
+    conversion_dict['yy2']   = ['compton1_compton1_xi',0,0]
+    conversion_dict['gy2']   = ['galaxy_compton1_xi','bins_source',0]
     conversion_dict['gg']   = ['galaxy_xi','bins_lens','bins_lens']
     conversion_dict['gk']   = ['galaxy_shear_xi','bins_lens','bins_source']
     conversion_dict['kk']   = ['shear_xi_plus','bins_source','bins_source']
@@ -56,7 +59,8 @@ def execute(block, config):
                     block[name_stat, name] = corrf_stat
                 except:
                     pass
-                    # print ('warning'+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
+                    if config['verbose']:
+                        print ('warning'+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
         try:
             block[name_stat, "nbin_a"] = len(conversion_dict[key][0])
         except:
@@ -80,12 +84,16 @@ def execute(block, config):
             block[name_stat, "is_auto"] = False
         # save theta and a few metadata
         #block[name_stat, "cl_section"] = cl_section
-        block[name_stat, "theta"] = xcoord_array/(60./((2*math.pi)/360))
-        block.put_metadata(name_stat, "theta", "unit", "radians")
-        block[name_stat, "sep_name"] = "theta"
-        block[name_stat, "save_name"] = name_stat
-        block[name_stat, "bin_avg"] = False
-    # import ipdb; ipdb.set_trace() # BREAKPOINT
+        try:
+            block[name_stat, "theta"] = xcoord_array/(60./((2*math.pi)/360))
+            del xcoord_array
+            block.put_metadata(name_stat, "theta", "unit", "radians")
+            block[name_stat, "sep_name"] = "theta"
+            block[name_stat, "save_name"] = name_stat
+            block[name_stat, "bin_avg"] = False
+        except:
+            pass
+
 
     if config['verbose']:
         print ('done conversion module')
