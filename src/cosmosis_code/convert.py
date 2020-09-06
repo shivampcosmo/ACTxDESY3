@@ -57,6 +57,7 @@ def execute(block, config):
                     block[name_stat, name] = corrf_stat
                     name = 'bin_%d_%d' % (np.int(jx), np.int(ix))
                     block[name_stat, name] = corrf_stat
+                    # import ipdb; ipdb.set_trace() # BREAKPOINT
                 except:
                     pass
                     if config['verbose']:

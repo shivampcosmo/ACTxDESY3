@@ -36,7 +36,8 @@ def QR_inverse(matrix):
     return np.dot(_Q, np.linalg.inv(_R.T))
 
 
-def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_block=False, use_dndm_block=False, use_conc_block=False, use_bm_block=False):
+def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_block=False, use_dndm_block=False, use_conc_block=False, use_bm_block=False,
+        theta_min=2.5, theta_max=250.,ntheta=0):
     config_run = ConfigObj(ini_file, unrepr=True)
     if ini_def is None:
         config_def = ConfigObj(config_run['DEFAULT']['params_default_file'], unrepr=True)
@@ -182,28 +183,48 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
     other_params_dict['x_array'] = np.logspace(np.log10(other_params_dict['xmin']), np.log10(other_params_dict['xmax']),
                                                other_params_dict['num_x'])
 
-    if twopt_file is None:
-        if other_params_dict['larray_spacing'] == 'log':
-            if other_params_dict['num_l'] == 0:
-                l_array_all = np.exp(np.arange(np.log(other_params_dict['lmin']), np.log(other_params_dict['lmax']),
-                                               other_params_dict['dl_log_array']))
-            else:
-                l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
-                                          other_params_dict['num_l'])
+    if ntheta > 0:
+        theta_temp = np.logspace(np.log10(theta_min),np.log10(theta_max), ntheta+1)
+        theta_temp_rad = theta_temp*(1./60.)*(np.pi/180.)
+        ell_temp = (1./theta_temp_rad)[::-1]
+        logell_temp = np.log(ell_temp)
+        dell = logell_temp[1] - logell_temp[0]
+        log_lmax = np.log(other_params_dict['lmax'])
+        log_lmin = np.log(other_params_dict['lmin'])
+        logell_rightext = np.arange(logell_temp[-1],log_lmax,dell)
+        logell_leftext = np.arange(logell_temp[0],log_lmin,-dell)[::-1]
+        logell_cen = np.hstack((logell_leftext[:-1],logell_temp,logell_rightext))
+        logell_all = (logell_cen[1:] + logell_cen[:-1])/2.
+        logell_all = np.insert(logell_all,[0,len(logell_all)],[logell_all[0]-dell,logell_all[-1]+dell])
+        ell_cen = np.exp(logell_cen)
+        dell_all = np.exp(logell_all)[1:] - np.exp(logell_all)[:-1]
+        other_params_dict['dl_array'] = dell_all
+        other_params_dict['l_array'] = ell_cen
 
-        if other_params_dict['larray_spacing'] == 'lin':
-            l_array_all = np.linspace((other_params_dict['lmin']), (other_params_dict['lmax']),
-                                      other_params_dict['num_l'])
-        other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
-        other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
     else:
-        clf = pk.load(open(twopt_file, 'rb'))
-        ell_data = clf['ell']
-        lmin = (ell_data - (ell_data[1] - ell_data[0]) / 2.)[0]
-        lmax = (ell_data + (ell_data[1] - ell_data[0]) / 2.)[-1]
-        l_array_all = np.linspace(lmin, lmax, len(ell_data) + 1)
-        other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
-        other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
+        if twopt_file is None:
+            if other_params_dict['larray_spacing'] == 'log':
+                if other_params_dict['num_l'] == 0:
+                    l_array_all = np.exp(np.arange(np.log(other_params_dict['lmin']), np.log(other_params_dict['lmax']),
+                                                other_params_dict['dl_log_array']))
+                else:
+                    l_array_all = np.logspace(np.log10(other_params_dict['lmin']), np.log10(other_params_dict['lmax']),
+                                            other_params_dict['num_l'])
+
+            if other_params_dict['larray_spacing'] == 'lin':
+                l_array_all = np.linspace((other_params_dict['lmin']), (other_params_dict['lmax']),
+                                        other_params_dict['num_l'])
+            other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
+            other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
+        else:
+            clf = pk.load(open(twopt_file, 'rb'))
+            ell_data = clf['ell']
+            lmin = (ell_data - (ell_data[1] - ell_data[0]) / 2.)[0]
+            lmax = (ell_data + (ell_data[1] - ell_data[0]) / 2.)[-1]
+            l_array_all = np.linspace(lmin, lmax, len(ell_data) + 1)
+            other_params_dict['dl_array'] = l_array_all[1:] - l_array_all[:-1]
+            other_params_dict['l_array'] = (l_array_all[1:] + l_array_all[:-1]) / 2.
+
     other_params_dict['ng_zarray'] = np.linspace(0.1, 2.0, 100)
     other_params_dict['ng_value'] = np.ones(len(other_params_dict['ng_zarray'])) / sp.integrate.simps(
         np.ones(len(other_params_dict['ng_zarray'])), other_params_dict['ng_zarray'])
@@ -256,6 +277,11 @@ def setup(options):
     use_conc_block = options.get_bool(option_section, "use_conc_block", default=False)
     use_bm_block = options.get_bool(option_section, "use_bm_block", default=False)
 
+    ntheta = options.get_int(option_section, "ntheta", default=0)
+    dlogtheta = options.get_string(option_section, "dlogtheta", default='')
+    theta_min = options.get_double(option_section, "theta_min", default=1.0)
+    theta_max = options.get_double(option_section, "theta_max", default=100.0)
+
     if do_use_measured_2pt:
         ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file,
                             twopt_file=twopt_file, get_bp=get_bp, use_Plin_block=use_Plin_block,
@@ -263,7 +289,7 @@ def setup(options):
     else:
         ini_info = read_ini(params_files_dir + params_file, ini_def=params_files_dir + params_def_file, get_bp=get_bp,
                             use_Plin_block=use_Plin_block, use_dndm_block=use_dndm_block, use_conc_block=use_conc_block,
-                            use_bm_block=use_bm_block)
+                            use_bm_block=use_bm_block, theta_min=theta_min, theta_max=theta_max, ntheta=0)
 
     z_edges = ast.literal_eval(
         options.get_string(option_section, "z_edges", default='[ 0.20, 0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ]'))
@@ -277,10 +303,6 @@ def setup(options):
     save_data_fname = options.get_string(option_section, "save_data_fname", default='')
     save_real_space_cov = options.get_bool(option_section, "save_real_space_cov", default=False)
 
-    ntheta = options.get_int(option_section, "ntheta", default=0)
-    dlogtheta = options.get_string(option_section, "dlogtheta", default='')
-    theta_min = options.get_double(option_section, "theta_min", default=1.0)
-    theta_max = options.get_double(option_section, "theta_max", default=100.0)
     verbose = options.get_bool(option_section, "verbose", default=False)
     run_cov_pipe = options.get_bool(option_section, "run_cov_pipe", default=False)
     save_detailed_DV = options.get_bool(option_section, "save_detailed_DV", default=False)
@@ -353,7 +375,6 @@ def execute(block, config):
                 np.arange(np.log(theta_min) - dlogtheta/2., np.log(theta_max) + dlogtheta/2, block[sec_save_name, 'dlogtheta']))
             ntheta = len(theta_array_all)
             theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
-
         else:
             theta_array = None
             theta_array_all = None
@@ -361,8 +382,8 @@ def execute(block, config):
         block[sec_save_name, 'theory_min'] = theta_min
         block[sec_save_name, 'theory_max'] = theta_max
         block[sec_save_name, 'ntheta'] = ntheta
-        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta)
-        theta_array = (theta_array_all[1:] + theta_array_all[:-1]) / 2.
+        theta_array_all = np.logspace(np.log10(theta_min), np.log10(theta_max), ntheta+1)
+        theta_array = np.exp((np.log(theta_array_all)[1:] + np.log(theta_array_all)[:-1])/2.)
     other_params_dict['kk_hm_trans'] = 1
     for binvs in bins_source:
         for binvl in bins_lens:
@@ -430,31 +451,38 @@ def execute(block, config):
             if other_params_dict_bin['do_vary_cosmo']:
                 del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                     'bm_array'], other_params_dict_bin['halo_conc_mdef']
-            if verbose:
-                print('getting IA interpolated object')
             if other_params_dict['put_IA'] and ('gammaIA_allinterp' not in other_params_dict.keys()):
-                nk_temp = 100000
-                gammaIA_block = np.zeros((len(other_params_dict['z_array']), len(other_params_dict['M_array']), nk_temp))
-                a1h_IA = other_params_dict['a1h_IA']
+                if verbose:
+                    print('getting IA interpolated object')
+                save_data_fnameIA = other_params_dict['save_IA_fname']
+                nk_temp = 10000
+                if not os.path.isfile(other_params_dict['save_IA_fname']):
+                    gammaIA_block = np.zeros((len(other_params_dict['z_array']), len(other_params_dict['M_array']), nk_temp))
+                    a1h_IA = other_params_dict['a1h_IA']
 
-                H0 = 100. * (u.km / (u.s * u.Mpc))
-                G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
-                rho_crit = ((3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
-                for jz in range(len(other_params_dict['z_array'])):
-                    for jM in range(len(other_params_dict['M_array'])):
-                        cv = other_params_dict['halo_conc_mdef'][jz, jM]
-                        gv, kv = hmf.compute_gamma_k_m(a1h_IA,other_params_dict['M_array'][jM],cv,rho_crit,Dv=200, nk=nk_temp)
-                        gammaIA_block[jz, jM, :] = gv
-                ind_nz = np.where(gammaIA_block <= 0)
-                gammaIA_block[ind_nz] = 1e-200
+                    H0 = 100. * (u.km / (u.s * u.Mpc))
+                    G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
+                    rho_crit = ((3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
+                    for jz in range(len(other_params_dict['z_array'])):
+                        for jM in range(len(other_params_dict['M_array'])):
+                            cv = other_params_dict['halo_conc_mdef'][jz, jM]
+                            gv, kv = hmf.compute_gamma_k_m(a1h_IA,other_params_dict['M_array'][jM],cv,rho_crit,Dv=200, nk=nk_temp)
+                            gammaIA_block[jz, jM, :] = gv
+                    ind_nz = np.where(gammaIA_block <= 0)
+                    gammaIA_block[ind_nz] = 1e-200
+                    to_save_dict = {'z':other_params_dict['z_array'],'M':other_params_dict['M_array'],'k':kv,'gIA':gammaIA_block}
+                    with open(save_data_fnameIA,'wb') as f:
+                        dill.dump(to_save_dict,f)
+                else:
+                    to_save_dict = dill.load(open(save_data_fnameIA,'rb'))
+
                 gammaIA_allinterp = RegularGridInterpolator(
-                    (other_params_dict['z_array'], np.log(other_params_dict['M_array']), np.log(kv)),
-                    np.log(gammaIA_block), fill_value=-200, bounds_error=False)
+                    (to_save_dict['z'], np.log(to_save_dict['M']), np.log(to_save_dict['k'])),
+                    np.log(to_save_dict['gIA']), fill_value=-200, bounds_error=False)
                 other_params_dict['gammaIA_allinterp'] = gammaIA_allinterp
                 other_params_dict_bin['gammaIA_allinterp'] = gammaIA_allinterp
-            
-            if verbose:
-                print('done getting IA interpolated object')
+                if verbose:
+                    print('done getting IA interpolated object')
 
             other_params_dict['kk_hm_trans'] = 1.
             if ('uml_zM_dict' not in other_params_dict.keys()) and ('um_block_allinterp' not in other_params_dict.keys())\

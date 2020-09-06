@@ -207,6 +207,7 @@ class DataVec:
                                     ximint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
+                                    import ipdb; ipdb.set_trace() # BREAKPOINT
 
 
                                     xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
@@ -352,6 +353,7 @@ class DataVec:
                             if 'ky' in PrepDV.stats_analyze:
                                 block[
                                     sec_save_name, 'theory_corrf_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(j1) + '_' + str(0)] = gt_tot_j1j2
+
                                 block[sec_save_name, 'xcoord_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(j1) + '_' + str(0)] = theta_array
 
                         else:
@@ -800,7 +802,7 @@ class DataVec:
                                                        uAl_zM_dict, uBl_zM_dict, uCl_zM_dict, uDl_zM_dict, beam_fwhm_arcmin[0])
 
                         covtot = covG + covNG
-                        # covtot = covNG 
+                        # covtot = covG 
                         bin_key = 'bin_' + str(bins1_stat1[jb1]) + '_' + str(bins2_stat1[jb1]) + '_' + str(bins1_stat2[jb2]) + '_' + str(bins2_stat2[jb2])
                         covG_stat12[bin_key] = covG
                         covNG_stat12[bin_key] = covNG
@@ -873,11 +875,16 @@ class DataVec:
 
                     if isgtykk:
                         kkgtfftcovtot_stat12['bins_comb'] = bins_comb
-                        stat_analyze_key = 'gty_kk'
-                        self.fftcovtot_dict[stat_analyze_key] = kkgtfftcovtot_stat12
+                        if ((stats_analyze_1_ordered == 'kk') and (stats_analyze_2_ordered == 'ky')):
+                            stat_analyze_key1 = 'kk_gty'
+                            stat_analyze_key2 = 'kkm_gty'
+                        else:
+                            stat_analyze_key1 = 'gty_kk'
+                            stat_analyze_key2 = 'gty_kkm'
+
+                        self.fftcovtot_dict[stat_analyze_key1] = kkgtfftcovtot_stat12
                         kkmgtfftcovtot_stat12['bins_comb'] = bins_comb
-                        stat_analyze_key = 'gty_kkm'
-                        self.fftcovtot_dict[stat_analyze_key] = kkmgtfftcovtot_stat12
+                        self.fftcovtot_dict[stat_analyze_key2] = kkmgtfftcovtot_stat12
 
                     # self.fftcovG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covG_stat12
                     # self.fftcovNG_dict[stats_analyze_1_ordered + '_' + stats_analyze_2_ordered] = covNG_stat12

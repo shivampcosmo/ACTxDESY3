@@ -256,7 +256,6 @@ class Powerspec:
         H0 = 100. * (u.km / (u.s * u.Mpc))
         G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
         self.rho_m_bar = ((cosmo_params['Om0'] * 3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
-        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         if other_params['put_IA']:
             Dz_array = 1./(1. + self.z_array)
@@ -264,7 +263,7 @@ class Powerspec:
             z0_IA = other_params['z0_IA']
             eta_IA = other_params['eta_IA']
             A_IA = other_params['A_IA']
-            self.Az_IA = A_IA * self.rho_m_bar * C1_bar * (1./Dz_array) * ((1. + self.z_array)/(1. + z0_IA))**eta_IA
+            self.Az_IA = -1. * A_IA * self.rho_m_bar * C1_bar * (1./Dz_array) * ((1. + self.z_array)/(1. + z0_IA))**eta_IA
             self.gammaIA_allinterp = other_params['gammaIA_allinterp']
 
         if 'pkzlin_interp' not in other_params.keys():
@@ -325,7 +324,6 @@ class Powerspec:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
             val = np.sqrt(
                 (2 * self.Ns_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
-#            val = (self.Nc_mat * self.Ns_mat * ukzm_mat + self.Nc_mat) 
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),
@@ -335,7 +333,6 @@ class Powerspec:
             suppress_fac =  (1. - np.exp(-1.*(k_mat/self.kstar)**4))
         else:
             suppress_fac = 1.
-#        import ipdb; ipdb.set_trace() # BREAKPOINT
 
         return coeff_mat * val*suppress_fac
 

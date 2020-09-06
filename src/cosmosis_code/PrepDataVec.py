@@ -642,11 +642,84 @@ class CalcDataVec:
         # pdb.set_trace()
         return Cly_misc_l_final
 
+
     def get_cov_G(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2,
                   Cl_result_dict, fsky_dict):
 
         A, B = list(stats_analyze_1)
         C, D = list(stats_analyze_2)
+        k_sum1 = (A == 'k') * (B == 'k')
+        k_sum2 = (C == 'k') * (D == 'k')
+        if k_sum1 == 1 and k_sum2 == 1:
+            iskk = 1
+        else:
+            iskk = 0
+        stats_pairs = [A + C, B + D, A + D, B + C]
+        bin_pairs = [[bin1_stat1, bin1_stat2], [bin2_stat1, bin2_stat2], [bin1_stat1, bin2_stat2],
+                     [bin2_stat1, bin1_stat2]]
+        Cl_stats_dict = {}
+        Nl_stats_dict = {}
+       
+
+        for j in range(len(stats_pairs)):
+            stat = stats_pairs[j]
+            bin_pair = bin_pairs[j]
+            bin_key = 'bin_' + str(bin_pair[0]) + '_' + str(bin_pair[1])
+            Atemp, Btemp = list(stat)
+            if Atemp == Btemp:
+                try:
+                    Cl_temp = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    if iskk:
+                        Nl = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey'] - Cl_result_dict[stat][bin_key]['tot_ellsurvey'] 
+                        Nl_stats_dict[j] = Nl
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                except:
+                    bin_key = 'bin_' + str(bin_pair[1]) + '_' + str(bin_pair[0])
+                    if iskk:
+                        Nl = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey'] - Cl_result_dict[stat][bin_key]['tot_ellsurvey'] 
+                        Nl_stats_dict[j] = Nl
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+            else:
+                try:
+                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                except:
+                    bin_key = 'bin_' + str(bin_pair[1]) + '_' + str(bin_pair[0])
+                    Cl_stats_dict[j] = Cl_result_dict[Btemp + Atemp][bin_key]['tot_plus_noise_ellsurvey']
+
+        fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
+
+        to_mult = np.ones_like(Cl_result_dict['l_array_survey'])
+
+        # ind_z = np.where(Cl_result_dict['l_array_survey'] < 00.)[0]
+        # to_mult[ind_z] = 0.
+
+
+        # ind_z = np.where(Cl_result_dict['l_array_survey'] > 12500.)[0]
+        # to_mult[ind_z] = 0.
+        if iskk:
+#           if doing xi_plus or xi_minus, then add the shape noise due to BB correlations
+            Nl_BB = (bin1_stat1 == bin1_stat2)*(bin2_stat1 == bin2_stat2)*Nl_stats_dict[0]*Nl_stats_dict[1] + (bin1_stat1 == bin2_stat2)*(bin2_stat1 == bin1_stat2)*Nl_stats_dict[2]*Nl_stats_dict[3]
+            val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
+                    Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3] + Nl_BB) * (to_mult ** 2)
+        else:
+            val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
+                    Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3]) * (to_mult ** 2)
+
+
+        return np.diag(val_diag)
+
+
+    def get_cov_G_arx(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2,
+                  Cl_result_dict, fsky_dict):
+
+        A, B = list(stats_analyze_1)
+        C, D = list(stats_analyze_2)
+        k_sum1 = (A == 'k') + (B == 'k')
+        k_sum2 = (C == 'k') + (D == 'k')
+        if k_sum1 == 1 and k_sum2 == 1:
+            k_sum = 1
+        else:
+            k_sum = 0
         stats_pairs = [A + C, B + D, A + D, B + C]
         bin_pairs = [[bin1_stat1, bin1_stat2], [bin2_stat1, bin2_stat2], [bin1_stat1, bin2_stat2],
                      [bin2_stat1, bin1_stat2]]
@@ -658,12 +731,22 @@ class CalcDataVec:
             bin_pair = bin_pairs[j]
             bin_key = 'bin_' + str(bin_pair[0]) + '_' + str(bin_pair[1])
             Atemp, Btemp = list(stat)
+            iskk = (Atemp == 'k') and (Btemp == 'k')
             if Atemp == Btemp:
                 try:
-                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    Cl_temp = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    if k_sum == 1 and iskk:
+                        Nl = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey'] - Cl_result_dict[stat][bin_key]['tot_ellsurvey'] 
+                        Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_ellsurvey'] + 0.5*Nl
+                    else:
+                        Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
                 except:
                     bin_key = 'bin_' + str(bin_pair[1]) + '_' + str(bin_pair[0])
-                    Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
+                    if k_sum == 1 and iskk:
+                        Nl = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey'] - Cl_result_dict[stat][bin_key]['tot_ellsurvey'] 
+                        Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_ellsurvey'] + 0.5*Nl
+                    else:
+                        Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
             else:
                 try:
                     Cl_stats_dict[j] = Cl_result_dict[stat][bin_key]['tot_plus_noise_ellsurvey']
@@ -673,9 +756,19 @@ class CalcDataVec:
 
         fsky_j = np.sqrt(fsky_dict[A + B] * fsky_dict[C + D])
 
-        val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
-                Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3])
+        to_mult = np.ones_like(Cl_result_dict['l_array_survey'])
 
+        # ind_z = np.where(Cl_result_dict['l_array_survey'] < 00.)[0]
+        # to_mult[ind_z] = 0.
+
+
+        # ind_z = np.where(Cl_result_dict['l_array_survey'] > 12500.)[0]
+        # to_mult[ind_z] = 0.
+
+        val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
+                Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3]) * (to_mult ** 2)
+
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         return np.diag(val_diag)
 
@@ -696,7 +789,7 @@ class CalcDataVec:
         return val_NG
 
     def do_Hankel_transform(self, nu, ell_array, Cell_array, theta_array_arcmin=None):
-        l_array_full = np.logspace(np.log10(0.1), np.log10(20000), 200000)
+        l_array_full = np.logspace(np.log10(0.01), np.log10(200000), 200000)
         Cell_interp = interpolate.interp1d(np.log(ell_array), np.log(Cell_array), fill_value='extrapolate',
                                            bounds_error=False)
         Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
