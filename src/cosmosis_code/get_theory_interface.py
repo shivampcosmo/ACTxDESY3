@@ -19,6 +19,8 @@ import dill
 from configobj import ConfigObj
 from configparser import ConfigParser
 import pickle as pk
+from mcfit import P2xi
+from mcfit import xi2P
 import pdb
 import time
 import traceback as tb
@@ -455,7 +457,7 @@ def execute(block, config):
                 if verbose:
                     print('getting IA interpolated object')
                 save_data_fnameIA = other_params_dict['save_IA_fname']
-                nk_temp = 10000
+                nk_temp = 100000
                 if not os.path.isfile(other_params_dict['save_IA_fname']):
                     gammaIA_block = np.zeros((len(other_params_dict['z_array']), len(other_params_dict['M_array']), nk_temp))
                     a1h_IA = other_params_dict['a1h_IA']
@@ -585,6 +587,61 @@ def execute(block, config):
                 # with open(savefname, 'wb') as f:
                 #     dill.dump(savedict, f)
                 # import pdb; pdb.set_trace()
+
+                # get_Pe_HSE = True
+                get_Pe_HSE = False
+                if get_Pe_HSE:
+                    if verbose:
+                        print('getting HSE pressure profile')
+
+                    H0 = 100. * (u.km / (u.s * u.Mpc))
+                    G_new = const.G.to(u.Mpc ** 3 / ((u.s ** 2) * u.M_sun))
+                    rho_crit = ((3 * (H0 ** 2) / (8 * np.pi * G_new)).to(u.M_sun / (u.Mpc ** 3))).value
+
+                    # um_block_allinterp = RegularGridInterpolator(
+                        # (z_array_selum, np.log(M_array_block), np.log(k_array_block)),
+                        # np.log(um_block + 1e-200), fill_value=None, bounds_error=False)
+
+                    coeff = (const.G * (const.M_sun ** 2) / ((1.0 * u.Mpc) ** 4)).to((u.eV / (u.cm ** 3))).value
+                    coeff_si = (const.G * (const.M_sun ** 2) / ((1.0 * u.Mpc) ** 4)).value
+                    nk = 200
+                    k_array = np.logspace(-3,3,nk)
+                    P_mat = np.zeros((len(z_array_selum), len(M_array_block), nk-1))
+                    pressure_model_delta = 200
+                    M_from_rho = np.zeros((len(z_array_selum), len(M_array_block)))
+                    rhoM = np.zeros((len(z_array_selum), len(M_array_block),nk-1))
+                    for jz in range(len(z_array_selum)):
+                        print(jz)
+                        for jM in range(len(M_array_block)):
+                            ksel = np.where((k_array_block > 1e-4) & (k_array_block < 20))[0]
+                            um_interp = interpolate.interp1d(np.log(k_array_block[ksel]),(rho_m)*np.log(um_block[jz,jM,ksel]),fill_value='extrapolate')
+                            r_all, rho_M = P2xi(k_array)(np.exp(um_interp(np.log(k_array))))
+                            r_cent, rho_M_cent = 0.5*(r_all[1:] + r_all[:-1]), 0.5*(rho_M[1:] + rho_M[:-1])
+                            rho_cent = rho_M_cent * M_array_block[jM]
+                            rhoM[jz,jM,:] = rho_cent
+                            dr_all = r_all[1:] - r_all[:-1]
+                            int_M = 4*np.pi * (r_cent**2) * rho_cent * dr_all
+                            M_ltr = np.cumsum(int_M)
+                            to_int = -1 * G_new.value * M_ltr * (1./r_cent**2) * dr_all
+                            rhs_all = np.cumsum(to_int)
+                            gv = 1.14
+                            rho0 = rho_cent[0]
+                            rvir = np.power(3 * M_array_block[jM] / (4 * np.pi * 200. * rho_crit), 1. / 3.)
+                            rcv = np.where(r_cent > rvir)[0][0]
+                            M_from_rho[jz,jM] = M_ltr[rcv]
+
+                            P0 = (coeff / 2.) * pressure_model_delta * (
+                                    0.044 / 0.3) * M_array_block[jM] * rho_crit / rvir
+                            P0_rho0 = G_new.value * (M_array_block[jM] / rvir)
+                            rhs_mod = (1 + (1./P0_rho0) * ((gv-1)/gv) * rhs_all)**(gv/(gv-1))
+                            Pr_HSE = rhs_mod * P0
+                            P_mat[jz, jM, :] = Pr_HSE
+                            # if M_array_block[jM] > 1e14:
+                                # import ipdb; ipdb.set_trace() # BREAKPOINT
+
+                    np.savez('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/save_Pe_HSE.npz',r=r_cent,M=M_array_block, z=z_array_selum,P=P_mat)
+                    import ipdb; ipdb.set_trace() # BREAKPOINT
+
 
             if get_bp:
                 PS = Powerspec(cosmo_params_dict_bin, hod_params_dict_bin, pressure_params_dict_bin, other_params_dict_bin)

@@ -523,3 +523,46 @@ class Powerspec:
             Pk2h = Plin_kz
         return Pk2h
 
+
+    def get_Pkgm1h_zM(self, k_array):
+        nk = len(k_array)
+        ukzm_mat = hmf.get_ukmz_g_kmat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+
+        dndm_mat = np.tile(self.dndm_array.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        Ns_mat = np.tile(self.Ns_mat.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        Nc_mat = np.tile(self.Nc_mat.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        nbar_mat = np.tile(self.nbar.reshape(self.nz, 1), (1, nk))
+
+        norm_mat = np.tile((self.M_mat/self.rho_m_bar).reshape(self.nz, 1, self.nm), (1, nk, 1))
+        val = (Ns_mat * ukzm_mat + Nc_mat) 
+
+        Pk1h = (1./nbar_mat) * sp.integrate.simps((val * ukzm_mat * norm_mat) * dndm_mat, self.M_array)
+
+        return Pk1h, ukzm_mat
+
+
+
+    def get_Pkgm2h_zM(self, k_array):
+        nk = len(k_array)
+        ukzm_mat = hmf.get_ukmz_g_kmat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
+
+        dndm_mat = np.tile(self.dndm_array.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        Ns_mat = np.tile(self.Ns_mat.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        Nc_mat = np.tile(self.Nc_mat.reshape(self.nz, 1, self.nm), (1, nk, 1))
+        bM_mat = np.tile(self.bm_array.reshape(self.nz, 1, self.nm), (1, nk, 1))
+
+        nbar_mat = np.tile(self.nbar.reshape(self.nz, 1), (1, nk))
+        val = (Ns_mat * ukzm_mat + Nc_mat) 
+
+        toint = dndm_mat * (Nc_mat + Ns_mat * ukzm_mat) * bM_mat 
+
+        val = sp.integrate.simps(toint, self.M_array)
+
+        coeff = (1./nbar_mat)
+        Pnl_kz = np.exp(self.pkznl_interp((self.z_array), np.log(k_array), grid=True))
+        return coeff * val * Pnl_kz, Pnl_kz
+
+
+
+
+

@@ -103,8 +103,6 @@ class PrepDataVec:
                                                M200c_mat=self.PS.M_mat_200cP, Mmat_cond=self.PS.M_mat_cond_inbin,
                                                zmat_cond=self.PS.z_mat_cond_inbin)
 
-            # import ipdb; ipdb.set_trace() # BREAKPOINT
-
             if self.verbose:
                 print('getting x matrix')
             nz, nm, nx = len(self.PS.z_array), len(self.PS.M_array), len(self.PS.x_array)
@@ -261,7 +259,32 @@ class PrepDataVec:
         if 'uyl_zM_dict' not in other_params.keys():
             del x_mat2_y3d_mat, x_mat_lmdefP_mat, coeff_mat_y
 
-#        savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/compare_pkmm_cs_yx_wdndm_wmead.pk'
+
+        # binvl = other_params['binvl'] 
+        # binvs = other_params['binvs'] 
+        # if binvl == 1 and binvs == 3:
+            # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/save_allgm_code_comp.pk'
+            # k_array = np.logspace(-4,2,1000)
+            # Pk1h, ukzm = self.PS.get_Pkgm1h_zM(k_array)
+            # Pk2h, Pnlkz = self.PS.get_Pkgm2h_zM(k_array)
+            # Pktot = np.maximum(Pk1h, Pk2h)
+            # zv = 0.5
+            # ind_z = np.where(self.PS.z_array <= zv)[0][-1]
+            # import ipdb; ipdb.set_trace() # BREAKPOINT
+
+            # print(self.PS.z_array[ind_z])
+            # outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pk1h,'Pk2h':Pk2h,'Pktot':Pktot, 'dndm':other_params['dndm_array'], 'M':other_params['M_array'],
+                    # 'Nc':self.PS.Nc_mat,'Ns':self.PS.Ns_mat,'nbar':self.PS.nbar, 'rho_bar':self.PS.rho_m_bar, 'halo_conc':other_params['halo_conc_mdef']}
+
+            # outdict = {'k':k_array, 'z':self.PS.z_array,'Pk1h':Pk1h[ind_z,:],'Pk2h':Pk2h[ind_z,:],'Pktot':Pktot[ind_z,:], 'dndm':other_params['dndm_array'][ind_z,:], 'M':other_params['M_array'],
+                    # 'Nc':self.PS.Nc_mat[ind_z,:],'Ns':self.PS.Ns_mat[ind_z,:],'nbar':self.PS.nbar[ind_z], 'rho_bar':self.PS.rho_m_bar, 'halo_conc':other_params['halo_conc_mdef'][ind_z,:],
+                    # 'nfw_mk':ukzm[ind_z,:], 'Pnl':Pnlkz[ind_z,:], 'bm':other_params['bm_array'][ind_z,:]}
+
+            # with open(savefname, 'wb') as f:
+                # dill.dump(outdict, f)
+            # import ipdb; ipdb.set_trace()
+
+       # savefname = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/compare_pkmm_cs_yx_wdndm_wmead.pk'
 #        # getting the matter-matter power:
 #        # um_block = other_params['um_block']
 #        nu_mat, gm_mat, rhobar_M = other_params['nu_block'], other_params['gm_block'], other_params['rhobar_M_block']
@@ -704,9 +727,11 @@ class CalcDataVec:
         else:
             val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
                     Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3]) * (to_mult ** 2)
-
-
-        return np.diag(val_diag)
+        Cl_only = Cl_result_dict[stat][bin_key]['tot_ellsurvey']
+        noise_cl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Cl_only ** 2)
+        noise_clnl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (4. * Cl_only * Nl)
+        noise_nl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Nl_BB)
+        return np.diag(val_diag), np.diag(noise_cl), np.diag(noise_clnl), np.diag(noise_nl)
 
 
     def get_cov_G_arx(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2,

@@ -207,7 +207,7 @@ class DataVec:
                                     ximint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    import ipdb; ipdb.set_trace() # BREAKPOINT
+                                    # import ipdb; ipdb.set_trace() # BREAKPOINT
 
 
                                     xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
@@ -284,7 +284,7 @@ class DataVec:
                     for jb in range(len(beam_fwhm_arcmin)):
 
                         sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-                        Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth)
+                        Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth) + 1e-200
                         
                         if save_detailed_DV:
                             if put_IA:
@@ -388,7 +388,7 @@ class DataVec:
 
             for jb in range(len(beam_fwhm_arcmin)):
                 sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-                Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(2 * addbth)
+                Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(2 * addbth) + 1e-200
                 if PrepDV_params['PrepDV_fid'].has_yy_noise:
                     Cl_yy_tot_plus_noise = (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey] + Cl_noise_ellsurvey
                 else:
@@ -567,7 +567,7 @@ class DataVec:
 
                     for jb in range(len(beam_fwhm_arcmin)):
                         sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
-                        Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth)
+                        Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth) + 1e-200
                         Cl_gy_dict['bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2 * Bl,
                                                             'tot_ellsurvey': (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey],
                                                             'tot_plus_noise_ellsurvey': (Cltot_j1j2 * Bl)[
@@ -632,11 +632,11 @@ class DataVec:
                     Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('g', 'k', PrepDV.l_array,
                                                          PrepDV_params['ugl_cross_zM_dict' + str(j1)],
                                                          PrepDV_params['ukl_zM_dict' + str(j2)])
-                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'k', PrepDV.l_array,
+                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('g', 'k', PrepDV.l_array,
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
                                                          PrepDV_params['bkl_z_dict' + str(j2)])
                     Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'k', Cl1h_j1j2, Cl2h_j1j2)
-                    Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_model2('g', 'k', PrepDV.l_array,
+                    Cltot_j1j2_m2 = self.CalcDV.get_Cl_AB_tot_modelNL('g', 'k', PrepDV.l_array,
                                                          PrepDV_params['ugl_cross_zM_dict' + str(j1)],
                                                          PrepDV_params['ukl_zM_dict' + str(j2)],
                                                          PrepDV_params['bgl_z_dict' + str(j1)],
@@ -667,7 +667,7 @@ class DataVec:
                                                                                    theta_array_arcmin=theta_array_arcmin)
                         xi_gk_dict['bin_' + str(j1) + '_' + str(j2)] = xitot_j1j2
                         xi_gtg_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot':gt_tot_j1j2,'tot2':gt_tot_j1j2_m2,'1h':gt_1h_j1j2,'2h':gt_2h_j1j2}
-                        if 'theta' not in xi_kk_dict.keys():
+                        if 'theta' not in xi_gk_dict.keys():
                             xi_gk_dict['theta'] = theta_array
                             xi_gtg_dict['theta'] = theta_array
 
@@ -686,6 +686,8 @@ class DataVec:
                                 j2)] = Cltot_j1j2
                             block[sec_save_name, 'xcoord_' + 'gk' + '_' + 'bin_' + str(j1) + '_' + str(
                                 j2)] = PrepDV.l_array
+
+
 
 
             Cl_gk_dict['bin_combs'] = bin_combs
@@ -784,9 +786,10 @@ class DataVec:
                         if self.verbose:
                             print(stats_analyze_1_ordered, stats_analyze_2_ordered, bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2], bins2_stat2[jb2])
 
-                        covG = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
+                        covG, cov_cl, cov_clnl, cov_nl = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
                                                      bins2_stat2[jb2], stats_analyze_1_ordered, stats_analyze_2_ordered,
                                                      self.Cl_result_dict, fsky_dict)
+                        
 
 
                         A, B = list(stats_analyze_1_ordered)
@@ -811,8 +814,14 @@ class DataVec:
                         if analysis_coords == 'real':
                             if isodd:
                                 covtot_rs = covtot[:-1, :][:, :-1]
+                                covcl_rs = cov_cl[:-1, :][:, :-1]
+                                covclnl_rs = cov_clnl[:-1, :][:, :-1]
+                                covnl_rs = cov_nl[:-1, :][:, :-1]
                             else:
                                 covtot_rs = covtot
+                                covcl_rs = cov_cl
+                                covclnl_rs = cov_clnl
+                                covnl_rs = cov_nl
                             newtwobessel = two_Bessel(ell, ell, covtot_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
                                                       nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
                                                       c_window_width=0.25,
@@ -821,6 +830,24 @@ class DataVec:
                             theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
                             cov_tot_fft = cov_fft[:,:-1][:-1,:]
                             fftcovtot_stat12[bin_key] = cov_tot_fft
+
+                            newtwobessel = two_Bessel(ell, ell, covcl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
+                                                      nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
+                                                      c_window_width=0.25,
+                                                      N_pad=1000)
+                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
+                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                            cov_tot_fft = cov_fft[:,:-1][:-1,:]
+                            fftcovtot_stat12[bin_key + '_cl'] = cov_tot_fft
+
+                            newtwobessel = two_Bessel(ell, ell, covclnl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
+                                                      nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
+                                                      c_window_width=0.25,
+                                                      N_pad=1000)
+                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
+                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                            cov_tot_fft = cov_fft[:,:-1][:-1,:]
+                            fftcovtot_stat12[bin_key + '_clnl'] = cov_tot_fft
 
                             if iskkkk:
                                 t1, t2, cov_fft = newtwobessel.two_Bessel_binave(4, 4, dlnk, dlnk)
