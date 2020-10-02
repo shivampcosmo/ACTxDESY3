@@ -731,7 +731,8 @@ class CalcDataVec:
         # noise_cl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Cl_only ** 2)
         # noise_clnl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (4. * Cl_only * Nl)
         # noise_nl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Nl_BB)
-        return np.diag(val_diag), np.diag(noise_cl), np.diag(noise_clnl), np.diag(noise_nl)
+        # return np.diag(val_diag), np.diag(noise_cl), np.diag(noise_clnl), np.diag(noise_nl)
+        return np.diag(val_diag)
 
 
     def get_cov_G_arx(self, bin1_stat1, bin2_stat1, bin1_stat2, bin2_stat2, stats_analyze_1, stats_analyze_2,
