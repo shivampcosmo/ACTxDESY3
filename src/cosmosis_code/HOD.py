@@ -116,7 +116,8 @@ class HOD:
             M1 = 10 ** (self.hod_params['logM1'])
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
             # removing the fcen factor from the definition of satellite galaxies
-            Nsm *= Ncm/(self.hod_params['fcen'])
+            # Nsm *= Ncm/(self.hod_params['fcen'])
+            Nsm *= Ncm
             # Nsm = (M_val / (10 ** (self.hod_params['logM1']))) ** self.hod_params['alpha_g'])
             # erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             # Ncerf = 0.5 * (1 + erfval)
