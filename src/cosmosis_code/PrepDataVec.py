@@ -727,10 +727,10 @@ class CalcDataVec:
         else:
             val_diag = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (
                     Cl_stats_dict[0] * Cl_stats_dict[1] + Cl_stats_dict[2] * Cl_stats_dict[3]) * (to_mult ** 2)
-        Cl_only = Cl_result_dict[stat][bin_key]['tot_ellsurvey']
-        noise_cl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Cl_only ** 2)
-        noise_clnl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (4. * Cl_only * Nl)
-        noise_nl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Nl_BB)
+        # Cl_only = Cl_result_dict[stat][bin_key]['tot_ellsurvey']
+        # noise_cl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Cl_only ** 2)
+        # noise_clnl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (4. * Cl_only * Nl)
+        # noise_nl = (1. / (fsky_j * (2 * Cl_result_dict['l_array_survey'] + 1.) * Cl_result_dict['dl_array_survey'])) * (2. * Nl_BB)
         return np.diag(val_diag), np.diag(noise_cl), np.diag(noise_clnl), np.diag(noise_nl)
 
 

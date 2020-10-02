@@ -786,11 +786,14 @@ class DataVec:
                         if self.verbose:
                             print(stats_analyze_1_ordered, stats_analyze_2_ordered, bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2], bins2_stat2[jb2])
 
-                        covG, cov_cl, cov_clnl, cov_nl = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
-                                                     bins2_stat2[jb2], stats_analyze_1_ordered, stats_analyze_2_ordered,
-                                                     self.Cl_result_dict, fsky_dict)
+                        # covG, cov_cl, cov_clnl, cov_nl = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
+                                                     # bins2_stat2[jb2], stats_analyze_1_ordered, stats_analyze_2_ordered,
+                                                     # self.Cl_result_dict, fsky_dict)
                         
 
+                        covG = self.CalcDV.get_cov_G(bins1_stat1[jb1], bins2_stat1[jb1], bins1_stat2[jb2],
+                                                     bins2_stat2[jb2], stats_analyze_1_ordered, stats_analyze_2_ordered,
+                                                     self.Cl_result_dict, fsky_dict)
 
                         A, B = list(stats_analyze_1_ordered)
                         C, D = list(stats_analyze_2_ordered)
@@ -814,14 +817,14 @@ class DataVec:
                         if analysis_coords == 'real':
                             if isodd:
                                 covtot_rs = covtot[:-1, :][:, :-1]
-                                covcl_rs = cov_cl[:-1, :][:, :-1]
-                                covclnl_rs = cov_clnl[:-1, :][:, :-1]
-                                covnl_rs = cov_nl[:-1, :][:, :-1]
+                                # covcl_rs = cov_cl[:-1, :][:, :-1]
+                                # covclnl_rs = cov_clnl[:-1, :][:, :-1]
+                                # covnl_rs = cov_nl[:-1, :][:, :-1]
                             else:
                                 covtot_rs = covtot
-                                covcl_rs = cov_cl
-                                covclnl_rs = cov_clnl
-                                covnl_rs = cov_nl
+                                # covcl_rs = cov_cl
+                                # covclnl_rs = cov_clnl
+                                # covnl_rs = cov_nl
                             newtwobessel = two_Bessel(ell, ell, covtot_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
                                                       nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
                                                       c_window_width=0.25,
@@ -831,23 +834,23 @@ class DataVec:
                             cov_tot_fft = cov_fft[:,:-1][:-1,:]
                             fftcovtot_stat12[bin_key] = cov_tot_fft
 
-                            newtwobessel = two_Bessel(ell, ell, covcl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
-                                                      nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
-                                                      c_window_width=0.25,
-                                                      N_pad=1000)
-                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
-                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
-                            cov_tot_fft = cov_fft[:,:-1][:-1,:]
-                            fftcovtot_stat12[bin_key + '_cl'] = cov_tot_fft
+                            # newtwobessel = two_Bessel(ell, ell, covcl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
+                                                      # nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
+                                                      # c_window_width=0.25,
+                                                      # N_pad=1000)
+                            # t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
+                            # theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                            # cov_tot_fft = cov_fft[:,:-1][:-1,:]
+                            # fftcovtot_stat12[bin_key + '_cl'] = cov_tot_fft
 
-                            newtwobessel = two_Bessel(ell, ell, covclnl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
-                                                      nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
-                                                      c_window_width=0.25,
-                                                      N_pad=1000)
-                            t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
-                            theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
-                            cov_tot_fft = cov_fft[:,:-1][:-1,:]
-                            fftcovtot_stat12[bin_key + '_clnl'] = cov_tot_fft
+                            # newtwobessel = two_Bessel(ell, ell, covclnl_rs * (ell1_ell2 ** 2) * (1. / (4 * np.pi ** 2)),
+                                                      # nu1=1.01, nu2=1.01, N_extrap_low=0, N_extrap_high=0,
+                                                      # c_window_width=0.25,
+                                                      # N_pad=1000)
+                            # t1, t2, cov_fft = newtwobessel.two_Bessel_binave(0, 0, dlnk, dlnk)
+                            # theta_vals_arcmin_fft = (t1[:-1] + t1[1:]) / 2. / np.pi * 180 * 60
+                            # cov_tot_fft = cov_fft[:,:-1][:-1,:]
+                            # fftcovtot_stat12[bin_key + '_clnl'] = cov_tot_fft
 
                             if iskkkk:
                                 t1, t2, cov_fft = newtwobessel.two_Bessel_binave(4, 4, dlnk, dlnk)
