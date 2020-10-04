@@ -32,7 +32,7 @@ def execute(block, config):
     conversion_dict['yy2']   = ['compton1_compton1_xi',0,0]
     conversion_dict['gy2']   = ['galaxy_compton1_xi','bins_source',0]
     conversion_dict['gg']   = ['galaxy_xi','bins_lens','bins_lens']
-    conversion_dict['gk']   = ['galaxy_shear_xi','bins_lens','bins_source']
+    conversion_dict['gtg']   = ['galaxy_shear_xi','bins_lens','bins_source']
     conversion_dict['kk']   = ['shear_xi_plus','bins_source','bins_source']
     conversion_dict['kkm']  = ['shear_xi_minus','bins_source','bins_source']
     for key in conversion_dict.keys():
