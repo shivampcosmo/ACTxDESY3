@@ -729,13 +729,13 @@ class Pressure:
                                                                                        '200c')
 
         R200c_mat = R200c_mat_kpc_h / 1000.
-
         if self.pressure_model_name in ['LeBrun15', 'Arnaud10']:
             to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M_mat, x_array, z_array, R_mat,
                                                                        M200c_mat=M200c_mat, mdef_M_mat='500c')
 
         elif self.pressure_model_name == 'Battaglia12':
-            to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M200c_mat, x_array, z_array, R200c_mat,
+            rescale_x = R_mat[0][0]/R200c_mat[0][0]
+            to_integrate = 4. * np.pi * (x_array ** 2.) * self.get_y3d(M200c_mat, x_array*rescale_x, z_array, R200c_mat,
                                                                        M200c_mat=M200c_mat,
                                                                        mdef_M_mat='200c')
         else:

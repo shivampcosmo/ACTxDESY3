@@ -414,6 +414,11 @@ def execute(block, config):
                                     if var_name == hod_keys.lower():
                                         hod_params_dict_bin[hod_keys] = block[key]
 
+                            if other_params_dict['put_IA']:
+                                for other_keys in other_params_dict_bin.keys():
+                                    if var_name == other_keys.lower():
+                                        other_params_dict_bin[hod_keys] = block[key]
+
                         if bin_n == binvl:
                             for hod_keys in hod_params_dict_bin.keys():
                                 if var_name == hod_keys.lower():
