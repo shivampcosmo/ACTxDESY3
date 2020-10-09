@@ -51,6 +51,7 @@ class DataVec:
         fsky_dict = PrepDV_params['fsky_dict']
         sec_save_name = PrepDV_params['sec_save_name']
         put_IA = PrepDV_params['put_IA']
+        only2h_IA = PrepDV_params['only_2h_IA']
         save_detailed_DV = PrepDV_params['save_detailed_DV']
         self.Cl_result_dict = {'l_array': PrepDV.l_array, 'l_array_survey': PrepDV.l_array_survey,
                           'ind_select_survey': PrepDV.ind_select_survey,
@@ -82,16 +83,6 @@ class DataVec:
                                                             PrepDV_params['bkl_z_dict' + str(j1)],
                                                             PrepDV_params['bkl_z_dict' + str(j2)])
                         if put_IA:
-                            ClII1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'I', PrepDV.l_array,
-                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
-                                                            PrepDV_params['uIl_zM_dict' + str(j2)])
-                            ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
-                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
-                                                            PrepDV_params['ukl_zM_dict' + str(j2)])
-                            ClGI1h_j2j1 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
-                                                            PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                            PrepDV_params['uIl_zM_dict' + str(j2)])
-
 
                             ClII2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'I', PrepDV.l_array,
                                                                     PrepDV_params['bIl_z_dict' + str(j1)],
@@ -102,7 +93,22 @@ class DataVec:
                             ClGI2h_j2j1 = self.CalcDV.get_Cl_AB_2h('G', 'I', PrepDV.l_array,
                                                                     PrepDV_params['bkl_z_dict' + str(j1)],
                                                                     PrepDV_params['bIl_z_dict' + str(j2)])
-                            
+                            Clintrinsic2h_j1j2 =  ClII2h_j1j2 + ClGI2h_j1j2 + ClGI2h_j2j1 
+                            if only2h_IA:
+                                Clintrinsic_j1j2 =  Clintrinsic2h_j1j2
+                            else:
+                                ClII1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'I', PrepDV.l_array,
+                                                                PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                                PrepDV_params['uIl_zM_dict' + str(j2)])
+                                ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
+                                                                PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                                PrepDV_params['ukl_zM_dict' + str(j2)])
+                                ClGI1h_j2j1 = self.CalcDV.get_Cl_AB_1h('G', 'I', PrepDV.l_array,
+                                                                PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                                PrepDV_params['uIl_zM_dict' + str(j2)])
+
+                                Clintrinsic1h_j1j2 =  ClII1h_j1j2 + ClGI1h_j1j2 + ClGI1h_j2j1 
+                                Clintrinsic_j1j2 =  Clintrinsic1h_j1j2 + Clintrinsic2h_j1j2
                             
                             # ClII_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'I', PrepDV.l_array,
                                                                     # PrepDV_params['bIl_z_dict' + str(j1)],
@@ -115,9 +121,6 @@ class DataVec:
                                                                     # PrepDV_params['bIl_z_dict' + str(j2)])
 
                             # Clintrinsic_j1j2 =  ClII_j1j2 + ClGI_j1j2 + ClGI_j2j1
-                            Clintrinsic1h_j1j2 =  ClII1h_j1j2 + ClGI1h_j1j2 + ClGI1h_j2j1 
-                            Clintrinsic2h_j1j2 =  ClII2h_j1j2 + ClGI2h_j1j2 + ClGI2h_j2j1 
-                            Clintrinsic_j1j2 =  Clintrinsic1h_j1j2 + Clintrinsic2h_j1j2
                             Cltot_j1j2 = Cltotmead_j1j2 + Clintrinsic_j1j2
                         else:
                             Cltot_j1j2 = Cltotmead_j1j2
@@ -137,12 +140,20 @@ class DataVec:
 #
                         if save_detailed_DV:
                             if put_IA:
-                                Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot_phy': Cltotmead_j1j2,'tot_II': ClII1h_j1j2 + ClII2h_j1j2 ,'tot_GI': ClGI1h_j1j2 + ClGI1h_j2j1 + ClGI2h_j1j2 + ClGI2h_j2j1,
-                                                                                'tot':Cltot_j1j2,
-                                                                                'tot_ellsurvey': Cltot_j1j2[
-                                                                                    PrepDV.ind_select_survey],
-                                                                                'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                                                                                                                PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                                if only2h_IA:
+                                    Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot_phy': Cltotmead_j1j2,'tot_II': ClII2h_j1j2 ,'tot_GI': ClGI2h_j1j2 + ClGI2h_j2j1,
+                                                                                    'tot':Cltot_j1j2,
+                                                                                    'tot_ellsurvey': Cltot_j1j2[
+                                                                                        PrepDV.ind_select_survey],
+                                                                                    'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                                    PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
+                                else:
+                                    Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot_phy': Cltotmead_j1j2,'tot_II': ClII1h_j1j2 + ClII2h_j1j2 ,'tot_GI': ClGI1h_j1j2 + ClGI1h_j2j1 + ClGI2h_j1j2 + ClGI2h_j2j1,
+                                                                                    'tot':Cltot_j1j2,
+                                                                                    'tot_ellsurvey': Cltot_j1j2[
+                                                                                        PrepDV.ind_select_survey],
+                                                                                    'tot_plus_noise_ellsurvey': Cltot_j1j2[
+                                                                                                                    PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                             else:
                                 Cl_kk_dict['bin_' + str(j1) + '_' + str(j2)] = {'tot': Cltotmead_j1j2,
                                                                                 'tot_ellsurvey': Cltot_j1j2[
@@ -184,9 +195,10 @@ class DataVec:
                                     xiGG_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                             Cltotmead_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                                                                            Clintrinsic1h_j1j2,
-                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    if not only2h_IA:
+                                        xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
+                                                                                                Clintrinsic1h_j1j2,
+                                                                                                theta_array_arcmin=theta_array_arcmin)
                                     xi2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                             Clintrinsic2h_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
@@ -198,9 +210,10 @@ class DataVec:
                                     ximGG_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
                                                                                             Cltotmead_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xim1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
-                                                                                            Clintrinsic1h_j1j2,
-                                                                                            theta_array_arcmin=theta_array_arcmin)
+                                    if not only2h_IA:
+                                        xim1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
+                                                                                                Clintrinsic1h_j1j2,
+                                                                                                theta_array_arcmin=theta_array_arcmin)
                                     xim2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(4, PrepDV.l_array,
                                                                                             Clintrinsic2h_j1j2,
                                                                                             theta_array_arcmin=theta_array_arcmin)
@@ -209,9 +222,12 @@ class DataVec:
                                                                                             theta_array_arcmin=theta_array_arcmin)
                                     # import ipdb; ipdb.set_trace() # BREAKPOINT
 
-
-                                    xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
-                                            'phym':ximGG_j1j2,'intm':ximint_j1j2 ,'1hintm':xim1hint_j1j2 ,'2hintm':xim2hint_j1j2 }
+                                    if not only2h_IA:
+                                        xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
+                                                'phym':ximGG_j1j2,'intm':ximint_j1j2 ,'1hintm':xim1hint_j1j2 ,'2hintm':xim2hint_j1j2 }
+                                    else:
+                                        xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'phy':xiGG_j1j2,'int':xiint_j1j2,'2hint':xi2hint_j1j2,'tot':xitot_j1j2, 'totm':ximtot_j1j2,
+                                                'phym':ximGG_j1j2,'intm':ximint_j1j2 ,'2hintm':xim2hint_j1j2 }
                                 else:
                                     xi_kk_dict['bin_' + str(j1) + '_' + str(j2)] =  {'tot':xitot_j1j2, 'totm':ximtot_j1j2 }
                             else:
@@ -260,17 +276,22 @@ class DataVec:
                                                         PrepDV_params['byl_z_dict0'])
 
                     if put_IA:
-                        ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'y', PrepDV.l_array,
-                                                            PrepDV_params['uIl_zM_dict' + str(j1)],
-                                                            PrepDV_params['uyl_zM_dict0'])
+
                         ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'y', PrepDV.l_array, PrepDV_params['bIl_z_dict' + str(j1)],
                                                             PrepDV_params['byl_z_dict0'])
-                        ClGI_j1j2 = self.CalcDV.get_Cl_AB_tot('I', 'y', ClGI1h_j1j2, ClGI2h_j1j2)
+                        if only2h_IA:
+                            Clintrinsic_j1j2 =  ClGI2h_j1j2
+                            ClGI_j1j2 =  ClGI2h_j1j2
+                        else:
+                            ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'y', PrepDV.l_array,
+                                                                PrepDV_params['uIl_zM_dict' + str(j1)],
+                                                                PrepDV_params['uyl_zM_dict0'])
+                            ClGI_j1j2 = self.CalcDV.get_Cl_AB_tot('I', 'y', ClGI1h_j1j2, ClGI2h_j1j2)
                         # ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'y', PrepDV.l_array,
                                                                 # PrepDV_params['bIl_z_dict' + str(j1)],
                                                                 # PrepDV_params['byl_z_dict' + str(0)])
 
-                        Clintrinsic_j1j2 =  ClGI_j1j2
+                            Clintrinsic_j1j2 =  ClGI_j1j2
                         Cltot_j1j2 = Cltotmead_j1j2 + Clintrinsic_j1j2
                     else:
                         Cltot_j1j2 = Cltotmead_j1j2
@@ -335,13 +356,17 @@ class DataVec:
                                     xiint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2*Bl,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-                                                                                            ClGI1h_j1j2 *Bl,
-                                                                                            theta_array_arcmin=theta_array_arcmin)
+
                                     xi2hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                             ClGI2h_j1j2*Bl,
                                                                                             theta_array_arcmin=theta_array_arcmin)
-                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2}
+                                    if not only2h_IA:
+                                        xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                                ClGI1h_j1j2 *Bl,
+                                                                                                theta_array_arcmin=theta_array_arcmin)
+                                        xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2}
+                                    else:
+                                        xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'2hint':xi2hint_j1j2}
                                 else:
                                     xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
                             else:

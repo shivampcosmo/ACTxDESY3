@@ -264,7 +264,8 @@ class Powerspec:
             eta_IA = other_params['eta_IA']
             A_IA = other_params['A_IA']
             self.Az_IA = -1. * A_IA * self.rho_m_bar * C1_bar * (1./Dz_array) * ((1. + self.z_array)/(1. + z0_IA))**eta_IA
-            self.gammaIA_allinterp = other_params['gammaIA_allinterp']
+            if not other_params['only_2h_IA']:
+                self.gammaIA_allinterp = other_params['gammaIA_allinterp']
 
         if 'pkzlin_interp' not in other_params.keys():
             if self.verbose:

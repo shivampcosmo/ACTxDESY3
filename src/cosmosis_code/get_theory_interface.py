@@ -458,7 +458,7 @@ def execute(block, config):
             if other_params_dict_bin['do_vary_cosmo']:
                 del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
                     'bm_array'], other_params_dict_bin['halo_conc_mdef']
-            if other_params_dict['put_IA'] and ('gammaIA_allinterp' not in other_params_dict.keys()):
+            if other_params_dict['put_IA'] and (not other_params_dict['only_2h_IA']) and ('gammaIA_allinterp' not in other_params_dict.keys()):
                 if verbose:
                     print('getting IA interpolated object')
                 save_data_fnameIA = other_params_dict['save_IA_fname']
@@ -717,6 +717,7 @@ def execute(block, config):
                     # PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
                     PrepDV_dict_allbins['verbose'] = verbose
                     PrepDV_dict_allbins['put_IA'] = other_params_dict['put_IA']
+                    PrepDV_dict_allbins['only_2h_IA'] = other_params_dict['only_2h_IA']
                     PrepDV_dict_allbins['sec_save_name'] = sec_save_name
                     PrepDV_dict_allbins['save_detailed_DV'] = save_detailed_DV
                     PrepDV_dict_allbins['add_beam_to_theory'] = other_params_dict['add_beam_to_theory']

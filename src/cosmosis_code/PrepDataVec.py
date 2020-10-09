@@ -158,7 +158,7 @@ class PrepDataVec:
                 self.ugl_cross_zM_dict[round(l_array[j], 1)] = self.PS.get_ug_cross_l_zM(l_array[j])
             if 'k' in self.lss_probes_analyze:
                 self.ukl_zM_dict[round(l_array[j], 1)] = self.PS.get_uk_l_zM(l_array[j], self.uml_zM_dict)
-            if other_params['put_IA']:
+            if other_params['put_IA'] and (not other_params['only_2h_IA']):
                 self.uIl_zM_dict[round(l_array[j], 1)] = self.PS.get_uI_l_zM(l_array[j])
 
         if self.verbose:
