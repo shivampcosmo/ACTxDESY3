@@ -167,7 +167,7 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
         other_params_dict['split_mass_bins_centers'] = split_mass_bins_centers
         other_params_dict['split_params_massbins_names'] = split_params_massbins_names
 
-    other_params_dict['do_vary_cosmo'] = False
+    # other_params_dict['do_vary_cosmo'] = False
 
     other_params_dict['M_array'] = np.logspace(other_params_dict['logM_array_min'], other_params_dict['logM_array_max'],
                                                other_params_dict['num_M'])
@@ -239,7 +239,6 @@ def read_ini(ini_file, ini_def=None, twopt_file=None, get_bp=False, use_Plin_blo
     if not use_conc_block:
         halo_conc_mdef = ghmf.get_halo_conc_Mz(M_mat_mdef, mdef_analysis)
         other_params_dict['halo_conc_mdef'] = halo_conc_mdef
-
 
     if not use_dndm_block:
         dndm_array, bm_array = ghmf.get_dndm_bias(M_mat_mdef, mdef_analysis)
@@ -417,12 +416,35 @@ def execute(block, config):
                             if other_params_dict['put_IA']:
                                 for other_keys in other_params_dict_bin.keys():
                                     if var_name == other_keys.lower():
-                                        other_params_dict_bin[hod_keys] = block[key]
+                                        other_params_dict_bin[other_keys] = block[key]
 
                         if bin_n == binvl:
                             for hod_keys in hod_params_dict_bin.keys():
                                 if var_name == hod_keys.lower():
                                     hod_params_dict_bin[hod_keys] = block[key]
+
+
+                if key[0] == 'cosmological_parameters':
+                    dict_trans = {'omega_m':'Om0','sigma8_input':'sigma8', 'omega_b':'Ob0'}
+                    param_val = key[1]
+                    for keydict in dict_trans.keys():
+                        if param_val == 'h0':
+                            if (not other_params_dict_bin['do_vary_cosmo']) and (cosmo_params_dict_bin['H0'] - block[key] * 100. > 1e-3):
+                                print(key, cosmo_params_dict_bin['H0'], block[key] * 100.)
+                                print('MAKE YOUR COSMOLOGY IN VALUES FILE AND PARAMS FILE SAME')
+                                print('OR SET do_vary_cosmo as TRUE IN PARAMS FILE')
+                                sys.exit()
+                            else:
+                                cosmo_params_dict_bin['H0'] = block[key] * 100.
+                        else:
+                            if param_val in dict_trans.keys():
+                                if (not other_params_dict_bin['do_vary_cosmo']) and (cosmo_params_dict_bin[dict_trans[param_val]] - block[key] > 1e-5):
+                                    print(key, cosmo_params_dict_bin[dict_trans[param_val]], block[key])
+                                    print('MAKE YOUR COSMOLOGY IN VALUES FILE AND PARAMS FILE SAME')
+                                    print('OR SET do_vary_cosmo as TRUE IN PARAMS FILE')
+                                    sys.exit()
+                                else:
+                                    cosmo_params_dict_bin[dict_trans[param_val]] = block[key]
 
             if verbose:
                 print('done putting in values file data in the dict')
@@ -456,8 +478,13 @@ def execute(block, config):
                 other_params_dict_bin['noise_kappa'] = 0.0
 
             if other_params_dict_bin['do_vary_cosmo']:
-                del other_params_dict_bin['pkzlin_interp'], other_params_dict_bin['dndm_array'], other_params_dict_bin[
-                    'bm_array'], other_params_dict_bin['halo_conc_mdef']
+                if not use_Plin_block: 
+                    del other_params_dict_bin['pkzlin_interp'] 
+                if not use_dndm_block: 
+                    del other_params_dict_bin['dndm_array']
+                if not use_conc_block:
+                    del other_params_dict_bin['halo_conc_mdef']
+                del other_params_dict_bin['bm_array']
             if other_params_dict['put_IA'] and (not other_params_dict['only_2h_IA']) and ('gammaIA_allinterp' not in other_params_dict.keys()):
                 if verbose:
                     print('getting IA interpolated object')

@@ -144,6 +144,11 @@ if __name__ == "__main__":
         datapoint_weight_all = np.ones_like(datapoint_z_all)
         datapoint_radius_all = dfv[ind_sel,3]
 
+        ind_sel = cat['index/redmagic/combined_sample_fid/select'][()]
+        rm_z_all = cat['catalog/redmagic/combined_sample_fid/zredmagic'][()][ind_sel]
+        rm_ra_all = cat['catalog/redmagic/combined_sample_fid/ra'][()][ind_sel]
+        rm_dec_all = cat['catalog/redmagic/combined_sample_fid/dec'][()][ind_sel]
+        rm_weight_all = cat['catalog/redmagic/combined_sample_fid/weight'][()][ind_sel]
 
         ind_selr = cat['index/redmagic/combined_sample_fid/random_select'][()]
         rand_ra_all = cat['randoms/redmagic/combined_sample_fid/ra'][()][ind_selr]
@@ -152,7 +157,8 @@ if __name__ == "__main__":
 
     datapoint_ra_all, datapoint_dec_all = data_coord_cov(datapoint_ra_all, datapoint_dec_all,icrs2gal=True)
     rand_ra_all, rand_dec_all = data_coord_cov(rand_ra_all, rand_dec_all,icrs2gal=True)
-
+    rm_ra_all, rm_dec_all = data_coord_cov(rm_ra_all, rm_dec_all,icrs2gal=True)
+    
     # Restrict to datapoint selection
     selection_z = np.where((datapoint_z_all > zmin) & (datapoint_z_all < zmax))[0]
     print("num in selection = ", selection_z.shape)
@@ -179,6 +185,15 @@ if __name__ == "__main__":
     theta_datapoint = theta_datapoint_all[selection_f]
     costheta_datapoint = np.cos(theta_datapoint)
     phi_datapoint = phi_datapoint_all[selection_f]
+    
+    
+    selection_z = np.where((rm_z_all > zmin) & (rm_z_all < zmax))[0]
+    print("num in selection = ", selection_z.shape)    
+    selection_f = selection_z    
+    rm_ra = rm_ra_all[selection_f]
+    rm_dec = rm_dec_all[selection_f]
+    rm_z = rm_z_all[selection_f]
+    rm_weight = rm_weight_all[selection_f]    
 
     ndatapoint = len(datapoint_ra)
 
@@ -196,17 +211,21 @@ if __name__ == "__main__":
     selection_mask_rand = np.where(int_ind_rand == False)[0]
     selection_rand = np.intersect1d(selection_z_rand, selection_mask_rand)
 
-    if len(selection_rand) < 150*ndatapoint:
-        rand_theta, rand_phi = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
-        rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
-        rand_z = rand_z_all[selection_rand]
-    else:
-        rand_theta_all, rand_phi_all = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
-        rand_z_all = rand_z_all[selection_rand]
-        rand_index_rand = np.unique(np.random.randint(0, len(rand_theta_all), 150 * ndatapoint))
-        rand_theta, rand_phi = rand_theta_all[rand_index_rand], rand_phi_all[rand_index_rand]
-        rand_z = rand_z_all[rand_index_rand]
-        rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
+    rand_theta, rand_phi = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
+    rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
+    rand_z = rand_z_all[selection_rand]    
+    
+#     if len(selection_rand) < 150*ndatapoint:
+#         rand_theta, rand_phi = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
+#         rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
+#         rand_z = rand_z_all[selection_rand]
+#     else:
+#         rand_theta_all, rand_phi_all = rand_theta_all[selection_rand], rand_phi_all[selection_rand]
+#         rand_z_all = rand_z_all[selection_rand]
+#         rand_index_rand = np.unique(np.random.randint(0, len(rand_theta_all), 150 * ndatapoint))
+#         rand_theta, rand_phi = rand_theta_all[rand_index_rand], rand_phi_all[rand_index_rand]
+#         rand_z = rand_z_all[rand_index_rand]
+#         rand_ra, rand_dec = ang2eq(rand_theta, rand_phi)
 
     nrand = len(rand_ra)
 
@@ -247,11 +266,15 @@ if __name__ == "__main__":
     pix_ra, pix_dec = ang2eq(pix_theta, pix_phi)
     ytruth_cat = treecorr.Catalog(ra=pix_ra, dec=pix_dec, k=ymap_truth,ra_units='degrees', dec_units='degrees')
     nrad = 13
+    
     xi_all_data = np.zeros((len(datapoint_ra), nrad))
+    xiVy_all_data = np.zeros((len(datapoint_ra), nrad))
+    xiRy_all_data = np.zeros((len(datapoint_ra), nrad))
     theta_all_data = np.zeros((len(datapoint_ra), nrad))
     th_thv_all_data = np.zeros((len(datapoint_ra), nrad))
     thetav_data = np.zeros(len(datapoint_ra))
     Dcomv_data = np.zeros(len(datapoint_ra))
+    lss_weights_data = np.zeros(len(datapoint_ra))
 
     if do_jk:
         datapoint_radec = np.transpose([datapoint_ra, datapoint_dec])
@@ -259,7 +282,7 @@ if __name__ == "__main__":
         datapoint_jk = jkobj_map.find_nearest(datapoint_radec)
         
         fac_mult = 5
-        fac_multy = 9
+        fac_multy = 10
         for jv in range(len(datapoint_ra)):
             ra_jv, dec_jv, z_jv, r_jv, w_jv = datapoint_ra[jv], datapoint_dec[jv], datapoint_z[jv], datapoint_radius[jv], datapoint_weight[jv]
             Dcom_jv = gnf.get_Dcom(z_jv)
@@ -274,12 +297,18 @@ if __name__ == "__main__":
             rand_ra_jv, rand_dec_jv, rand_z_jv = rand_ra[rand_ind_sel_void], rand_dec[rand_ind_sel_void], rand_z[rand_ind_sel_void]
             minrad = th_thv_min * thv_jv
             maxrad = th_thv_max * thv_jv
+            
+            rm_ind_sel_void = np.where((rm_ra > ra_jv - thv_jv_deg) & (rm_ra < ra_jv + thv_jv_deg) & \
+             (rm_dec > dec_jv - thv_jv_deg) & (rm_dec < dec_jv + thv_jv_deg))[0]
+            if len(rm_ind_sel_void) > 1:
+                rm_w_jv = np.mean(rm_weight[rm_ind_sel_void])
+            else:
+                rm_w_jv = 1.
+                        
 
             datapoint_cat = treecorr.Catalog(ra=[ra_jv], dec=[dec_jv], w=[w_jv], ra_units='degrees',
                                                 dec_units='degrees')
             rand_cat = treecorr.Catalog(ra=rand_ra_jv, dec=rand_dec_jv, ra_units='degrees', dec_units='degrees')
-
-
 
             y_ind_sel_void = np.where((pix_ra > ra_jv - fac_multy*thv_jv_deg) & (pix_ra < ra_jv + fac_multy*thv_jv_deg) & \
              (pix_dec > dec_jv - fac_multy*thv_jv_deg) & (pix_dec < dec_jv + fac_multy*thv_jv_deg))[0]
@@ -289,30 +318,31 @@ if __name__ == "__main__":
                 print('doing the void:' + str(jv+1))
                 print('random points here:' + str(len(rand_ra_jv)))
 
-#             print('doing the void:' + str(jv+1))
-#             print('random points here:' + str(len(rand_ra_jv)))
-            # perform correlation measurement
             dytruth = treecorr.NKCorrelation(nbins=nrad, min_sep=minrad, max_sep=maxrad,  sep_units='arcmin', verbose=0)
             randytruth = treecorr.NKCorrelation(nbins=nrad, min_sep=minrad, max_sep=maxrad,  sep_units='arcmin', verbose=0)
 
             dytruth.process(datapoint_cat, ytruth_cat)
             randytruth.process(rand_cat, ytruth_cat)
-            xi_jv = dytruth.xi - randytruth.xi
+            xi_jv = rm_w_jv * dytruth.xi - randytruth.xi
+            xiVy_all_data[jv,:] = dytruth.xi
+            xiRy_all_data[jv,:] = randytruth.xi
             xi_all_data[jv,:] = xi_jv
             theta_all_data[jv,:] = dytruth.rnom
             thetav_data[jv] = thv_jv
             th_thv_all_data[jv,:] = dytruth.rnom/thv_jv
             Dcomv_data[jv] = Dcom_jv
+            lss_weights_data[jv] = rm_w_jv
 
-#     import ipdb; ipdb.set_trace() # BREAKPOINT
+#             import ipdb; ipdb.set_trace() # BREAKPOINT
 
     # Save output
     save_data = {'ra':datapoint_ra, 'dec':datapoint_dec, 'z':datapoint_z, 'rv':datapoint_radius,'jk':datapoint_jk,
-    'xi_all':xi_all_data, 'theta_thv_all':th_thv_all_data, 'Dcom_all':Dcomv_data, 'thv_data':thetav_data, 'theta_all_data':theta_all_data}
+    'xi_all':xi_all_data, 'theta_thv_all':th_thv_all_data, 'Dcom_all':Dcomv_data, 'thv_data':thetav_data, 'theta_all_data':theta_all_data,
+                'lss_weights_data':lss_weights_data, 'xiVy_all_data':xiVy_all_data, 'xiRy_all_data':xiRy_all_data}
 
     data_output_dir = '/global/project/projectdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/'
     file_suffix_save = '_cat_' + str('void') + '_z_' + str(zmin) + '_' + str(zmax) + '_R_' + str(rmin) + '_' + str(rmax) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints))
-    filename = data_output_dir + 'dy/dy_' + 'planck_' + 'fwhm_10arcmin' + '_nside' + str(nside_ymap) + '_' + file_suffix_save + '_loghres.pk'
+    filename = data_output_dir + 'dy/dy_' + 'planck_' + 'fwhm_10arcmin' + '_nside' + str(nside_ymap) + '_' + file_suffix_save + '_loghres_weighted.pk'
 
     pk.dump(save_data, open(filename, "wb"), protocol = 2)
 

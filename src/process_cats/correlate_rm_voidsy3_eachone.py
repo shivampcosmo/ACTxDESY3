@@ -109,7 +109,7 @@ class general_funcs:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--njk', default=60, type=int, help='Cat type')
+    parser.add_argument('--njk', default=100, type=int, help='Cat type')
     parser.add_argument('--rmin', type=float, default=20.0, help='rmin')
     parser.add_argument('--rmax', type=float, default=80.0, help='rmax')
     parser.add_argument('--zmin', type=float, default=0.15, help='rmin')
@@ -261,6 +261,7 @@ if __name__ == "__main__":
     th_thv_all_data = np.zeros((len(datapoint_ra), nrad))
     thetav_data = np.zeros(len(datapoint_ra))
     Dcomv_data = np.zeros(len(datapoint_ra))
+    
 
     if do_jk:
         datapoint_radec = np.transpose([datapoint_ra, datapoint_dec])
@@ -331,7 +332,7 @@ if __name__ == "__main__":
 
     data_output_dir = '/global/project/projectdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/'
     file_suffix_save = '_cat_' + str('void') + '_z_' + str(zmin) + '_' + str(zmax) + '_R_' + str(rmin) + '_' + str(rmax) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints))
-    filename = data_output_dir + 'dy/void_rm_' + 'planck_' + 'fwhm_10arcmin' + '_nside' + str(nside_ymap) + '_' + file_suffix_save + '_loghres.pk'
+    filename = data_output_dir + 'dy/void_rm_' + '_' + file_suffix_save + '_loghres.pk'
 
     pk.dump(save_data, open(filename, "wb"), protocol = 2)
 
