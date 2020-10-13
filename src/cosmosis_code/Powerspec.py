@@ -284,6 +284,10 @@ class Powerspec:
 
         self.add_beam_to_theory = other_params['add_beam_to_theory']
         self.beam_fwhm_arcmin = other_params['beam_fwhm_arcmin']
+
+        self.add_pixwin_to_theory = other_params['add_pixwin_to_theory']
+        self.nside_pixwin = other_params['nside_pixwin']
+
         if 'um_block_allinterp' in other_params.keys():
             self.um_block_allinterp = other_params['um_block_allinterp']
             self.bkm_block_allinterp = other_params['bkm_block_allinterp']

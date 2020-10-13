@@ -748,8 +748,12 @@ def execute(block, config):
                     PrepDV_dict_allbins['sec_save_name'] = sec_save_name
                     PrepDV_dict_allbins['save_detailed_DV'] = save_detailed_DV
                     PrepDV_dict_allbins['add_beam_to_theory'] = other_params_dict['add_beam_to_theory']
-                    PrepDV_dict_allbins['beam_fwhm_arcmin'] = other_params_dict['beam_fwhm_arcmin']
-
+                    if other_params_dict['add_beam_to_theory']:
+                        PrepDV_dict_allbins['beam_fwhm_arcmin'] = other_params_dict['beam_fwhm_arcmin']
+                    else:
+                        PrepDV_dict_allbins['beam_fwhm_arcmin'] = [0.0]
+                    PrepDV_dict_allbins['add_pixwin_to_theory'] = other_params_dict['add_pixwin_to_theory']
+                    PrepDV_dict_allbins['nside_pixwin'] = other_params_dict['nside_pixwin']
     if not get_bp:
         try:
             DV = DataVec(PrepDV_dict_allbins, block)

@@ -315,7 +315,7 @@ class CalcDataVec:
     def __init__(self, PrepDV_params):
         self.PS_prepDV = PrepDV_params['PrepDV_fid'].PS
         self.add_beam_to_theory = self.PS_prepDV.add_beam_to_theory 
-      
+        self.add_pixwin_to_theory = self.PS_prepDV.add_pixwin_to_theory 
 
     def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')

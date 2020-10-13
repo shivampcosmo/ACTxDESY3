@@ -3,6 +3,7 @@ import traceback
 import pdb
 import numpy as np
 import scipy as sp
+import healpy as hp
 import scipy.special as spsp
 from scipy import interpolate
 import astropy.units as u
@@ -40,6 +41,8 @@ class DataVec:
         self.CalcDV = CalcDataVec(PrepDV_params)
         beam_fwhm_arcmin = self.CalcDV.PS_prepDV.beam_fwhm_arcmin
         addbth = self.CalcDV.add_beam_to_theory
+        addpw = self.CalcDV.add_pixwin_to_theory
+        nside_pw = self.CalcDV.PS_prepDV.nside_pixwin
         PrepDV = PrepDV_params['PrepDV_fid']
         self.verbose = PrepDV_params['verbose']
         run_cov_pipe = PrepDV_params['run_cov_pipe']
@@ -264,11 +267,12 @@ class DataVec:
             bin_combs = []
             for j1 in bins_source:
                 try:
-#                    Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
-#                                                        PrepDV_params['ukl_zM_dict' + str(j1)],
-#                                                        PrepDV_params['uyl_zM_dict0'])
-#                    Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PrepDV.l_array, PrepDV_params['bkl_z_dict' + str(j1)],
-#                                                        PrepDV_params['byl_z_dict0'])
+                    if save_detailed_DV:
+                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
+                                                            PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                            PrepDV_params['uyl_zM_dict0'])
+                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PrepDV.l_array, PrepDV_params['bkl_z_dict' + str(j1)],
+                                                            PrepDV_params['byl_z_dict0'])
 #                    Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
                     Cltotmead_j1j2 = self.CalcDV.get_Cl_AB_tot_modelmead('k', 'y', PrepDV.l_array,
                                                         PrepDV_params['ukl_zM_dict' + str(j1)],
@@ -306,7 +310,10 @@ class DataVec:
 
                         sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
                         Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth) + 1e-200
+                        pw_ip = interpolate.interp1d(np.log(np.arange(3*nside_pw[jb])), np.log(hp.pixwin(nside_pw[jb])),fill_value='extrapolate')
+                        Bl *= (np.exp(pw_ip(np.log(PrepDV.l_array_survey))))**(addpw) + 1e-200
                         
+
                         if save_detailed_DV:
                             if put_IA:
                                 Cl_ky_dict['bin_' + str(j1) + '_' + str(0)] = {'tot_phy': Cltotmead_j1j2*Bl,'tot_GI': ClGI_j1j2*Bl, 
@@ -317,6 +324,7 @@ class DataVec:
                                                                                                                 PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                             else:
                                 Cl_ky_dict['bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2*Bl,
+                                                                        '1h':Cl1h_j1j2*Bl, '2h':Cl2h_j1j2*Bl,
                                                                                 'tot_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                     PrepDV.ind_select_survey],
                                                                                 'tot_plus_noise_ellsurvey': (Cltot_j1j2*Bl)[
@@ -333,20 +341,15 @@ class DataVec:
                                                                                         Cltot_j1j2*Bl,
                                                                                         theta_array_arcmin=theta_array_arcmin)
 
-#
-#                        gt_totmead_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-#                                                                                    Cltotmead_j1j2,
-#                                                                                    theta_array_arcmin=theta_array_arcmin)
-#
-#                        gt1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-#                                                                                    Cl1h_j1j2,
-#                                                                                    theta_array_arcmin=theta_array_arcmin)
-#
-#                        gt2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-#                                                                                    Cl2h_j1j2,
-#                                                                                    theta_array_arcmin=theta_array_arcmin)
-#                        xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'1h':gt1h_j1j2,'2h':gt2h_j1j2,'tot':gt_tot_j1j2,
-#                                        'tot2':gt_totmead_j1j2}
+
+                            if save_detailed_DV:
+                                gt1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                            Cl1h_j1j2*Bl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
+
+                                gt2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                            Cl2h_j1j2*Bl,
+                                                                                            theta_array_arcmin=theta_array_arcmin)
 
                             if save_detailed_DV:
                                 if put_IA:
@@ -368,7 +371,7 @@ class DataVec:
                                     else:
                                         xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'2hint':xi2hint_j1j2}
                                 else:
-                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
+                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2, '1h':gt1h_j1j2, '2h':gt2h_j1j2}
                             else:
                                 xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
 
@@ -414,6 +417,8 @@ class DataVec:
             for jb in range(len(beam_fwhm_arcmin)):
                 sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
                 Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(2 * addbth) + 1e-200
+                pw_ip = interpolate.interp1d(np.log(np.arange(3*nside_pw[jb])), np.log(hp.pixwin(nside_pw[jb])),fill_value='extrapolate')
+                Bl *= (np.exp(pw_ip(np.log(PrepDV.l_array_survey))))**(2 * addpw) + 1e-200
                 if PrepDV_params['PrepDV_fid'].has_yy_noise:
                     Cl_yy_tot_plus_noise = (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey] + Cl_noise_ellsurvey
                 else:
@@ -593,6 +598,8 @@ class DataVec:
                     for jb in range(len(beam_fwhm_arcmin)):
                         sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))
                         Bl = (np.exp(-1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.))**(addbth) + 1e-200
+                        pw_ip = interpolate.interp1d(np.log(np.arange(3*nside_pw[jb])), np.log(hp.pixwin(nside_pw[jb])),fill_value='extrapolate')
+                        Bl *= (np.exp(pw_ip(np.log(PrepDV.l_array_survey))))**(addpw) + 1e-200
                         Cl_gy_dict['bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2 * Bl,
                                                             'tot_ellsurvey': (Cltot_j1j2 * Bl)[PrepDV.ind_select_survey],
                                                             'tot_plus_noise_ellsurvey': (Cltot_j1j2 * Bl)[
