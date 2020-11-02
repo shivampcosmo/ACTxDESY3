@@ -20,7 +20,6 @@ def setup(options):
     config[0] = '0'
     config['auto_only'] = auto_only
     return config
-
 def execute(block, config):
     if config['verbose']:
         print ('*******  CONVERSION MODULE *********')
@@ -35,6 +34,7 @@ def execute(block, config):
     conversion_dict['gtg']   = ['galaxy_shear_xi','bins_lens','bins_source']
     conversion_dict['kk']   = ['shear_xi_plus','bins_source','bins_source']
     conversion_dict['kkm']  = ['shear_xi_minus','bins_source','bins_source']
+
     for key in conversion_dict.keys():
         name_stat = conversion_dict[key][0]
         for i in (config[conversion_dict[key][1]]):
@@ -43,25 +43,44 @@ def execute(block, config):
                     xcoord_array = block.get_double_array_1d(config['sec_save_name'], "xcoord_" + key + '_bin_' + str(i) + '_' + str(j))
                     corrf_stat =  block.get_double_array_1d(config['sec_save_name'],'theory_corrf_' + key + '_bin_' + str(i) + '_' +str(j))
                     # the following lines are to convert the convention i_0 for shear x y in Shivam's code and i_i for cosmosis.
+                    #print (i,j,key)
                     ix = copy.copy(i)
                     jx = copy.copy(j)
-                    if ((np.int(i) ==0) and (np.int(j)==0)):
-                        ix =1
-                        jx =1
-                    if ((np.int(i) ==0) and (np.int(j)!=0)):
-                        ix = copy.copy(j)
-                    if ((np.int(i) !=0) and (np.int(j)==0)):
-                        jx = copy.copy(i)
+                    if key=='kk':
+                        try:
+                            m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(ix)]))*(1.+(block['shear_calibration_parameters', "m{}".format(jx)]))
+                        except:
+                            m_tot =1.
+                    if key=='kkm':
+                        try:
+                            m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(ix)]))*(1.+(block['shear_calibration_parameters', "m{}".format(jx)]))
+                        except:
+                            m_tot =1.
+                    if (key=='gty2') or (key=='gty1'):
+                        try:
+                            if ((np.int(i) ==0) and (np.int(j)==0)):
+                                ix =1
+                                jx =1
+                                m_tot = 1.
+                            if ((np.int(i) ==0) and (np.int(j)!=0)):
+                                ix = copy.copy(j)
+                                m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(ix)]))
+                            if ((np.int(i) !=0) and (np.int(j)==0)):
+                                jx = copy.copy(i)
+                                m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(jx)]))
+                        except:
+                            m_tot=1.
+                    #print (m_tot)
                     # save to block.
                     name = 'bin_%d_%d' % (np.int(ix), np.int(jx))
-                    block[name_stat, name] = corrf_stat
-                    name = 'bin_%d_%d' % (np.int(jx), np.int(ix))
-                    block[name_stat, name] = corrf_stat
+                    block[name_stat, name] = corrf_stat*m_tot
+                    name = 'bin_%d_%d' % (np.int(jx), np.int(ix))	
+                    block[name_stat, name] = corrf_stat*m_tot
                     # import ipdb; ipdb.set_trace() # BREAKPOINT
                 except:
                     pass
                     if config['verbose']:
-                        print ('warning'+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
+                        print ('warning : '+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
         try:
             block[name_stat, "nbin_a"] = len(conversion_dict[key][0])
         except:
@@ -87,6 +106,7 @@ def execute(block, config):
         #block[name_stat, "cl_section"] = cl_section
         try:
             block[name_stat, "theta"] = xcoord_array/(60./((2*math.pi)/360))
+            #print (xcoord_array/(60./((2*math.pi)/360)))
             del xcoord_array
             block.put_metadata(name_stat, "theta", "unit", "radians")
             block[name_stat, "sep_name"] = "theta"
@@ -94,11 +114,8 @@ def execute(block, config):
             block[name_stat, "bin_avg"] = False
         except:
             pass
-
-
     if config['verbose']:
         print ('done conversion module')
     return 0
-
 def cleanup(config):
     pass
