@@ -298,7 +298,7 @@ class DataVec:
                     if put_IA:
 
                         ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'y', PrepDV.l_array, PrepDV_params['bIl_z_dict' + str(j1)],
-                                                            PrepDV_params['byl_z_dict0'])
+                                                            PrepDV_params['byl_z_dict0'], model_2h = model_2h_IA)
                         if only2h_IA:
                             Clintrinsic_j1j2 =  ClGI2h_j1j2
                             ClGI_j1j2 =  ClGI2h_j1j2
@@ -322,6 +322,7 @@ class DataVec:
 #                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
 #                                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
 
+                    # import ipdb; ipdb.set_trace() # BREAKPOINT
 
                     for jb in range(len(beam_fwhm_arcmin)):
 
@@ -333,21 +334,21 @@ class DataVec:
 
                         if save_detailed_DV:
                             if put_IA:
-                                Cl_ky_dict['bin_' + str(j1) + '_' + str(0)] = {'tot_phy': Cltotphy_j1j2*Bl,'tot_GI': ClGI_j1j2*Bl, 
+                                Cl_ky_dict['yt_' + str(jb+1) + 'bin_' + str(j1) + '_' + str(0)] = {'tot_phy': Cltotphy_j1j2*Bl,'tot_GI': ClGI_j1j2*Bl, 
                                                                                 'tot':Cltot_j1j2*Bl,
                                                                                 'tot_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                     PrepDV.ind_select_survey],
                                                                                 'tot_plus_noise_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                                                 PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                             else:
-                                Cl_ky_dict['bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2*Bl,
+                                Cl_ky_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2*Bl,
                                                                         '1h':Cl1h_j1j2*Bl, '2h':Cl2h_j1j2*Bl,
                                                                                 'tot_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                     PrepDV.ind_select_survey],
                                                                                 'tot_plus_noise_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                                                 PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                         else:
-                            Cl_ky_dict['bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2*Bl,
+                            Cl_ky_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_0'] = {'tot': Cltot_j1j2*Bl,
                                                                                 'tot_ellsurvey': (Cltot_j1j2*Bl)[
                                                                                     PrepDV.ind_select_survey],
                                                                                 'tot_plus_noise_ellsurvey': (Cltot_j1j2*Bl)[
@@ -384,13 +385,13 @@ class DataVec:
                                         xi1hint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                                 ClGI1h_j1j2 *Bl,
                                                                                                 theta_array_arcmin=theta_array_arcmin)
-                                        xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2}
+                                        xi_gty_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'1hint':xi1hint_j1j2,'2hint':xi2hint_j1j2}
                                     else:
-                                        xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'2hint':xi2hint_j1j2}
+                                        xi_gty_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_' + str(0)] =  {'phy':xiphy_j1j2,'int':xiint_j1j2,'tot':gt_tot_j1j2,'2hint':xi2hint_j1j2}
                                 else:
-                                    xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2, '1h':gt1h_j1j2, '2h':gt2h_j1j2}
+                                    xi_gty_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2, '1h':gt1h_j1j2, '2h':gt2h_j1j2}
                             else:
-                                xi_gty_dict['bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
+                                xi_gty_dict['yt_' + str(jb+1) +'bin_' + str(j1) + '_' + str(0)] =  {'tot':gt_tot_j1j2}
 
                             if 'theta' not in xi_gty_dict.keys():
                                 # xi_ky_dict['theta'] = theta_array
