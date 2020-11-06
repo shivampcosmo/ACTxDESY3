@@ -299,6 +299,7 @@ class DataVec:
 
                         ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'y', PrepDV.l_array, PrepDV_params['bIl_z_dict' + str(j1)],
                                                             PrepDV_params['byl_z_dict0'], model_2h = model_2h_IA)
+
                         if only2h_IA:
                             Clintrinsic_j1j2 =  ClGI2h_j1j2
                             ClGI_j1j2 =  ClGI2h_j1j2
@@ -372,7 +373,7 @@ class DataVec:
                             if save_detailed_DV:
                                 if put_IA:
                                     xiphy_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-                                                                                            Cltotmead_j1j2*Bl,
+                                                                                            Cltotphy_j1j2*Bl,
                                                                                             theta_array_arcmin=theta_array_arcmin)
                                     xiint_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
                                                                                             Clintrinsic_j1j2*Bl,

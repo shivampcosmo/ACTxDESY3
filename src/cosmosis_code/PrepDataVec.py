@@ -361,9 +361,9 @@ class CalcDataVec:
             # toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
             #     self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
             if model_2h == 'lin':
-                pkzh = self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array)) 
+                pkzh = np.exp(self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array))) 
             if model_2h == 'nl':
-                pkzh = self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array))
+                pkzh = np.exp(self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array)))
             toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * pkzh * toint_z_multfac
             val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
             Cl_2h[j] = val
