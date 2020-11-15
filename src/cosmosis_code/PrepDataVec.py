@@ -319,7 +319,6 @@ class CalcDataVec:
 
     def get_Cl_AB_1h(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict):
         g_sum = (A == 'g') + (B == 'g')
-        y_sum = (A == 'y') + (B == 'y')
         if g_sum == 2:
             if self.PS_prepDV.use_only_halos:
                 return 0
@@ -347,7 +346,6 @@ class CalcDataVec:
 
     def get_Cl_AB_2h(self, A, B, l_array, bAl_z_dict, bBl_z_dict, model_2h='lin'):
         g_sum = (A == 'g') + (B == 'g')
-        y_sum = (A == 'y') + (B == 'y')
         if g_sum > 0:
             toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
         else:
@@ -358,8 +356,6 @@ class CalcDataVec:
             k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
             bgl_z1 = bAl_z_dict[round(l, 1)]
             bgl_z2 = bBl_z_dict[round(l, 1)]
-            # toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
-            #     self.PS_prepDV.pkzlin_interp.ev(np.log(self.PS_prepDV.z_array), np.log(k_array))) * toint_z_multfac
             if model_2h == 'lin':
                 pkzh = np.exp(self.PS_prepDV.pkzlin_interp.ev(self.PS_prepDV.z_array, np.log(k_array))) 
             if model_2h == 'nl':
@@ -369,28 +365,8 @@ class CalcDataVec:
             Cl_2h[j] = val
         return Cl_2h
 
-    # def get_Cl_AB_2h_nl(self, A, B, l_array, bAl_z_dict, bBl_z_dict):
-        # g_sum = (A == 'g') + (B == 'g')
-        # y_sum = (A == 'y') + (B == 'y')
-        # if g_sum > 0:
-            # toint_z_multfac = self.PS_prepDV.z_array_cond_inbin
-        # else:
-            # toint_z_multfac = 1.
-        # Cl_2h = np.zeros_like(l_array)
-        # for j in range(len(l_array)):
-            # l = l_array[j]
-            # k_array = (l + (1. / 2.) ) / self.PS_prepDV.chi_array
-            # bgl_z1 = bAl_z_dict[round(l, 1)]
-            # bgl_z2 = bBl_z_dict[round(l, 1)]
-            # toint_z = (bgl_z1 * bgl_z2) * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array * np.exp(
-                # self.PS_prepDV.pkznl_interp.ev(self.PS_prepDV.z_array, np.log(k_array))) * toint_z_multfac
-            # val = sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
-            # Cl_2h[j] = val
-        # return Cl_2h
-
     def get_Cl_AB_tot_modelNL(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
         g_sum = (A == 'g') + (B == 'g')
-        y_sum = (A == 'y') + (B == 'y')
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
@@ -426,18 +402,17 @@ class CalcDataVec:
         return Cl_tot
 
 
-    def get_Cl_AB_tot_modelmead(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict):
+    def get_Cl_AB_tot_modelmead(self, A, B, l_array, uAl_zM_dict, uBl_zM_dict,bAl_z_dict, bBl_z_dict,al=1):
         g_sum = (A == 'g') + (B == 'g')
-        k_sum = (A == 'k') + (B == 'k')
-        y_sum = (A == 'y') + (B == 'y')
+        # k_sum = (A == 'k') + (B == 'k')
         toint_M_multfac = 1.
         toint_z_multfac = 1.
         Cl_tot = np.zeros_like(l_array)
-
-        if k_sum > 0:   
-            al = self.PS_prepDV.al_kk
-        else:
-            al = 1.
+        # import pdb; pdb.set_trace()
+        # if k_sum > 0:
+        #     al = self.PS_prepDV.al_kk
+        # else:
+        #     al = 1.
 
         for j in range(len(l_array)):
             l = l_array[j]

@@ -221,6 +221,7 @@ class Powerspec:
 
         ng_zarray = other_params['ng_zarray']
         ng_value = other_params['ng_value']
+        # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         ng_interp = interpolate.interp1d(ng_zarray, np.log(ng_value + 1e-100), fill_value='extrapolate')
 

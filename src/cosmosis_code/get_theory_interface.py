@@ -1,5 +1,8 @@
 import sys, os
-from cosmosis.datablock import names, option_section, BlockError
+try:
+    from cosmosis.datablock import names, option_section, BlockError
+except:
+    pass
 sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/helper/')
 import numpy as np
 import copy
@@ -13,6 +16,7 @@ from general_hm import *
 from Powerspec import *
 from PrepDataVec import *
 from DataVec import *
+import LSS_funcs as hmf
 from scipy.interpolate import RegularGridInterpolator
 import multiprocessing
 import dill
@@ -423,6 +427,10 @@ def execute(block, config):
                                 if var_name == hod_keys.lower():
                                     hod_params_dict_bin[hod_keys] = block[key]
 
+                        if bin_n == binvs:
+                            for other_keys in other_params_dict_bin.keys():
+                                if var_name == other_keys.lower():
+                                    other_params_dict_bin[other_keys] = block[key]
 
                 if key[0] == 'cosmological_parameters':
                     dict_trans = {'omega_m':'Om0','sigma8_input':'sigma8', 'omega_b':'Ob0'}
@@ -448,10 +456,14 @@ def execute(block, config):
 
             if verbose:
                 print('done putting in values file data in the dict')
-            other_params_dict_bin['ng_zarray'] = block['nz_lens', 'z']
 
             binv_lens = binvl
-            other_params_dict_bin['ng_value'] = block['nz_lens', 'bin_' + str(binv_lens)]
+            if hod_params_dict_bin['hod_type'] == 'Halos':
+                other_params_dict_bin['ng_value'] = hmf.get_nz_tophat(other_params_dict_bin['z_array'], other_params_dict_bin['zmin_tracer'], other_params_dict_bin['zmax_tracer'])
+                other_params_dict_bin['ng_zarray'] = other_params_dict_bin['z_array']
+            else:
+                other_params_dict_bin['ng_value'] = block['nz_lens', 'bin_' + str(binv_lens)]
+                other_params_dict_bin['ng_zarray'] = block['nz_lens', 'z']
             other_params_dict_bin['ng_zarray_source'] = block['nz_source', 'z']
             if ('nz_source', 'bin_' + str(binvs)) in block.keys():
                 other_params_dict_bin['ng_value_source'] = block['nz_source', 'bin_' + str(binvs)]
@@ -721,7 +733,8 @@ def execute(block, config):
                 PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
                 PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
                 PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
-
+                for stats in other_params_dict['stats_analyze']:
+                    PrepDV_dict_allbins[stats + '_alpha_1h2h_model' + str(binvs)] = other_params_dict_bin[stats + '_alpha_1h2h_model']
                 if 'uyl_zM_dict0' not in PrepDV_dict_allbins.keys():
                     PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
                     PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
@@ -757,7 +770,7 @@ def execute(block, config):
                     PrepDV_dict_allbins['nside_pixwin'] = other_params_dict['nside_pixwin']
                     for stats in other_params_dict['stats_analyze']:
                         PrepDV_dict_allbins[stats + '_1h2h_model'] = other_params_dict[stats + '_1h2h_model']
-                        PrepDV_dict_allbins[stats + '_alpha_1h2h_model'] = other_params_dict[stats + '_alpha_1h2h_model']
+                        # PrepDV_dict_allbins[stats + '_alpha_1h2h_model'] = other_params_dict[stats + '_alpha_1h2h_model']
     if not get_bp:
         try:
             DV = DataVec(PrepDV_dict_allbins, block)
