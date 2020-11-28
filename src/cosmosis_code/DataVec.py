@@ -305,8 +305,9 @@ class DataVec:
                 xi_gty_dict = {}
             bin_combs = []
             for j1 in bins_source:
+
                 try:
-                    if (PrepDV_params['ky_1h2h_model'] == 'sum_normal') or save_detailed_DV:
+                    if (PrepDV_params['ky_1h2h_model'] in ['sum_normal']) or save_detailed_DV:
                         Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
                                                              PrepDV_params['ukl_zM_dict' + str(j1)],
                                                              PrepDV_params['uyl_zM_dict0'])
@@ -314,7 +315,14 @@ class DataVec:
                                                              PrepDV_params['bkl_z_dict' + str(j1)],
                                                              PrepDV_params['byl_z_dict0'])
                         Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
-
+                    if (PrepDV_params['ky_1h2h_model'] in ['larger_real']) or save_detailed_DV:                        
+                        Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
+                                                             PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                             PrepDV_params['uyl_zM_dict0'])
+                        Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PrepDV.l_array,
+                                                             PrepDV_params['bkl_z_dict' + str(j1)],
+                                                             PrepDV_params['byl_z_dict0'], model_2h='nl')
+                        Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
                     if PrepDV_params['ky_1h2h_model'] == 'sum_fsmooth':
                         # import pdb; pdb.set_trace()
                         if PrepDV_params['ky_alpha_1h2h_model' + str(j1)] == 0.0:
@@ -405,9 +413,31 @@ class DataVec:
                                                                                                  PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
 
                         if analysis_coords == 'real':
-                            gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
-                                                                                       Cltot_j1j2 * Bl,
-                                                                                       theta_array_arcmin=theta_array_arcmin)
+                            if (PrepDV_params['ky_1h2h_model'] not in ['larger_real']):
+                                gt_tot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                        Cltot_j1j2 * Bl,
+                                                                                        theta_array_arcmin=theta_array_arcmin)
+                            else:
+                                gt1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                         Cl1h_j1j2 * Bl,
+                                                                                         theta_array_arcmin=theta_array_arcmin)
+
+                                gt2h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
+                                                                                         (Cl2h_j1j2 + ClGI2h_j1j2) * Bl,
+                                                                                         theta_array_arcmin=theta_array_arcmin)
+                                # import ipdb; ipdb.set_trace()
+                                if not np.any(gt1h_j1j2 > 0): 
+                                    ind_all = np.arange(len(gt1h_j1j2))
+                                    ind_gt0 = np.where(gt1h_j1j2 > 0)[0]
+                                    ind_ngt0 = np.setdiff1d(np.union1d(ind_all, ind_gt0), np.intersect1d(ind_all, ind_gt0))
+                                    gt1h_j1j2[ind_ngt0]=0.0
+                                if not np.any(gt2h_j1j2 > 0):
+                                    ind_all = np.arange(len(gt2h_j1j2))
+                                    ind_gt0 = np.where(gt2h_j1j2 > 0)[0]
+                                    ind_ngt0 = np.setdiff1d(np.union1d(ind_all, ind_gt0), np.intersect1d(ind_all, ind_gt0))
+                                    gt2h_j1j2[ind_ngt0]=0.0
+                                # import ipdb; ipdb.set_trace()
+                                gt_tot_j1j2 = np.maximum(gt1h_j1j2,gt2h_j1j2)
 
                             if save_detailed_DV:
                                 gt1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(2, PrepDV.l_array,
@@ -436,11 +466,11 @@ class DataVec:
                                                                                                     theta_array_arcmin=theta_array_arcmin)
                                         xi_gty_dict['yt_' + str(jb + 1) + 'bin_' + str(j1) + '_' + str(0)] = {
                                             'phy': xiphy_j1j2, 'int': xiint_j1j2, 'tot': gt_tot_j1j2,
-                                            '1hint': xi1hint_j1j2, '2hint': xi2hint_j1j2}
+                                            '1hint': xi1hint_j1j2, '2hint': xi2hint_j1j2, '1h': gt1h_j1j2, '2h': gt2h_j1j2}
                                     else:
                                         xi_gty_dict['yt_' + str(jb + 1) + 'bin_' + str(j1) + '_' + str(0)] = {
                                             'phy': xiphy_j1j2, 'int': xiint_j1j2, 'tot': gt_tot_j1j2,
-                                            '2hint': xi2hint_j1j2}
+                                            '2hint': xi2hint_j1j2,'1h': gt1h_j1j2, '2h': gt2h_j1j2}
                                 else:
                                     xi_gty_dict['yt_' + str(jb + 1) + 'bin_' + str(j1) + '_' + str(0)] = {
                                         'tot': gt_tot_j1j2, '1h': gt1h_j1j2, '2h': gt2h_j1j2}
@@ -452,6 +482,7 @@ class DataVec:
                                 # xi_ky_dict['theta'] = theta_array
                                 xi_gty_dict['theta'] = theta_array
                             if 'ky' in PrepDV.stats_analyze:
+
                                 block[
                                     sec_save_name, 'theory_corrf_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(
                                         j1) + '_' + str(0)] = gt_tot_j1j2

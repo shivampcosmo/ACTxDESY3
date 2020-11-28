@@ -31,8 +31,6 @@ from mcfit import Hankel
 pi = np.pi
 
 
-
-
 class Pressure:
     """
     Sets up the pressure profile functions.
@@ -70,7 +68,7 @@ class Pressure:
     # get generalized nfw profile for the pressure profile from Arnard et al 2010 paper
     def get_gnfwp_Arnaud10(self, x, M_mat_shape_nz_nm):
 
-        params_names_gnfwp = copy.deepcopy(self.pressure_params_dict.keys())
+        params_names_gnfwp = copy.deepcopy([*self.pressure_params_dict.keys()])
         params_names_gnfwp.remove('alpha_p')
         if 'Mstar' in params_names_gnfwp:
             params_names_gnfwp.remove('Mstar')
@@ -127,7 +125,7 @@ class Pressure:
                 param_j_array = self.pressure_params_dict[param_j]
             params_array_value_gnfwp[param_j] = param_j_array
 
-        val_num = params_array_value_gnfwp['P0'] * ((0.7 / self.cosmo.h) ** (3. / 2.))
+        val_num = params_array_value_gnfwp['P0'] * ((0.7 / self.cosmo.h) ** (3. / 2.))     
         val_denom_1 = np.power(params_array_value_gnfwp['c500'] * xmat, params_array_value_gnfwp['gamma'])
         val_denom_2 = 1. + np.power(params_array_value_gnfwp['c500'] * xmat, params_array_value_gnfwp['alpha'])
         val_denom_3 = (params_array_value_gnfwp['beta'] - params_array_value_gnfwp['gamma']) / \
@@ -178,7 +176,7 @@ class Pressure:
 
         M_array_coeff = np.power(
             (M_mat / ((10 ** self.pressure_params_dict['logMstar']['alpha_p']) * (0.7 / self.cosmo.h))),
-            (2. / 3. + alpha_p_array))
+            (2. / 3. + alpha_p_array))        
         M_mat_coeff = np.tile(M_array_coeff.reshape(nz, nm, 1), (1, 1, nx))
 
         Pe_mat = (1.65 * (self.cosmo.h / 0.7) ** 2) * Ez_mat_coeff * gnfwp_mat_coeff * M_mat_coeff
@@ -186,64 +184,12 @@ class Pressure:
         return Pe_mat
 
     def get_gnfwp_LeBrun15(self, x, M_mat_shape_nz_nm):
-        # import pdb; pdb.set_trace()
         params_names_gnfwp = copy.deepcopy([*self.pressure_params_dict.keys()])
-        # params_names_gnfwp.remove('alpha_p')
-        # if 'Mstar' in params_names_gnfwp:
-        #     params_names_gnfwp.remove('Mstar')
 
         nz, nm = M_mat_shape_nz_nm.shape
         nx = len(x)
         xmat = np.tile(x.reshape(1, 1, nx), (nz, nm, 1))
         M_mat_Delta_no_h_nz_nm_nx = (np.tile(M_mat_shape_nz_nm.reshape(nz, nm, 1), (1, 1, nx))) / (self.cosmo.h)
-
-        # M_mat_cond_dict = {}
-        # if self.do_split_params_massbins:
-        #     for i in range(len(params_names_gnfwp)):
-        #         param_i = params_names_gnfwp[i]
-        #         if self.do_split_params_massbins:
-        #             if param_i in self.split_params_massbins_names:
-        #                 M_mat_cond_shape_nz_nm_nx = []
-        #
-        #                 if self.pressure_model_type in ['fullybroken_powerlaw', 'superbroken_powerlaw',
-        #                                                 'superPlybroken_powerlaw']:
-        #                     for j in range(len(self.split_mass_bins_centers)):
-        #                         if j == 0:
-        #                             M_mat_cond_j = (M_mat_shape_nz_nm <= (
-        #                                     10 ** self.pressure_params_dict['logMstar'][param_i]) * (
-        #                                                     0.7 / self.cosmo.h))
-        #                             M_mat_cond_j_reshape = np.tile(M_mat_cond_j.reshape(nz, nm, 1), (1, 1, nx))
-        #                             M_mat_cond_shape_nz_nm_nx.append(M_mat_cond_j_reshape)
-        #
-        #                         if j == 1:
-        #                             M_mat_cond_j = (M_mat_shape_nz_nm >= (
-        #                                     10 ** self.pressure_params_dict['logMstar'][param_i]) * (
-        #                                                     0.7 / self.cosmo.h))
-        #                             M_mat_cond_j_reshape = np.tile(M_mat_cond_j.reshape(nz, nm, 1), (1, 1, nx))
-        #                             M_mat_cond_shape_nz_nm_nx.append(M_mat_cond_j_reshape)
-        #
-        #                 else:
-        #                     for j in range(len(self.split_mass_bins_centers)):
-        #                         M_mat_cond_j = np.logical_and(M_mat_shape_nz_nm >= self.split_mass_bins_min[j],
-        #                                                       M_mat_shape_nz_nm <= self.split_mass_bins_max[j])
-        #                         M_mat_cond_j_reshape = np.tile(M_mat_cond_j.reshape(nz, nm, 1), (1, 1, nx))
-        #                         M_mat_cond_shape_nz_nm_nx.append(M_mat_cond_j_reshape)
-        #
-        #                 M_mat_cond_dict[param_i] = M_mat_cond_shape_nz_nm_nx
-
-        # params_array_value_gnfwp = {}
-        # for j in range(len(params_names_gnfwp)):
-        #     param_j = params_names_gnfwp[j]
-        #     if self.do_split_params_massbins:
-        #         if param_j in self.split_params_massbins_names:
-        #             param_j_array = np.zeros((nz, nm, nx))
-        #             for i in range(len(self.split_mass_bins_centers)):
-        #                 param_j_array += self.pressure_params_dict[param_j][i] * M_mat_cond_dict[param_j][i]
-        #         else:
-        #             param_j_array = self.pressure_params_dict[param_j]
-        #     else:
-        #         param_j_array = self.pressure_params_dict[param_j]
-        #     params_array_value_gnfwp[param_j] = param_j_array
 
         params_array_value_gnfwp = {}
         for j in range(len(params_names_gnfwp)):
@@ -273,33 +219,6 @@ class Pressure:
         if mdef_Delta is None:
             mdef_Delta = self.other_params['pressure_model_mdef']
 
-        # if M200c_mat is None:
-        #     if self.verbose:
-        #         print('changing mdef to 200c for battaglia profiles in function get_Pe_mat_Battaglia12')
-        # 
-        #         ti = time.time()
-        # 
-        #     halo_conc_Delta = np.zeros(M_mat_Delta.shape)
-        #     # pdb.set_trace()
-        #     for j in range(len(z_array)):
-        #         M_array = M_mat_Delta[j, :]
-        #         halo_conc_Delta[j, :] = concentration.concentration(M_array, mdef_Delta, z_array[j])
-        # 
-        #     M200c_mat, R200c_mat_kpc_h = np.zeros(M_mat_Delta.shape), np.zeros(M_mat_Delta.shape)
-        #     for j in range(nz):
-        #         M200c_mat[j, :], R200c_mat_kpc_h[j, :], _ = mass_defs.changeMassDefinition(M_mat_Delta[j, :],
-        #                                                                                    halo_conc_Delta[j, :],
-        #                                                                                    z_array[j], mdef_Delta,
-        #                                                                                    '200c')
-        # 
-        #     hydro_B = self.pressure_params_dict['hydro_mb']
-        #     M200c_mat = M200c_mat / hydro_B
-        # 
-        #     if self.verbose:
-        #         print('that took ', time.time() - ti, 'seconds')
-
-        # print('M200c=' + str(np.log10(M200c_mat)))
-
         nz, nm = M_mat_Delta.shape
         nx = len(x_array)
         # units (Msun) / (Mpc ** 3)
@@ -318,88 +237,6 @@ class Pressure:
         gnfw_P = self.get_gnfwp_LeBrun15(x_array, M_mat_Delta)
         M_mat_Delta_no_h = (M_mat_Delta / self.cosmo.h)
         M_mat_Delta_no_h_nz_nm_nx = np.tile(M_mat_Delta_no_h.reshape(nz, nm, 1), (1, 1, nx))
-
-        # if self.pressure_model_type == 'lowbroken_powerlaw':
-        #     M_mat_cond_shape_nz_nm = []
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h < (10 ** self.pressure_params_dict['logMstar']['alpha_p_low']))
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h > (10 ** self.pressure_params_dict['logMstar']['alpha_p_low']))
-        #
-        #     alpha_p_array = np.zeros((nz, nm))
-        #     for i in range(2):
-        #         if i == 0:
-        #             alpha_p_array += self.pressure_params_dict['alpha_p_low'] * M_mat_cond_shape_nz_nm[i]
-        #         else:
-        #             alpha_p_array += 0.0 * M_mat_cond_shape_nz_nm[i]
-        #
-        #     alpha_p_mat = np.tile(alpha_p_array.reshape(nz, nm, 1), (1, 1, nx))
-        #     M_mat_coeff = np.power(
-        #         (M_mat_Delta_no_h_nz_nm_nx / (10 ** self.pressure_params_dict['logMstar']['alpha_p_low'])),
-        #         alpha_p_mat)
-        #
-        # elif self.pressure_model_type == 'highbroken_powerlaw':
-        #     M_mat_cond_shape_nz_nm = []
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h < (10 ** self.pressure_params_dict['logMstar']['alpha_p_high']))
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h > (10 ** self.pressure_params_dict['logMstar']['alpha_p_high']))
-        #
-        #     alpha_p_array = np.zeros((nz, nm))
-        #     for i in range(2):
-        #         if i == 0:
-        #             alpha_p_array += self.pressure_params_dict['alpha_p_high'] * M_mat_cond_shape_nz_nm[i]
-        #         else:
-        #             alpha_p_array += 0.0 * M_mat_cond_shape_nz_nm[i]
-        #
-        #     alpha_p_mat = np.tile(alpha_p_array.reshape(nz, nm, 1), (1, 1, nx))
-        #     M_mat_coeff = np.power(
-        #         (M_mat_Delta_no_h_nz_nm_nx / (10 ** self.pressure_params_dict['logMstar']['alpha_p_high'])),
-        #         alpha_p_mat)
-        #
-        # elif self.pressure_model_type == 'doublybroken_powerlaw':
-        #     M_mat_cond_shape_nz_nm = []
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h < (10 ** self.pressure_params_dict['logMstar']['alpha_p_low']))
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h > (10 ** self.pressure_params_dict['logMstar']['alpha_p_low']))
-        #
-        #     alpha_p_array = np.zeros((nz, nm))
-        #     for i in range(2):
-        #         if i == 0:
-        #             alpha_p_array += self.pressure_params_dict['alpha_p_low'] * M_mat_cond_shape_nz_nm[i]
-        #         else:
-        #             alpha_p_array += 0.0 * M_mat_cond_shape_nz_nm[i]
-        #
-        #     alpha_p_mat = np.tile(alpha_p_array.reshape(nz, nm, 1), (1, 1, nx))
-        #     M_mat_coeff1 = np.power(
-        #         (M_mat_Delta_no_h_nz_nm_nx / (10 ** self.pressure_params_dict['logMstar']['alpha_p_low'])),
-        #         alpha_p_mat)
-        #
-        #     M_mat_cond_shape_nz_nm = []
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h < (10 ** self.pressure_params_dict['logMstar']['alpha_p_high']))
-        #     M_mat_cond_shape_nz_nm.append(
-        #         M_mat_Delta_no_h > (10 ** self.pressure_params_dict['logMstar']['alpha_p_high']))
-        #
-        #     alpha_p_array = np.zeros((nz, nm))
-        #     for i in range(2):
-        #         if i == 0:
-        #             alpha_p_array += self.pressure_params_dict['alpha_p_high'] * M_mat_cond_shape_nz_nm[i]
-        #         else:
-        #             alpha_p_array += 0.0 * M_mat_cond_shape_nz_nm[i]
-        #
-        #     alpha_p_mat = np.tile(alpha_p_array.reshape(nz, nm, 1), (1, 1, nx))
-        #     M_mat_coeff2 = np.power(
-        #         (M_mat_Delta_no_h_nz_nm_nx / (10 ** self.pressure_params_dict['logMstar']['alpha_p_high'])),
-        #         alpha_p_mat)
-        #
-        #     M_mat_coeff = M_mat_coeff1 * M_mat_coeff2
-        #
-        #     # pdb.set_trace()
-        #
-        # else:
-        #     M_mat_coeff = np.ones((nz, nm, nx))
 
         M_mat_coeff = np.power((M_mat_Delta_no_h_nz_nm_nx / (10 ** 14)), self.pressure_params_dict['epsilon'])
         Pe_mat = 0.518 * P_Delta * gnfw_P * M_mat_coeff
