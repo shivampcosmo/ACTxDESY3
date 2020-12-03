@@ -72,6 +72,18 @@ class general_hm:
         return Pklinz_2d_mat_interp
 
 
+    # Get the interpolated object of non-linear power spectrum at given cosmology
+    def get_PkNL_zk_interp(self):
+        k_array = np.logspace(-5, 2, 400)
+        zmin, zmax = np.min(self.z_array), np.max(self.z_array)
+        z_array = np.logspace(np.log10(zmin), np.log10(zmax), 100)
+        
+        PkNL_2d_mat = hmf.get_PkNL_zarray(z_array, k_array, current_cosmo=self.cosmo)
+        
+        PkNLz_2d_mat_interp = interpolate.RectBivariateSpline((z_array), np.log(k_array),
+                                                               np.log(PkNL_2d_mat))
+        return PkNLz_2d_mat_interp 
+
     # get the halo mass function and halo bias using the colossus module
     def get_dndm_bias(self, M_mat, mdef):
 

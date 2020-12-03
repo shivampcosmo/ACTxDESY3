@@ -307,6 +307,7 @@ def setup(options):
     analysis_coords = options.get_string(option_section, "analysis_coords", default='real')
     save_data_fname = options.get_string(option_section, "save_data_fname", default='')
     save_real_space_cov = options.get_bool(option_section, "save_real_space_cov", default=False)
+    get_logsens_zM = options.get_bool(option_section, "get_logsens_zM", default=False)
 
     verbose = options.get_bool(option_section, "verbose", default=False)
     run_cov_pipe = options.get_bool(option_section, "run_cov_pipe", default=False)
@@ -319,7 +320,8 @@ def setup(options):
                   'do_use_measured_2pt': do_use_measured_2pt, 'get_bp': get_bp, 'bp_model':bp_model, 'dlogtheta': dlogtheta,
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
                   'verbose': verbose, 'gg_doauto':gg_doauto, 'use_Plin_block':use_Plin_block,
-                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV, 'save_DV':save_DV}
+                  'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV, 'save_DV':save_DV,
+                  'get_logsens_zM':get_logsens_zM}
 
     return ini_info, returndict
 
@@ -342,6 +344,7 @@ def execute(block, config):
     use_Plin_block, use_dndm_block, use_conc_block = returndict['use_Plin_block'], returndict['use_dndm_block'], returndict['use_conc_block']
     save_detailed_DV = returndict['save_detailed_DV']
     save_DV = returndict['save_DV']
+    get_logsens_zM = returndict['get_logsens_zM']
     if twopt_file is not None:
         try:
             clf = pk.load(open(twopt_file, 'rb'))
@@ -754,7 +757,7 @@ def execute(block, config):
                     PrepDV_dict_allbins['analysis_coords'] = analysis_coords
                     PrepDV_dict_allbins['gg_doauto'] = gg_doauto
                     PrepDV_dict_allbins['fsky_dict'] = PrepDV_fid.fsky
-                    # PrepDV_dict_allbins['verbose'] = other_params_dict['verbose']
+                    PrepDV_dict_allbins['get_logsens_zM'] = get_logsens_zM
                     PrepDV_dict_allbins['verbose'] = verbose
                     PrepDV_dict_allbins['put_IA'] = other_params_dict['put_IA']
                     PrepDV_dict_allbins['only_2h_IA'] = other_params_dict['only_2h_IA']

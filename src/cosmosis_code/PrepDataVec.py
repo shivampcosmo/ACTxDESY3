@@ -808,3 +808,228 @@ class CalcDataVec:
             xi_final = xi_out
             theta_array_arcmin = theta_out_arcmin
         return xi_final, theta_array_arcmin
+
+    def get_dlnxigty1h_AB_dlnM(self, l_array, uA_zM_dict, uB_zM_dict, Bl_array,theta_out_arcmin = np.array([3.0,10.0,40.0])):
+        Cl1h_denom = np.zeros_like(l_array)
+        nz, nm = self.PS_prepDV.M_mat.shape
+        Cl1h_num = np.zeros((nm,len(l_array)))
+
+        for j in range(len(l_array)):
+            l = l_array[j]
+
+            uAl_zM = uA_zM_dict[round(l, 1)]
+            uBl_zM = uB_zM_dict[round(l, 1)]
+            toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array
+            val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+            toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+            Cl1h_denom[j] = Bl_array[j] * sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+
+            num_volfac = np.tile((self.PS_prepDV.z_array * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array).reshape(1, nz),
+                                (nm, 1))
+
+            toint_z_num = self.PS_prepDV.dndm_array.T * num_volfac * (uAl_zM.T * uBl_zM.T)
+            num = self.PS_prepDV.M_array * sp.integrate.simps(toint_z_num, self.PS_prepDV.z_array)                                
+            Cl1h_num[:,j] = num * Bl_array[j]
+
+        l_array_full = np.logspace(np.log10(0.1), np.log10(100000), 100000)        
+        Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_denom), fill_value='extrapolate',
+                                        bounds_error=False)
+        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+
+        
+        # theta_out = theta_out_arcmin*(np.pi/180.)*(1./60.)
+        # ntheta = len(theta_out)
+        # nl_full = len(l_array_full)
+        # Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+        # l_theta = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1))) * (
+        #     np.tile(theta_out.reshape(ntheta, 1), (1, nl_full)))
+        # j0_ltheta = sp.special.jv(0, l_theta)
+        # l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
+        # denom = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+        theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=True)
+        denom = xi_out * (1 / (2 * np.pi))
+        theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+
+        z_mat = np.tile((self.PS_prepDV.z_array).reshape(1, nz),(nm, 1))
+
+        ratio = np.zeros((len(theta_out_arcmin),nm))
+        num = np.zeros((len(theta_out_arcmin),nm))
+        for jM in range(nm):
+            # for jz in range(nz):
+            Cl1h_j = Cl1h_num[jM,:]
+            ind_lt0 = np.where(Cl1h_j <= 0)[0]
+            if len(ind_lt0) > 0:
+                Cl1h_j[ind_lt0] = 1e-300
+            Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_j), fill_value='extrapolate',
+                                            bounds_error=False)
+            Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+            ind_lt0 = np.where(Cell_full == 0)[0]
+            if len(ind_lt0) > 0:
+                Cell_full[ind_lt0] = 1e-300  
+
+            # Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+            # xi_out = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+            theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=False)
+            xi_out *= (1 / (2 * np.pi))
+
+            num[:,jM] = xi_out
+            ratio[:,jM] = xi_out/denom
+            # import pdb; pdb.set_trace();
+        ind_s = np.where((theta_out_arcmin > 2.5) & (theta_out_arcmin < 250.))[0]
+        ratio = ratio[ind_s,:]
+        theta_out_arcmin = theta_out_arcmin[ind_s]
+        # import pdb; pdb.set_trace();
+
+        return ratio, theta_out_arcmin, self.PS_prepDV.M_array, self.PS_prepDV.z_array
+
+    def get_dlnxigty1h_AB_dlnz(self, l_array, uA_zM_dict, uB_zM_dict, Bl_array,theta_out_arcmin = np.array([3.0,10.0,40.0])):
+        Cl1h_denom = np.zeros_like(l_array)
+        nz, nm = self.PS_prepDV.M_mat.shape
+        Cl1h_num = np.zeros((nz,len(l_array)))
+
+        for j in range(len(l_array)):
+            l = l_array[j]
+
+            uAl_zM = uA_zM_dict[round(l, 1)]
+            uBl_zM = uB_zM_dict[round(l, 1)]
+            toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array
+            val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+            toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+            Cl1h_denom[j] = Bl_array[j] * sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+
+            num_volfac = self.PS_prepDV.z_array * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+            num = num_volfac * sp.integrate.simps(self.PS_prepDV.dndm_array * (uAl_zM * uBl_zM), self.PS_prepDV.M_array)                               
+            Cl1h_num[:,j] = num * Bl_array[j]
+
+        # l_array_full = np.logspace(np.log10(0.1), np.log10(80000), 500000)        
+        l_array_full = np.logspace(np.log10(0.1), np.log10(100000), 100000)                
+        Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_denom), fill_value='extrapolate',
+                                        bounds_error=False)
+        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+
+        theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=True)
+        denom = xi_out * (1 / (2 * np.pi))
+        theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+
+
+        # theta_out_arcmin = np.array([3.0,10.0,30.0])
+        # theta_out = theta_out_arcmin*(np.pi/180.)*(1./60.)
+        # ntheta = len(theta_out)
+        # nl_full = len(l_array_full)
+        # Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+        # l_theta = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1))) * (
+        #     np.tile(theta_out.reshape(ntheta, 1), (1, nl_full)))
+        # j0_ltheta = sp.special.jv(0, l_theta)
+        # l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
+        # denom = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+        # z_mat = np.tile((self.PS_prepDV.z_array).reshape(1, nz),(nm, 1))
+
+        ratio = np.zeros((len(theta_out_arcmin),nz))
+        num = np.zeros((len(theta_out_arcmin),nz))
+        for jM in range(nz):
+            # for jz in range(nz):
+            Cl1h_j = Cl1h_num[jM,:]
+            ind_lt0 = np.where(Cl1h_j <= 0)[0]
+            if len(ind_lt0) > 0:
+                Cl1h_j[ind_lt0] = 1e-300
+            Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_j), fill_value='extrapolate',
+                                            bounds_error=False)
+            Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+            ind_lt0 = np.where(Cell_full == 0)[0]
+            if len(ind_lt0) > 0:
+                Cell_full[ind_lt0] = 1e-300  
+
+            # Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+            # xi_out = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+            theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=False)
+            xi_out *= (1 / (2 * np.pi))
+
+            num[:,jM] = xi_out
+            ratio[:,jM] = xi_out/denom
+        ind_s = np.where((theta_out_arcmin > 2.5) & (theta_out_arcmin < 250.))[0]
+        ratio = ratio[ind_s,:]
+        theta_out_arcmin = theta_out_arcmin[ind_s]
+        # import pdb; pdb.set_trace();
+
+        return ratio, theta_out_arcmin, self.PS_prepDV.M_array, self.PS_prepDV.z_array        
+
+
+    def get_d2lnxigty1h_AB_dlnMdlnz(self, l_array, uA_zM_dict, uB_zM_dict, Bl_array):
+        Cl1h_denom = np.zeros_like(l_array)
+        nz, nm = self.PS_prepDV.M_mat.shape
+        Cl1h_num = np.zeros((nm, nz, len(l_array)))
+
+        for j in range(len(l_array)):
+            l = l_array[j]
+
+            uAl_zM = uA_zM_dict[round(l, 1)]
+            uBl_zM = uB_zM_dict[round(l, 1)]
+            toint_M = (uAl_zM * uBl_zM) * self.PS_prepDV.dndm_array
+            val_z = sp.integrate.simps(toint_M, self.PS_prepDV.M_array)
+            toint_z = val_z * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array
+            Cl1h_denom[j] = Bl_array[j] * sp.integrate.simps(toint_z, self.PS_prepDV.z_array)
+
+            num_volfac = np.tile((self.PS_prepDV.z_array * (self.PS_prepDV.chi_array ** 2) * self.PS_prepDV.dchi_dz_array).reshape(1, nz),
+                                (nm, 1))
+            num_Mfac = self.PS_prepDV.M_mat.T * self.PS_prepDV.dndm_array.T * (uAl_zM.T * uBl_zM.T)
+            Cl1h_num[:,:,j] = num_Mfac * num_volfac * Bl_array[j]
+
+        l_array_full = np.logspace(np.log10(0.1), np.log10(100000), 300000)        
+        Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_denom), fill_value='extrapolate',
+                                        bounds_error=False)
+        Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+
+        theta_out_arcmin = np.array([3.0,10.0,30.0])
+        theta_out = theta_out_arcmin*(np.pi/180.)*(1./60.)
+        ntheta = len(theta_out)
+        nl_full = len(l_array_full)
+        Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+        l_theta = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1))) * (
+            np.tile(theta_out.reshape(ntheta, 1), (1, nl_full)))
+        j0_ltheta = sp.special.jv(0, l_theta)
+        l_mat = (np.tile(l_array_full.reshape(1, nl_full), (ntheta, 1)))
+        denom = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+
+        # theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=True)
+        # denom = xi_out * (1 / (2 * np.pi))
+        # theta_out_arcmin = theta_out * (180. / np.pi) * 60.
+
+        z_mat = np.tile((self.PS_prepDV.z_array).reshape(1, nz),(nm, 1))
+
+        ratio = np.zeros((len(theta_out_arcmin),nm, nz))
+        num = np.zeros((len(theta_out_arcmin),nm, nz))
+        for jM in range(nm):
+            for jz in range(nz):
+                Cl1h_j = Cl1h_num[jM,jz,:]
+                ind_lt0 = np.where(Cl1h_j <= 0)[0]
+                if len(ind_lt0) > 0:
+                    Cl1h_j[ind_lt0] = 1e-300
+                Cell_interp = interpolate.interp1d(np.log(l_array), np.log(Cl1h_j), fill_value='extrapolate',
+                                                bounds_error=False)
+                Cell_full = np.exp(Cell_interp(np.log(l_array_full)))
+                ind_lt0 = np.where(Cell_full == 0)[0]
+                if len(ind_lt0) > 0:
+                    Cell_full[ind_lt0] = 1e-300  
+
+                Cl_mat = (np.tile(Cell_full.reshape(1, nl_full), (ntheta, 1)))
+                xi_out = (sp.integrate.simps(l_mat * Cl_mat * j0_ltheta, l_array_full)) / (2 * np.pi)
+
+
+                # theta_out, xi_out = Hankel(l_array_full, nu=2, q=1.0)(Cell_full, extrap=False)
+                # xi_out *= (1 / (2 * np.pi))
+
+                num[:,jM,jz] = xi_out
+                ratio[:,jM,jz] = xi_out/denom
+        ind_s = np.where((theta_out_arcmin > 2.5) & (theta_out_arcmin < 250.))[0]
+        ratio = ratio[ind_s,:,:]
+        theta_out_arcmin = theta_out_arcmin[ind_s]
+        import pdb; pdb.set_trace();
+
+        return ratio, theta_out_arcmin, self.PS_prepDV.M_mat.T, z_mat
+
+     

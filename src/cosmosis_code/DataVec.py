@@ -303,9 +303,9 @@ class DataVec:
             if analysis_coords == 'real':
                 # xi_ky_dict = {}
                 xi_gty_dict = {}
+                self.xi_gty_log_sens_zM = {}
             bin_combs = []
             for j1 in bins_source:
-
                 try:
                     if (PrepDV_params['ky_1h2h_model'] in ['sum_normal']) or save_detailed_DV:
                         Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
@@ -490,6 +490,25 @@ class DataVec:
                                 block[
                                     sec_save_name, 'xcoord_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(j1) + '_' + str(
                                         0)] = theta_array
+                            
+                            if PrepDV_params['get_logsens_zM']: 
+
+                                Bl_array = np.ones_like(Bl)                    
+                                ratioM, theta_out_arcmin, M_array, z_array = self.CalcDV.get_dlnxigty1h_AB_dlnM(PrepDV.l_array, PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                                          PrepDV_params['uyl_zM_dict0'], Bl_array)
+                                # import pdb; pdb.set_trace()  
+                                ratioz, theta_out_arcmin, M_array, z_array = self.CalcDV.get_dlnxigty1h_AB_dlnz(PrepDV.l_array, PrepDV_params['ukl_zM_dict' + str(j1)],
+                                                                          PrepDV_params['uyl_zM_dict0'], Bl_array)
+                                # import pdb; pdb.set_trace()                                                               
+                                # ratio, theta_out_arcmin, M_mat, z_mat = self.CalcDV.get_d2lnxigty1h_AB_dlnMdlnz(PrepDV.l_array, PrepDV_params['ukl_zM_dict' + str(j1)],
+                                #                                           PrepDV_params['uyl_zM_dict0'], Bl_array)
+                                self.xi_gty_log_sens_zM['sensz_' + str(jb + 1) + 'bin_' + str(j1) + '_' + str(0)] = ratioz
+                                self.xi_gty_log_sens_zM['sensM_' + str(jb + 1) + 'bin_' + str(j1) + '_' + str(0)] = ratioM
+                                if jb == 0 and j1 == 1:
+                                   self.xi_gty_log_sens_zM['theta'] = theta_out_arcmin
+                                   self.xi_gty_log_sens_zM['M_array'] = M_array
+                                   self.xi_gty_log_sens_zM['z_array'] = z_array
+                                # import pdb; pdb.set_trace();
 
                         else:
                             if 'ky' in PrepDV.stats_analyze:
