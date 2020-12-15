@@ -278,7 +278,8 @@ class Powerspec:
         if 'pkznl_interp' in other_params.keys():
             self.pkznl_interp = other_params['pkznl_interp']
         else:
-            import ipdb; ipdb.set_trace() # BREAKPOINT
+            self.pkznl_interp = self.ghmf.get_PkNL_zk_interp()
+            # import ipdb; ipdb.set_trace() # BREAKPOINT
 
         self.suppress_1halo = other_params['suppress_1halo']
         self.kstar = other_params['kstar']

@@ -459,11 +459,11 @@ class CalcDataVec:
 
 
     def get_Cl_AB_tot(self, A, B, ClAB_1h, ClAB_2h):
-        g_sum = (A == 'g') + (B == 'g')
-        if (g_sum == 1) and self.PS_prepDV.use_only_halos and (self.PS_prepDV.fmis > 0):
-            Cl_AB_tot = self.get_Cl_yg_miscentered(l_array, ClAB_1h + ClAB_2h)
-        else:
-            Cl_AB_tot = ClAB_1h + ClAB_2h
+        # g_sum = (A == 'g') + (B == 'g')
+        # if (g_sum == 1) and self.PS_prepDV.use_only_halos and (self.PS_prepDV.fmis > 0):
+        #     Cl_AB_tot = self.get_Cl_yg_miscentered(l_array, ClAB_1h + ClAB_2h)
+        # else:
+        Cl_AB_tot = ClAB_1h + ClAB_2h
         return Cl_AB_tot
 
     # See Makiya paper
@@ -596,7 +596,7 @@ class CalcDataVec:
 
         Cly_intpsi = (1. / (2 * np.pi)) * sp.integrate.simps(Cly_theta_argnew, psi_array)
 
-        sigmaR_val = self.cmis * np.mean(self.PS_prepDV.r_vir_mat)
+        sigmaR_val = self.PS_prepDV.cmis * np.mean(self.PS_prepDV.r_vir_mat)
 
         sigmaR_mat = (np.tile(sigmaR_val.reshape(1, 1), (ntheta, nRmis)))
         Rmis_mat = (np.tile(Rmis_array.reshape(1, nRmis), (ntheta, 1)))

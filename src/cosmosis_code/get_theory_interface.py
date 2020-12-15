@@ -301,6 +301,7 @@ def setup(options):
     bins_source = ast.literal_eval(options.get_string(option_section, "bins_source", default='[1]'))
     bins_lens = ast.literal_eval(options.get_string(option_section, "bins_lens", default='[1]'))
     gg_doauto = options.get_bool(option_section, "gg_doauto", default=True)
+    do_tomo_Bhse = options.get_bool(option_section, "do_tomo_Bhse", default=False)
 
     sec_name = options.get_string(option_section, "sec_name", default='theory_yx')
     sec_save_name = options.get_string(option_section, "sec_save_name", default='theory_yx')
@@ -321,7 +322,7 @@ def setup(options):
                   'ntheta': ntheta, 'theta_min': theta_min, 'theta_max': theta_max, 'analysis_coords': analysis_coords,
                   'verbose': verbose, 'gg_doauto':gg_doauto, 'use_Plin_block':use_Plin_block,
                   'use_dndm_block':use_dndm_block, 'use_conc_block':use_conc_block, 'save_detailed_DV':save_detailed_DV, 'save_DV':save_DV,
-                  'get_logsens_zM':get_logsens_zM}
+                  'get_logsens_zM':get_logsens_zM, 'do_tomo_Bhse':do_tomo_Bhse}
 
     return ini_info, returndict
 
@@ -340,6 +341,7 @@ def execute(block, config):
     dlogtheta, ntheta, theta_min, theta_max = returndict['dlogtheta'], returndict['ntheta'], returndict['theta_min'], \
                                               returndict['theta_max']
     analysis_coords, verbose = returndict['analysis_coords'], returndict['verbose']
+    do_tomo_Bhse = returndict['do_tomo_Bhse']
 
     use_Plin_block, use_dndm_block, use_conc_block = returndict['use_Plin_block'], returndict['use_dndm_block'], returndict['use_conc_block']
     save_detailed_DV = returndict['save_detailed_DV']
@@ -362,6 +364,7 @@ def execute(block, config):
         z_block, k_block, pk_block = block.get_grid(lin_power, "z", "k_h", "p_k")
         pkzlin_interp = interpolate.RectBivariateSpline(z_block, np.log(k_block), np.log(pk_block))
         if get_bp:
+            ghmf = general_hm(cosmo_params_dict, pressure_params_dict, other_params_dict)
             wplin_interp = ghmf.get_wplin_interp(2, pkzlin_interp)
             other_params_dict['wplin_interp'] = wplin_interp
         other_params_dict['pkzlin_interp'] = pkzlin_interp
@@ -435,6 +438,12 @@ def execute(block, config):
                                 if var_name == other_keys.lower():
                                     other_params_dict_bin[other_keys] = block[key]
 
+                        if do_tomo_Bhse and (bin_n == binvs):
+                                for pressure_keys in pressure_params_dict_bin.keys():
+                                    if var_name == pressure_keys.lower():
+                                        # import ipdb; ipdb.set_trace()
+                                        pressure_params_dict_bin[pressure_keys] = block[key] 
+                
                 if key[0] == 'cosmological_parameters':
                     dict_trans = {'omega_m':'Om0','sigma8_input':'sigma8', 'omega_b':'Ob0'}
                     param_val = key[1]
@@ -456,7 +465,7 @@ def execute(block, config):
                                     sys.exit()
                                 else:
                                     cosmo_params_dict_bin[dict_trans[param_val]] = block[key]
-
+            # import ipdb; ipdb.set_trace()
             if verbose:
                 print('done putting in values file data in the dict')
 
@@ -707,9 +716,15 @@ def execute(block, config):
                     for jt in range(len(theta_array)):
                         xi_ky_2h_array[jt] = PS.get_xi_kappy_2h(theta_array[jt], bpz0_keVcm3=bpz0*1e-7, bpalpha=bpalpha*1e-7,
                                         bp_model='linear')
+                for jb in range(len(other_params_dict['beam_fwhm_arcmin'])):
+                    block[
+                        sec_save_name, 'theory_corrf_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(
+                            binvs) + '_' + str(0)] = xi_ky_2h_array
 
-                block[sec_save_name, 'theory_corrf_' + 'gty' + '_bin_' + str(binvs) + '_' + str(0)] = xi_ky_2h_array
-                block[sec_save_name, 'xcoord_' + 'gty' + '_bin_' + str(binvs) + '_' + str(0)] = theta_array
+                    block[
+                        sec_save_name, 'xcoord_' + 'gty' + str(jb + 1) + '_' + 'bin_' + str(binvs) + '_' + str(
+                            0)] = theta_array
+
             else:
                 ti = time.time()
                 try:
@@ -719,7 +734,8 @@ def execute(block, config):
                 if verbose:
                     print('Setting up DV took : ' + str(time.time() - ti) + 's')
 
-                if 'uyl_zM_dict' not in other_params_dict.keys():
+
+                if (not do_tomo_Bhse) and ('uyl_zM_dict' not in other_params_dict.keys()):
                     other_params_dict['uyl_zM_dict'] = PrepDV_fid.uyl_zM_dict
                     other_params_dict['byl_z_dict'] = PrepDV_fid.byl_z_dict
 
@@ -734,13 +750,17 @@ def execute(block, config):
                 PrepDV_dict_allbins['bkl_z_dict' + str(binvs)] = PrepDV_fid.bkl_z_dict
                 PrepDV_dict_allbins['bIl_z_dict' + str(binvs)] = PrepDV_fid.bIl_z_dict
                 PrepDV_dict_allbins['bgl_z_dict' + str(binvl)] = PrepDV_fid.bgl_z_dict
+                if do_tomo_Bhse:
+                    PrepDV_dict_allbins['uyl_zM_dict' + str(binvs)] = PrepDV_fid.uyl_zM_dict
+                    PrepDV_dict_allbins['byl_z_dict' + str(binvs)] = PrepDV_fid.byl_z_dict                    
                 PrepDV_dict_allbins['Cl_noise_gg_l_array' + str(binvl)] = PrepDV_fid.Cl_noise_gg_l_array
                 PrepDV_dict_allbins['Cl_noise_kk_l_array' + str(binvs)] = PrepDV_fid.Cl_noise_kk_l_array
                 for stats in other_params_dict['stats_analyze']:
                     PrepDV_dict_allbins[stats + '_alpha_1h2h_model' + str(binvs)] = other_params_dict_bin[stats + '_alpha_1h2h_model']
                 if 'uyl_zM_dict0' not in PrepDV_dict_allbins.keys():
-                    PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
-                    PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
+                    if not do_tomo_Bhse:
+                        PrepDV_dict_allbins['uyl_zM_dict0'] = PrepDV_fid.uyl_zM_dict
+                        PrepDV_dict_allbins['byl_z_dict0'] = PrepDV_fid.byl_z_dict
                     PrepDV_dict_allbins['uml_zM_dict0'] = PrepDV_fid.uml_zM_dict
                     PrepDV_dict_allbins['bml_z_dict0'] = PrepDV_fid.bml_z_dict
                     PrepDV_dict_allbins['PrepDV_fid'] = PrepDV_fid
@@ -749,6 +769,7 @@ def execute(block, config):
                     PrepDV_dict_allbins['bins_source'] = bins_source
                     PrepDV_dict_allbins['bins_lens'] = bins_lens
                     PrepDV_dict_allbins['run_cov_pipe'] = run_cov_pipe
+                    PrepDV_dict_allbins['do_tomo_Bhse'] = do_tomo_Bhse
                     PrepDV_dict_allbins['theta_min'] = theta_min
                     PrepDV_dict_allbins['theta_max'] = theta_max
                     PrepDV_dict_allbins['ntheta'] = ntheta

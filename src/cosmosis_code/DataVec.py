@@ -60,6 +60,7 @@ class DataVec:
         only2h_IA = PrepDV_params['only_2h_IA']
         model_2h_IA = PrepDV_params['model_2h_IA']
         save_detailed_DV = PrepDV_params['save_detailed_DV']
+        do_tomo_Bhse = PrepDV_params['do_tomo_Bhse']
         self.Cl_result_dict = {'l_array': PrepDV.l_array, 'l_array_survey': PrepDV.l_array_survey,
                                'ind_select_survey': PrepDV.ind_select_survey,
                                'dl_array_survey': PrepDV.dl_array_survey}
@@ -307,21 +308,25 @@ class DataVec:
             bin_combs = []
             for j1 in bins_source:
                 try:
+                    if do_tomo_Bhse:
+                        yind = j1
+                    else:
+                        yind = 0
                     if (PrepDV_params['ky_1h2h_model'] in ['sum_normal']) or save_detailed_DV:
                         Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
                                                              PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                             PrepDV_params['uyl_zM_dict0'])
+                                                             PrepDV_params['uyl_zM_dict' + str(yind)])
                         Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PrepDV.l_array,
                                                              PrepDV_params['bkl_z_dict' + str(j1)],
-                                                             PrepDV_params['byl_z_dict0'])
+                                                             PrepDV_params['byl_z_dict' + str(yind)])
                         Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
                     if (PrepDV_params['ky_1h2h_model'] in ['larger_real']) or save_detailed_DV:                        
                         Cl1h_j1j2 = self.CalcDV.get_Cl_AB_1h('k', 'y', PrepDV.l_array,
                                                              PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                             PrepDV_params['uyl_zM_dict0'])
+                                                             PrepDV_params['uyl_zM_dict' + str(yind)])
                         Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('k', 'y', PrepDV.l_array,
                                                              PrepDV_params['bkl_z_dict' + str(j1)],
-                                                             PrepDV_params['byl_z_dict0'], model_2h='nl')
+                                                             PrepDV_params['byl_z_dict' + str(yind)], model_2h='nl')
                         Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot('k', 'y', Cl1h_j1j2, Cl2h_j1j2)
                     if PrepDV_params['ky_1h2h_model'] == 'sum_fsmooth':
                         # import pdb; pdb.set_trace()
@@ -331,23 +336,23 @@ class DataVec:
                             alvj = PrepDV_params['ky_alpha_1h2h_model' + str(j1)]
                         Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot_modelmead('k', 'y', PrepDV.l_array,
                                                                             PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                                            PrepDV_params['uyl_zM_dict0'],
+                                                                            PrepDV_params['uyl_zM_dict' + str(yind)],
                                                                             PrepDV_params['bkl_z_dict' + str(j1)],
-                                                                            PrepDV_params['byl_z_dict0'],
+                                                                            PrepDV_params['byl_z_dict' + str(yind)],
                                                                                 al = alvj)
 
                     if PrepDV_params['ky_1h2h_model'] == 'larger_fourier':
                         Cltotphy_j1j2 = self.CalcDV.get_Cl_AB_tot_modelNL('k', 'y', PrepDV.l_array,
                                                                           PrepDV_params['ukl_zM_dict' + str(j1)],
-                                                                          PrepDV_params['uyl_zM_dict0'],
+                                                                          PrepDV_params['uyl_zM_dict' + str(yind)],
                                                                           PrepDV_params['bkl_z_dict' + str(j1)],
-                                                                          PrepDV_params['byl_z_dict0'])
+                                                                          PrepDV_params['byl_z_dict' + str(yind)])
 
                     if put_IA:
 
                         ClGI2h_j1j2 = self.CalcDV.get_Cl_AB_2h('I', 'y', PrepDV.l_array,
                                                                PrepDV_params['bIl_z_dict' + str(j1)],
-                                                               PrepDV_params['byl_z_dict0'], model_2h=model_2h_IA)
+                                                               PrepDV_params['byl_z_dict' + str(yind)], model_2h=model_2h_IA)
 
                         if only2h_IA:
                             Clintrinsic_j1j2 = ClGI2h_j1j2
@@ -355,11 +360,8 @@ class DataVec:
                         else:
                             ClGI1h_j1j2 = self.CalcDV.get_Cl_AB_1h('I', 'y', PrepDV.l_array,
                                                                    PrepDV_params['uIl_zM_dict' + str(j1)],
-                                                                   PrepDV_params['uyl_zM_dict0'])
+                                                                   PrepDV_params['uyl_zM_dict' + str(yind)])
                             ClGI_j1j2 = self.CalcDV.get_Cl_AB_tot('I', 'y', ClGI1h_j1j2, ClGI2h_j1j2)
-                            # ClGI_j1j2 = self.CalcDV.get_Cl_AB_2h_nl('I', 'y', PrepDV.l_array,
-                            # PrepDV_params['bIl_z_dict' + str(j1)],
-                            # PrepDV_params['byl_z_dict' + str(0)])
 
                             Clintrinsic_j1j2 = ClGI_j1j2
                         Cltot_j1j2 = Cltotphy_j1j2 + Clintrinsic_j1j2
@@ -367,12 +369,6 @@ class DataVec:
                         Cltot_j1j2 = Cltotphy_j1j2
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, 0])
-                    #                    Cl_ky_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2, 'tot': Cltot_j1j2,'tot_mead':Cltotmead_j1j2,
-                    #                                                        'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
-                    #                                                        'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                    #                                                                                        PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
-
-                    # import ipdb; ipdb.set_trace() # BREAKPOINT
 
                     for jb in range(len(beam_fwhm_arcmin)):
 
@@ -727,7 +723,11 @@ class DataVec:
                                                                          PrepDV_params['bgl_z_dict' + str(j1)],
                                                                          PrepDV_params['byl_z_dict' + str(0)],
                                                                                 al = 1.)
-
+                    if self.CalcDV.PS_prepDV.use_only_halos:
+                        if self.CalcDV.PS_prepDV.fmis > 0:
+                            # import ipdb; ipdb.set_trace()
+                            Cltot_j1j2_orig = Cltot_j1j2
+                            Cltot_j1j2 = self.CalcDV.get_Cl_yg_miscentered(PrepDV.l_array, Cltot_j1j2)
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, 0])
                     # Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,'2h_nl': Cl2h_j1j2_nl, 'tot': Cltot_j1j2,'tot2': Cltot_j1j2_m2,
@@ -742,8 +742,9 @@ class DataVec:
                         Bl = (np.exp(
                             -1. * PrepDV.l_array_survey * (PrepDV.l_array_survey + 1) * (sig_beam ** 2) / 2.)) ** (
                                  addbth) + 1e-200
-                        pw_ip = interpolate.interp1d(np.log(np.arange(3 * nside_pw[jb])),
+                        pw_ip = interpolate.interp1d(np.log(np.arange(3 * nside_pw[jb])+1),
                                                      np.log(hp.pixwin(nside_pw[jb])), fill_value='extrapolate')
+                        
                         Bl *= (np.exp(pw_ip(np.log(PrepDV.l_array_survey)))) ** (addpw) + 1e-200
                         if save_detailed_DV:
                             Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2 * Bl, '2h': Cl2h_j1j2 * Bl,
@@ -759,9 +760,11 @@ class DataVec:
                                                                    'tot_plus_noise_ellsurvey': (Cltot_j1j2 * Bl)[
                                                                                                    PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                         if analysis_coords == 'real':
+                            # import ipdb; ipdb.set_trace()
                             xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
                                                                                       Cltot_j1j2 * Bl,
                                                                                       theta_array_arcmin=theta_array_arcmin)
+                            # import ipdb; ipdb.set_trace()
                             if save_detailed_DV:
                                 # import pdb; pdb.set_trace()
                                 xi1h_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,

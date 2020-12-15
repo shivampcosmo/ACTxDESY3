@@ -40,8 +40,11 @@ class HOD:
         self.hod_params = hod_params
         self.hod_type = hod_params['hod_type']
         self.z_array = other_params['z_array']
-        self.z_edges = np.array(other_params['z_edges'])
-        self.zcen = 0.5*(self.z_edges[1:] + self.z_edges[:-1])
+        try:
+            self.z_edges = np.array(other_params['z_edges'])
+            self.zcen = 0.5*(self.z_edges[1:] + self.z_edges[:-1])
+        except:
+            pass
         self.binvl = other_params['binvl']
         self.nz = len(self.z_array)
         self.nm = len(other_params['M_array'])
