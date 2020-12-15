@@ -1,0 +1,5 @@
+#parameter mean std_dev
+#/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_sz_shear_planckxdesy3_grid_v0p4_P0betaA.txt
+halo_model_parameters--a   1.183201e+00   1.072142e+00
+theory_yx--p0-a_m0   1.394239e+01   4.000009e+00
+theory_yx--beta-a_m0   4.132309e+00   3.215096e-01
