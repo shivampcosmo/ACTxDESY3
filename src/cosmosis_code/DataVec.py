@@ -610,12 +610,12 @@ class DataVec:
                                 # Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PrepDV.l_array,
                                 # PrepDV_params['bgl_z_dict' + str(j1)],
                                 # PrepDV_params['bgl_z_dict' + str(j2)])
-                                # Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
-                                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot_modelNL('g', 'g', PrepDV.l_array,
-                                                                               PrepDV_params['ugl_zM_dict' + str(j1)],
-                                                                               PrepDV_params['ugl_zM_dict' + str(j2)],
-                                                                               PrepDV_params['bgl_z_dict' + str(j1)],
-                                                                               PrepDV_params['bgl_z_dict' + str(j2)])
+                                Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)
+                                # Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot_modelNL('g', 'g', PrepDV.l_array,
+                                #                                                PrepDV_params['ugl_zM_dict' + str(j1)],
+                                #                                                PrepDV_params['ugl_zM_dict' + str(j2)],
+                                #                                                PrepDV_params['bgl_z_dict' + str(j1)],
+                                #                                                PrepDV_params['bgl_z_dict' + str(j2)])
 
                                 if j1 == j2:
                                     Cl_noise_ellsurvey = PrepDV_params['Cl_noise_gg_l_array' + str(j1)]
@@ -636,9 +636,7 @@ class DataVec:
                                     'tot_plus_noise_ellsurvey': Cltot_j1j2[
                                                                     PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
                                 if analysis_coords == 'real':
-                                    # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,
-                                    # Cltot_j1j2,
-                                    # theta_array_arcmin=theta_array_arcmin)
+                                    # xitot_j1j2, theta_array = self.CalcDV.do_Hankel_transform(0, PrepDV.l_array,Cltot_j1j2,theta_array_arcmin=theta_array_arcmin)
                                     if self.CalcDV.PS_prepDV.use_only_halos:
                                         xi1h_j1j2 = np.zeros_like(theta_array)
                                     else:
@@ -730,12 +728,6 @@ class DataVec:
                             Cltot_j1j2 = self.CalcDV.get_Cl_yg_miscentered(PrepDV.l_array, Cltot_j1j2)
                     Cl_noise_ellsurvey = np.zeros_like(PrepDV.l_array_survey)
                     bin_combs.append([j1, 0])
-                    # Cl_gy_dict['bin_' + str(j1) + '_0'] = {'1h': Cl1h_j1j2, '2h': Cl2h_j1j2,'2h_nl': Cl2h_j1j2_nl, 'tot': Cltot_j1j2,'tot2': Cltot_j1j2_m2,
-                    # 'tot_ellsurvey': Cltot_j1j2[PrepDV.ind_select_survey],
-                    # 'tot_plus_noise_ellsurvey': Cltot_j1j2[
-                    # PrepDV.ind_select_survey] + Cl_noise_ellsurvey}
-
-                    # import ipdb; ipdb.set_trace() # BREAKPOINT
 
                     for jb in range(len(beam_fwhm_arcmin)):
                         sig_beam = beam_fwhm_arcmin[jb] * (1. / 60.) * (np.pi / 180.) * (1. / np.sqrt(8. * np.log(2)))

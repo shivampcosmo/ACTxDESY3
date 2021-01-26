@@ -94,13 +94,18 @@ class Powerspec:
             self.halo_conc_mdef = other_params['halo_conc_mdef']
 
         hydro_B = pressure_params['hydro_mb']
+        rho_B = pressure_params['rho_mb']
+
+        hydro_B_zarr = hydro_B *((1+self.z_array)**rho_B)
+        hydro_B_mat = np.tile(hydro_B_zarr.reshape(self.nz, 1),(1, self.nm) )
+
         if self.mdef_analysis == 'fof':
 #            self.M_mat_mdefP = M_mat_mdef / (1.4*hydro_B)
-            self.M_mat_mdefP = M_mat_mdef / (hydro_B)
+            self.M_mat_mdefP = M_mat_mdef / (hydro_B_mat)
             self.rmdefP_mat = hmf.get_R_from_M_mat(self.M_mat_mdefP,
                                                    200 * self.rho_crit_array)
         elif self.mdef_analysis == other_params['pressure_model_mdef']:
-            self.M_mat_mdefP = M_mat_mdef / hydro_B
+            self.M_mat_mdefP = M_mat_mdef / hydro_B_mat
             self.rmdefP_mat = hmf.get_R_from_M_mat(self.M_mat_mdefP,
                                                    other_params['pressure_model_delta'] * self.rho_crit_array)
         else:
@@ -115,7 +120,7 @@ class Powerspec:
                                                                                                other_params[
                                                                                                    'pressure_model_mdef'])
 
-            self.M_mat_mdefP = M_mat_mdefP / hydro_B
+            self.M_mat_mdefP = M_mat_mdefP / hydro_B_mat
             self.rmdefP_mat = hmf.get_R_from_M_mat(self.M_mat_mdefP,
                                                    other_params['pressure_model_delta'] * self.rho_crit_array)
 
@@ -123,7 +128,7 @@ class Powerspec:
         if self.verbose:
             print('changing mdef to 200c for battaglia profiles')
         if self.mdef_analysis == 'fof':
-            M_mat_200cP = M_mat_mdef*hydro_B    
+            M_mat_200cP = M_mat_mdef*hydro_B_mat   
         elif self.mdef_analysis == '200c':
             M_mat_200cP = M_mat_mdef
         else:
@@ -136,7 +141,7 @@ class Powerspec:
                                                                                                '200c')
 
 
-        self.M_mat_200cP = M_mat_200cP / hydro_B
+        self.M_mat_200cP = M_mat_200cP / hydro_B_mat
         self.r200cP_mat = hmf.get_R_from_M_mat(self.M_mat_200cP, 200 * self.rho_crit_array)
 
         # trying to test only single mdef
@@ -330,7 +335,7 @@ class Powerspec:
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
             val = np.sqrt(
-                (2 * self.Ns_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),

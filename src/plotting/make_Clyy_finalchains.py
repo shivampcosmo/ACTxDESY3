@@ -286,10 +286,10 @@ class makeplot:
 
 
 pf_dir = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/params_files/'
-pf_main = 'final_runs/params_des_kk_ky_planckacty3_beamed_B12_highbroken.ini'
-chain_f = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_xipm_gtyPLonly_fidcuts_HM_delz_m_IA_P0A_P0z_P0m_alphigh_highbpl_al1_PLcosmo_finalrun3.txt'
-save_data_fname = 'Clyy_plot_data_xipm_gtyPLonly_fidcuts_HM_delz_m_IA_P0A_P0z_P0m_alphigh_highbpl_al1_PLcosmo_finalrun3.txt'
-save_plot_fname = 'Clyy_xipm_gtyPLonly_fidcuts_HM_delz_m_IA_P0A_P0z_P0m_alphigh_highbpl_al1_PLcosmo_finalrun3.pdf'
+pf_main = 'final_runs/params_des_ky_planckacty3_beamed_B12_highbroken.ini'
+chain_f = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_gty_only_fidcuts_HM_delz_m_IA_P0A_P0z_betaA_alphigh_highbpl_al1_PLcosmo_finalrun3.txt'
+save_data_fname = 'Clyy_plot_data_gty_only_fidcuts_HM_delz_m_IA_P0A_P0z_betaA_alphigh_highbpl_al1_PLcosmo_finalrun3.pk'
+save_plot_fname = 'Clyy_gty_only_fidcuts_HM_delz_m_IA_P0A_P0z_betaA_alphigh_highbpl_al1_PLcosmo_finalrun3.pdf'
 
 pf_def = 'params_default.ini'
 mp = makeplot(pf_dir, pf_main, pf_def)
@@ -299,7 +299,7 @@ mp = makeplot(pf_dir, pf_main, pf_def)
 nsample = get_nsample(chain_f)
 nsamps = nsample
 # nsamps = 500
-l_array, Clyy_low, Clyy_high, Clyy_fid = mp.get_Clyy_mat(chain_file=chain_f, nsamps=nsamps)
+l_array, Clyy_low, Clyy_high, Clyy_fid = mp.get_Clyy_mat(chain_file=chain_f, nsamps=nsamps,num_pool=64)
 
 savedict = {'l':l_array, 'Clyy_low':Clyy_low,'Clyy_high':Clyy_high,'Clyy_fid':Clyy_fid}
 

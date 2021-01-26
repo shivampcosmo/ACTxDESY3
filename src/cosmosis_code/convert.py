@@ -40,12 +40,14 @@ def execute(block, config):
         for i in (config[conversion_dict[key][1]]):
             for j in (config[conversion_dict[key][2]]):
                 try:
+
                     xcoord_array = block.get_double_array_1d(config['sec_save_name'], "xcoord_" + key + '_bin_' + str(i) + '_' + str(j))
                     corrf_stat =  block.get_double_array_1d(config['sec_save_name'],'theory_corrf_' + key + '_bin_' + str(i) + '_' +str(j))
                     # the following lines are to convert the convention i_0 for shear x y in Shivam's code and i_i for cosmosis.
                     #print (i,j,key)
                     ix = copy.copy(i)
                     jx = copy.copy(j)
+                    m_tot=1.
                     if key=='kk':
                         try:
                             m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(ix)]))*(1.+(block['shear_calibration_parameters', "m{}".format(jx)]))
@@ -70,14 +72,34 @@ def execute(block, config):
                                 m_tot = (1.+(block['shear_calibration_parameters', "m{}".format(jx)]))
                         except:
                             m_tot=1.
+
+                    if (key=='gy2') or (key=='gy1'):
+                        try:
+                            if ((np.int(i) ==0) and (np.int(j)==0)):
+                                ix =1
+                                jx =1
+                                m_tot = 1.
+                            if ((np.int(i) ==0) and (np.int(j)!=0)):
+                                ix = copy.copy(j)                                
+                            if ((np.int(i) !=0) and (np.int(j)==0)):
+                                jx = copy.copy(i)
+                        except:
+                            m_tot=1.                            
                     #print (m_tot)
                     # save to block.
+                    # if config['verbose']:
+                    #     print(name_stat, name)
                     name = 'bin_%d_%d' % (np.int(ix), np.int(jx))
                     block[name_stat, name] = corrf_stat*m_tot
                     name = 'bin_%d_%d' % (np.int(jx), np.int(ix))	
                     block[name_stat, name] = corrf_stat*m_tot
+                    
                     # import ipdb; ipdb.set_trace() # BREAKPOINT
                 except:
+                    # if config['verbose']:
+                    #     if name_stat == 'galaxy_xi':
+                    #         import ipdb; ipdb.set_trace()
+                    #     print(name_stat)
                     pass
                     if config['verbose']:
                         print ('warning : '+ key + '_bin_' + str(i) + '_' + str(j)+ ' not predicted by theory code.')
@@ -116,6 +138,9 @@ def execute(block, config):
             pass
     if config['verbose']:
         print ('done conversion module')
+    
+    # import pdb; pdb.set_trace()
+
     return 0
 def cleanup(config):
     pass

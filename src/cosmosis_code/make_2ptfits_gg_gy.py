@@ -3,6 +3,8 @@ sys.path.append(os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/cosmosis_code/2
 import twopoint
 import pickle as pk
 from astropy.io import fits as pf
+from astropy.io import fits
+import scipy as sp
 # load template *****
 fiducial = pf.open('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/data/fiducial_maglim_cov_sourcesv040.fits')
 # load n(z) ******
@@ -24,21 +26,30 @@ for i in range(4):
     Nz.append(nz_e)
 nz_full  = twopoint.NumberDensity("nz_source", fiducial['nz_source'].data['Z_LOW'], fiducial['nz_source'].data['Z_MID'], fiducial['nz_source'].data['Z_HIGH'], Nz)
 
+zmin_bins = np.array([0.20, 0.40, 0.55, 0.70, 0.85, 0.95])
+zmax_bins = np.array([0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ])
+
+fname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_data.fits'
+df = fits.open(fname)
+zcgal_all = df[1].data['z_cgal']
+datapoint_z_all = df[1].data['z_dnf_mean_sof']
+zc_edges_all = np.hstack((fiducial['nz_lens'].data['Z_LOW'],fiducial['nz_lens'].data['Z_HIGH'][-1]))
 Nz = []
 from scipy.interpolate import interp1d
-for i in range(6):
-    Nz.append(fiducial['nz_lens'].data['BIN{0}'.format(i+1)])
+for i in range(len(zmin_bins)):
+    ind_bin = np.where((datapoint_z_all > zmin_bins[i]) & (datapoint_z_all < zmax_bins[i]))[0]
+    zc_bin = zcgal_all[ind_bin]
+    
+    nz_hist, hist_edges = np.histogram(zc_bin, bins=zc_edges_all)
+    nz_hist_norm = nz_hist / (sp.integrate.simps(nz_hist,fiducial['nz_lens'].data['Z_MID']))
+    Nz.append(nz_hist_norm)
 nz_LENS  = twopoint.NumberDensity("nz_lens", fiducial['nz_lens'].data['Z_LOW'], fiducial['nz_lens'].data['Z_MID'], fiducial['nz_lens'].data['Z_HIGH'], Nz)
 # this is to use the same theta as in the theory code - 
 import math
 
-theta = np.array([  0.5823474 ,   0.72831757,   0.91087637,   1.13919503,
-         1.42474364,   1.78186737,   2.2285071 ,   2.78710075,
-         3.48571051,   4.35943255,   5.45216021,   6.81878906,
-         8.52797469,  10.66558176,  13.33899765,  16.68252725,
-        20.86414007,  26.09390858,  32.63456162,  40.81468321,
-        51.04521963,  63.84012424,  79.84217705,  99.85527615,
-       124.88482334, 156.18823262])
+theta = np.array([0.61323842,  0.88152532,  1.27314055,  1.83433814,  2.64195147,
+        3.8078711 ,  5.484779  ,  7.90280216, 11.38533148, 16.40379712,
+       23.63340958, 34.04841214])
 
 import pickle
 def load_obj(name):
@@ -82,7 +93,7 @@ count =0
 save_dir = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/results/'
 cat_tocorr = 'maglim'
 do_jk = True
-njk = 150
+njk = 500
 put_weights_datapoints = False
 nside_ymap = 4096
 mask_type = 'act'
@@ -101,30 +112,41 @@ filenames = []
 for j in range(len(minz_all)):
     minz = minz_all[j]
     maxz = maxz_all[j]
-    file_suffix_save = '_cat_' + str(cat_tocorr) + '_z_' + str(minz) + '_' + str(maxz) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints)) + '_beam' + str(2.4)   
+    # file_suffix_save = '_cat_' + str(cat_tocorr) + '_z_' + str(minz) + '_' + str(maxz) + '_' + 'dojk_' + str(do_jk) + '_njk_' + str(njk)  + '_' + 'desy3' + '_w' + str(int(put_weights_datapoints)) + '_beam' + str(2.4)   
 
-    if do_gg:
-        filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
-    else:
-        filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
+    # if do_gg:
+    #     filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
+    # else:
+    #     filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
+    filename = save_dir + 'dy/dy_dd_MICEy_nobeam_nside4096_mask_act__cat_maglim_z_' + str(minz) + '_' + str(maxz) + '_dojk_True_njk_500_desy3_w1_beam0_ns4096_v16Jan21.pk'
     filenames.append(filename)
 
-nbins = 6
+nbins = len(zmin_bins)
+ntheta = len(theta)
+n_tot = nbins * ntheta * 2
+cov_total = np.zeros((n_tot,n_tot)) 
+
 for l in range(nbins): 
+    print('opening bin ' + str(l+1))
     filename = filenames[l]
     try:
         haloydata = pk.load(open(filename, "rb"))
     except:
         haloydata = pk.load(open(filename, "rb"),encoding='latin1')
 
-    ggcorr = haloydata['xi_gg_full']
+    ggcorr = haloydata['xi_gg']
     store_gg["{0} {1}".format(l,l)] = ggcorr
-
-    dytruth = haloydata['dytruth']
-    randytruth = haloydata['randytruth']
-    xi_dytruth = dytruth.xi - randytruth.xi
+    # dytruth = haloydata['dytruth']
+    # randytruth = haloydata['randytruth']
+    cov_totalj = haloydata['cov_total']
+    xi_dytruth = haloydata['xi_dy']
     store_tsz["{0}".format(l)] = dict()
     store_tsz["{0}".format(l)]["tsz"] = xi_dytruth
+    print(cov_totalj.shape)
+    cov_total[l*ntheta:(l+1)*ntheta,l*ntheta:(l+1)*ntheta] = cov_totalj[0:12,0:12]
+    cov_total[(l+nbins)*ntheta:(l+1+nbins)*ntheta,(l+nbins)*ntheta:(l+1+nbins)*ntheta] = cov_totalj[12:,12:]
+    cov_total[l*ntheta:(l+1)*ntheta,(l+nbins)*ntheta:(l+1+nbins)*ntheta] = cov_totalj[0:12,:][:,12:]
+    cov_total[(l+nbins)*ntheta:(l+1+nbins)*ntheta,l*ntheta:(l+1)*ntheta] = cov_totalj[12:,:][:,0:12]
 
 angular_bins = len(theta)
 tsz_dv = np.zeros(angular_bins*nbins)
@@ -167,73 +189,88 @@ tsz_m = twopoint.SpectrumMeasurement('compton_galaxy', (tsz_bin1, tsz_bin2),
 print ('done')
 
 
-
-
-
-path_results = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/results/'
-dd = pickle.load(open(path_results +'DV_obj_temp_all_MICE_maglim_gg_gy_zevhod_actbeam_wcov_corrnbar.pk','rb'),fix_imports=True,encoding='latin')
-ind_th_sel = np.where((dd.fftcovtot_dict['gy_gy']['theta'] > 0.55) & (dd.fftcovtot_dict['gy_gy']['theta'] < 157.0))[0]
-n_tot = angular_bins*nbins+angular_bins*nbins
-cov_theory = np.zeros((n_tot,n_tot))     
-comb = []
-for l in range(nbins):
-    comb.append([l,l,'gg','gg'])
-for l in range(nbins):
-    comb.append([l,-1,'gg','gy'])
-for i,c1 in enumerate(comb):
-    for j,c2 in enumerate(comb):
-        count = False
-        c_mute = np.zeros(((angular_bins),(angular_bins)))
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[1]+1) + '_' + str(c1[0]+1) + '_' + str(c2[1]+1) + '_' + str(c2[0]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[1]+1) + '_' + str(c2[0]+1) + '_' + str(c1[1]+1) + '_' + str(c1[0]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[0]+1) + '_' + str(c2[1]+1) + '_' + str(c1[0]+1) + '_' + str(c1[1]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[1]+1) + '_' + str(c2[0]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c1[1]+1) + '_' + str(c1[0]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        try:
-            c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[0]+1) + '_' + str(c2[1]+1) + '_' + str(c1[1]+1) + '_' + str(c1[0]+1)][ind_th_sel, :][:,ind_th_sel]
-            count = True
-        except:
-            pass
-        cov_theory[i*angular_bins:(i+1)*angular_bins,j*angular_bins:(j+1)*angular_bins] = c_mute
 obj = twopoint.TwoPointFile([wtheta,tsz_m], [nz_full,nz_LENS], windows=None, covmat_info=None)
 names = [s.name for s in obj.spectra]
 lengths = [len(s) for s in obj.spectra]
 n = sum(lengths)
-obj.covmat_info = twopoint.CovarianceMatrixInfo("COVMAT", names, lengths, cov_theory)
+obj.covmat_info = twopoint.CovarianceMatrixInfo("COVMAT", names, lengths, cov_total)
+
+path_results = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/results/'
+
 import os
 try:
-    os.remove(path_results + 'Maglim_ACT_MICE_actarea_theorycov_corrnbar.fits')
+    os.remove(path_results + 'Maglim_ACT_MICE_actarea_JKcov.fits')
 except:
     pass
-obj.to_fits(path_results + 'Maglim_ACT_MICE_actarea_theorycov_corrnbar.fits') 
+obj.to_fits(path_results + 'Maglim_ACT_MICE_actarea_JKcov.fits') 
+
+
+
+
+# path_results = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/results/'
+# dd = pickle.load(open(path_results +'DV_obj_temp_all_MICE_maglim_gg_gy_zevhod_actbeam_wcov_corrnbar.pk','rb'),fix_imports=True,encoding='latin')
+# ind_th_sel = np.where((dd.fftcovtot_dict['gy_gy']['theta'] > 0.55) & (dd.fftcovtot_dict['gy_gy']['theta'] < 157.0))[0]
+# n_tot = angular_bins*nbins+angular_bins*nbins
+# cov_theory = np.zeros((n_tot,n_tot))     
+# comb = []
+# for l in range(nbins):
+#     comb.append([l,l,'gg','gg'])
+# for l in range(nbins):
+#     comb.append([l,-1,'gg','gy'])
+# for i,c1 in enumerate(comb):
+#     for j,c2 in enumerate(comb):
+#         count = False
+#         c_mute = np.zeros(((angular_bins),(angular_bins)))
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[1]+1) + '_' + str(c1[0]+1) + '_' + str(c2[1]+1) + '_' + str(c2[0]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[1]+1) + '_' + str(c2[0]+1) + '_' + str(c1[1]+1) + '_' + str(c1[0]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[0]+1) + '_' + str(c2[1]+1) + '_' + str(c1[0]+1) + '_' + str(c1[1]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c1[3],c2[3])]['bin_' + str(c1[0]+1) + '_' + str(c1[1]+1) + '_' + str(c2[1]+1) + '_' + str(c2[0]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c1[1]+1) + '_' + str(c1[0]+1) + '_' + str(c2[0]+1) + '_' + str(c2[1]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         try:
+#             c_mute = dd.fftcovtot_dict['{0}_{1}'.format(c2[3],c1[3])]['bin_' + str(c2[0]+1) + '_' + str(c2[1]+1) + '_' + str(c1[1]+1) + '_' + str(c1[0]+1)][ind_th_sel, :][:,ind_th_sel]
+#             count = True
+#         except:
+#             pass
+#         cov_theory[i*angular_bins:(i+1)*angular_bins,j*angular_bins:(j+1)*angular_bins] = c_mute
+# obj = twopoint.TwoPointFile([wtheta,tsz_m], [nz_full,nz_LENS], windows=None, covmat_info=None)
+# names = [s.name for s in obj.spectra]
+# lengths = [len(s) for s in obj.spectra]
+# n = sum(lengths)
+# obj.covmat_info = twopoint.CovarianceMatrixInfo("COVMAT", names, lengths, cov_theory)
+# import os
+# try:
+#     os.remove(path_results + 'Maglim_ACT_MICE_actarea_theorycov_corrnbar.fits')
+# except:
+#     pass
+# obj.to_fits(path_results + 'Maglim_ACT_MICE_actarea_theorycov_corrnbar.fits') 
 

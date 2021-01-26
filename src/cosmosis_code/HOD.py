@@ -96,7 +96,8 @@ class HOD:
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fcen'] * 0.5 * (1 + erfval)
         elif self.hod_type == 'EVOLVE_HOD':
-            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
+            # Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
+            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk','rb'))['fcen_interp']
             Ncm = np.zeros_like(M_val)
             for j in range(len(self.z_array)):
                 Ncm[j,:] = np.exp(Ncm_interp((self.z_array[j]), np.log(M_val[j,:]),grid=False))
@@ -119,8 +120,9 @@ class HOD:
             M1 = 10 ** (self.hod_params['logM1'])
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
             # removing the fcen factor from the definition of satellite galaxies
-            # Nsm *= Ncm/(self.hod_params['fcen'])
-            Nsm *= Ncm
+            Nsm *= Ncm/(self.hod_params['fcen'])
+            # import ipdb; ipdb.set_trace()
+            # Nsm *= Ncm
             # Nsm = (M_val / (10 ** (self.hod_params['logM1']))) ** self.hod_params['alpha_g'])
             # erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             # Ncerf = 0.5 * (1 + erfval)
@@ -143,7 +145,6 @@ class HOD:
             # alpha = self.hod_params['alpha_g_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['alpha_g_alpha_z'])) 
             # alpha = np.tile(alpha.reshape(self.nz, 1), (1, self.nm))
 
-
             logmmin = self.hod_params['logMmin_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logMmin_alpha_z']) 
             # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
             siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['sig_logM_alpha_z']) 
@@ -154,13 +155,15 @@ class HOD:
             # alpha = np.tile(alpha.reshape(self.nz, 1), (1, self.nm))
             Ncm =  0.5 * (1. + sp.special.erf((np.log10(M_val) - logmmin)/siglogm))
             Nsm = Ncm * ( M_val / 10**logM1)**alpha
+            # import ipdb; ipdb.set_trace()
 
         elif self.hod_type == 'DES_GGL':
             M1 = 10 ** (self.hod_params['logM1'])
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
 
         elif self.hod_type == 'EVOLVE_HOD':
-            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
+            # Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
+            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk', 'rb'))['fsat_interp']
             Nsm = np.zeros_like(M_val)
             for j in range(len(self.z_array)):
                 Nsm[j, :] = np.exp(Nsm_interp((self.z_array[j]), np.log(M_val[j, :]), grid=False))

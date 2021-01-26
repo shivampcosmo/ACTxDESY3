@@ -329,7 +329,6 @@ def setup(options):
 
 def execute(block, config):
     ini_info, returndict = config
-
     bins_source, bins_lens, z_edges = returndict['bins_source'], returndict['bins_lens'], returndict['z_edges']
     gg_doauto = returndict['gg_doauto']
     twopt_file = returndict['twopt_file']
@@ -477,6 +476,7 @@ def execute(block, config):
                 other_params_dict_bin['ng_value'] = block['nz_lens', 'bin_' + str(binv_lens)]
                 other_params_dict_bin['ng_zarray'] = block['nz_lens', 'z']
             other_params_dict_bin['ng_zarray_source'] = block['nz_source', 'z']
+
             if ('nz_source', 'bin_' + str(binvs)) in block.keys():
                 other_params_dict_bin['ng_value_source'] = block['nz_source', 'bin_' + str(binvs)]
             else:
