@@ -1,0 +1,4 @@
+#parameter mean std_dev
+#/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_sz_shear_planckxdesy3_grid_v0p4_P0az_narrow_gtyonly_hres2.txt
+theory_yx--p0-a_m0   1.486664e+01   2.960212e+00
+theory_yx--p0-alpha_z0   5.310752e-02   1.149091e+00

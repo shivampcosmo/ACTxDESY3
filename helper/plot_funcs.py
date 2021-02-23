@@ -12,9 +12,9 @@ Color = ['#0072b1', '#009d73', '#d45e00', 'k', 'grey', 'yellow']
 # matplotlib.rcParams['text.latex.unicode'] = True
 
 
-matplotlib.rcParams['text.usetex'] = False
-matplotlib.rcParams['text.latex.unicode'] = False
-
+#matplotlib.rcParams['text.usetex'] = False
+#matplotlib.rcParams['text.latex.unicode'] = False
+#
 
 # font = {'size': 18}
 # matplotlib.rc('font', **font)

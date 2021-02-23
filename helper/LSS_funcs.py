@@ -9,6 +9,11 @@ from camb import model
 from scipy.integrate import simps as _simps
 from scipy.interpolate import InterpolatedUnivariateSpline as _spline
 import pdb
+import numpy as np
+import scipy
+import cmath
+from mcfit import xi2P
+from mcfit import P2xi
 # from numba import vectorize, float64
 # from numba import jit
 
@@ -473,10 +478,10 @@ def get_PkNL_zarray(z_mean_array, karr, current_cosmo=Planck15, Pklinz0=None):
     Omega_L = current_cosmo.Ode0
     Omlh2 = Omega_L * ((H0 / 100) ** 2)
 
-    if current_cosmo == 'MICEcosmo':
-        nsval = current_cosmo.ns
-    else:
-        nsval = 0.965
+    # if current_cosmo == 'MICEcosmo':
+    nsval = current_cosmo.ns
+    # else:
+    #     nsval = 0.965
 
     Pklinz_z0_test = get_Pklinz(0.0, karr, current_cosmo=current_cosmo)
 
@@ -553,11 +558,28 @@ def get_ukm_g(r_max, k_val, conc):
     return valf
 
 
+## fourier transform of halo mass profile : notation adhere to Cooray-Sheth '01
+#def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
+#    nz, nm = conc_mat.shape
+#    k_mat = np.tile(k_array.reshape(nz, 1), (1, nm))
+#    rs_mat = rsg_rs * r_max_mat / conc_mat
+#    coeff = 1. / (np.log(1. + conc_mat) - (conc_mat / (1. + conc_mat)))
+#    (s1, c1) = sp.special.sici((1. + conc_mat) * rs_mat * k_mat)
+#    (s2, c2) = sp.special.sici(k_mat * rs_mat)
+#    sin1 = np.sin(k_mat * rs_mat)
+#    cos1 = np.cos(k_mat * rs_mat)
+#    sin2 = np.sin(conc_mat * k_mat * rs_mat)
+#    valf = coeff * (sin1 * (s1 - s2) - (sin2 / ((1. + conc_mat) * k_mat * rs_mat)) + cos1 * (c1 - c2))
+#    return valf
+#
+
 # fourier transform of halo mass profile : notation adhere to Cooray-Sheth '01
-def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
-    nz, nm = conc_mat.shape
+def get_ukmz_g_mat(r_max_mat, k_array, conc_mat_dm,rsg_rs):
+    nz, nm = conc_mat_dm.shape
     k_mat = np.tile(k_array.reshape(nz, 1), (1, nm))
-    rs_mat = rsg_rs * r_max_mat / conc_mat
+    rs_dm_mat = r_max_mat/conc_mat_dm
+    conc_mat = conc_mat_dm / rsg_rs
+    rs_mat =  r_max_mat / conc_mat
     coeff = 1. / (np.log(1. + conc_mat) - (conc_mat / (1. + conc_mat)))
     (s1, c1) = sp.special.sici((1. + conc_mat) * rs_mat * k_mat)
     (s2, c2) = sp.special.sici(k_mat * rs_mat)
@@ -567,6 +589,24 @@ def get_ukmz_g_mat(r_max_mat, k_array, conc_mat,rsg_rs):
     valf = coeff * (sin1 * (s1 - s2) - (sin2 / ((1. + conc_mat) * k_mat * rs_mat)) + cos1 * (c1 - c2))
     return valf
 
+# fourier transform of halo mass profile : notation adhere to Cooray-Sheth '01
+def get_ukmz_g_kmat(r_max_mat, k_array, conc_mat_dm,rsg_rs):
+    nz, nm = conc_mat_dm.shape
+    nk = len(k_array)
+    k_mat = np.tile(k_array.reshape(1, nk, 1), (nz, 1, nm))
+    r_max_mat = np.tile(r_max_mat.reshape(nz, 1, nm), (1, nk, 1))
+    conc_mat_dm = np.tile(conc_mat_dm.reshape(nz, 1, nm), (1, nk, 1))
+    rs_dm_mat = r_max_mat/conc_mat_dm
+    conc_mat = conc_mat_dm / rsg_rs
+    rs_mat =  r_max_mat / conc_mat
+    coeff = 1. / (np.log(1. + conc_mat) - (conc_mat / (1. + conc_mat)))
+    (s1, c1) = sp.special.sici((1. + conc_mat) * rs_mat * k_mat)
+    (s2, c2) = sp.special.sici(k_mat * rs_mat)
+    sin1 = np.sin(k_mat * rs_mat)
+    cos1 = np.cos(k_mat * rs_mat)
+    sin2 = np.sin(conc_mat * k_mat * rs_mat)
+    valf = coeff * (sin1 * (s1 - s2) - (sin2 / ((1. + conc_mat) * k_mat * rs_mat)) + cos1 * (c1 - c2))
+    return valf
 
 def get_nz_g_2mrs(z, m, n, z0):
     val = (n / (z0 * sp.special.gamma((m + 1.) / n))) * ((z / z0) ** m) * np.exp(-1. * (z / z0) ** n)
@@ -591,6 +631,19 @@ def get_nfw_rm(r, m, halo_conc, rhovir):
 
     return rhorm
 
+
+def get_nfw_rm_full(r, m, halo_conc, rhovir):
+    # mstar = 0.2985*np.power(10,13)
+    c = halo_conc
+    rvir3 = 3 * m / (4 * np.pi * rhovir)
+    rvir = np.power(rvir3, 1. / 3.)
+
+    rs = rvir / c
+    rhos = m / (4 * np.pi * (rs ** 3) * (np.log(1 + c) - (c / (1 + c))))
+    denom = (r / rs) * ((1 + (r / rs)) * (1 + (r / rs)))
+    rhorm = rhos / denom
+
+    return rhorm
 
 # def rhoav(dndm, Marrh):
 #     valf = sp.integrate.simps(dndm * Marrh, Marrh)
@@ -761,4 +814,52 @@ def get_wplin_interp(nu, pkzlin_interp):
 #     temp_mat = l * x_mat / l500c_mat
 #     val = (x_mat ** 2) * y3d_mat * np.sin(temp_mat) / temp_mat
 #     return val
+
+def g_n(n,phi):
+    x = np.linspace(0,2*np.pi,1000)
+    f = np.cos(2*x)*(np.cos(phi-x))**n
+    return np.trapz(f,x)/np.cos(2*phi)
+
+def I(a,b):
+    x = np.linspace(-1,1,10000)
+    f = (1-x**2)**(0.5*a)*x**b
+    return np.trapz(f,x)
+
+def fl(l,theta,phi):
+    wm = 0
+    for m in range(l+1):
+        wg = 0.
+        for j in range(m+1):
+            wg+= scipy.special.binom(m,j)*g_n(j,phi)*I(j+1,m-j)*np.sin(theta)**j*np.cos(theta)**(m-j)
+        wm += scipy.special.binom(l, m)*scipy.special.binom(0.5*(l+m-1.),l)*wg
+    return 2**l* cmath.exp(1j*2*phi)*wm
+
+def gamma_r(A_IA,r,r_vir):
+    gr = A_IA*(r/r_vir)**(-2)
+    gr[r<0.06] = A_IA*(0.06/r_vir)**(-2)
+    gr[gr>0.3] = 0.3
+    return gr
+
+def takefft(A_IA,M,c,rho_crit, Dv=200, nk=2000):
+    r_array = np.logspace(-3.0,3.0,nk)
+    rv = (M/(Dv * rho_crit * 4*np.pi/3.))**(1./3.)
+    rs = rv/c
+    rho_s = (M/(4.*np.pi*rs**3))*(np.log(1. + c) - c/(1.+c))
+    u_rm = (1./M) * rho_s*((r_array/rs)**-1)*((1. + (r_array/rs))**-3)
+    ind_gtrv = np.where(r_array > rv)[0]
+    u_rm[ind_gtrv] = 0.
+    ell_array = np.arange(6)
+    ulkm_all = []
+    for ell in ell_array:
+        k, ulkm = xi2P(r_array, l=ell)(u_rm*gamma_r(A_IA,r_array,rv))
+        ulkm_all.append(ulkm)
+    return ulkm_all,k
+
+
+def compute_gamma_k_m(A_IA,M,c,rho_crit,Dv=200, nk=2000):
+    ulkm_all,k = takefft(A_IA,M,c,rho_crit, Dv=Dv, nk=nk)
+    gammakm = 0j*ulkm_all[0]
+    for l in range(6):
+        gammakm+=(fl(l,np.pi/2.,0.))*ulkm_all[l]*(1j**l)*(2.*l+1.)
+    return gammakm.real,k
 

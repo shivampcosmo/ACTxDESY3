@@ -15,7 +15,7 @@ import dill
 import pickle as pk
 from configobj import ConfigObj
 from configparser import ConfigParser
-
+import traceback as tb
 
 
 def get_corr(cov):
@@ -36,7 +36,7 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
     except:
         stats_array = stat_type
     corrf_theory_rdata = []
-    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord")
+
 
     # if stat_type == 'gg':
     for stat in stats_array:
@@ -44,54 +44,32 @@ def get_theory_terms(block, xcoord_data, stat_type, bins_array, sec_savename = "
         kbv = 0
         for j in range(nbins):
             bin_j = bins_array[j]
+            try:
+                if stat in ['gty','gy']:
+                    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(0))
+                    corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(0))
+                else:
+                    xcoord_array = block.get_double_array_1d(sec_savename, "xcoord_" + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+                    corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
+            except:
+                import ipdb; ipdb.set_trace() # BREAKPOINT
 
-            corrf_stat =  block.get_double_array_1d(sec_savename,'theory_corrf_' + stat + '_bin_' + str(bin_j) + '_' + str(bin_j))
             corrf_stat_temp = intspline(xcoord_array, corrf_stat)
             corrf_stat_f = corrf_stat_temp(xcoord_data[kbv])
             if len(corrf_theory_rdata) == 0:
                 corrf_theory_rdata = corrf_stat_f
             else:
                 corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_stat_f))
-
-    # if stat_type == 'gy':
-    #     nbins = len(bins_array)
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
-    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j])
-    #         if len(corrf_theory_rdata) == 0:
-    #             corrf_theory_rdata = corrf_gy_f
-    #         else:
-    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
-    #
-    # elif stat_type == 'gg_gy':
-    #     nbins = len(bins_array)
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gg = block.get_double_array_1d(sec_savename,'theory_corrfgg_bin_' + str(bin_j) + '_' + str(bin_j))
-    #         corrf_gg_temp = intspline(xcoord_array, corrf_gg)
-    #         corrf_gg_f = corrf_gg_temp(xcoord_data[j])
-    #         if len(corrf_theory_rdata) == 0:
-    #             corrf_theory_rdata = corrf_gg_f
-    #         else:
-    #             corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gg_f ))
-    #
-    #     for j in range(nbins):
-    #         bin_j = bins_array[j]
-    #         corrf_gy = block.get_double_array_1d(sec_savename,'theory_corrfgy_bin_'+ str(bin_j) + '_' + str(bin_j))
-    #         corrf_gy_temp = intspline(xcoord_array, corrf_gy)
-    #         corrf_gy_f = corrf_gy_temp(xcoord_data[j + nbins])
-    #         corrf_theory_rdata = np.hstack((corrf_theory_rdata, corrf_gy_f))
+            kbv += 1
 
     return corrf_theory_rdata
 
 
 def lnprob_func(block, xcoord_data, corrf_data_gtcut, incov_obs_comp, stat_type, bins_array,sec_save_name):
     corrf_theory_rdata = get_theory_terms(block, xcoord_data, stat_type, bins_array,sec_savename=sec_save_name)
-    # import pdb; pdb.set_trace()
     valf = -0.5 * np.dot(np.dot(np.transpose((corrf_data_gtcut - corrf_theory_rdata)), incov_obs_comp),
                          (corrf_data_gtcut - corrf_theory_rdata))
+
     return valf, corrf_theory_rdata
 
 
@@ -280,7 +258,7 @@ def setuplnprob_func(scale_cut_min, scale_cut_max, xcoord_data_array, corrf_data
     xcoord_data_comp = xcoord_data_all[selection]
     corrf_data_gtcut = corrf_data_full[selection]
     print('total number of data points=' + str(len(corrf_data_gtcut)))
-
+    # import pdb; pdb.set_trace()
     return corrf_data_gtcut, xcoord_data_comp, xcoord_data_comp_ll, incov_obs_comp, cov_obs_comp
 
 def import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_all, stat_type):
@@ -380,7 +358,7 @@ def import_data(xcoord_obs, data_obs, cov_obs, bins_to_rem, bins_to_fit, bins_al
 
 
 def setup(options):
-    bins_all = ast.literal_eval(options.get_string(option_section, "bins_numbers", "[1, 2, 3, 4, 5]"))
+    bins_all = ast.literal_eval(options.get_string(option_section, "bins_source", "[1, 2, 3, 4, 5]"))
     bins_to_fit = ast.literal_eval(options.get_string(option_section, "bins_to_fit", "[1, 2, 3, 4, 5]"))
     xcoord_comp_min = ast.literal_eval(options.get_string(option_section, "xcoord_comp_min", "[0,0,0,0,0,0,0,0,0,0]"))
     xcoord_comp_max = ast.literal_eval(
@@ -415,17 +393,19 @@ def setup(options):
                                                                                               no_cov_zbins_only_auto_cross=no_cov_zbins_only_auto_cross,
                                                                                               no_cov_zbins_all=no_cov_zbins_all,
                                                                                               no_cov_auto_cross=no_cov_auto_cross)
-    # import pdb; pdb.set_trace()
+#    import ipdb; ipdb.set_trace()
 
     return data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name
 
 
 def execute(block, config):
     data_obs_comp, xcoord_obs_comp, xcoord_obs_comp_ll, incov_obs_comp, cov_obs_comp, stat_type, bins_to_fit, sec_save_name = config
-
-    like3d, corrf_theory_rdata = lnprob_func(block, xcoord_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
+    try:
+        like3d, corrf_theory_rdata = lnprob_func(block, xcoord_obs_comp_ll, data_obs_comp, incov_obs_comp, stat_type, bins_to_fit,sec_save_name)
+    except:
+        print(tb.format_exc())
     chi2 = -2. * like3d
-
+    # print(block['theory_yx','P0-A_m--0'],block['theory_yx','beta-A_m--0'],like3d)
     likes = names.likelihoods
     block[likes, 'SZ_LIKE'] = like3d
     block[likes, 'SZ_CHI2'] = chi2

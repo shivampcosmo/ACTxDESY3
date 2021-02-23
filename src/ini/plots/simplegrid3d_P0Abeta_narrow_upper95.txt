@@ -1,0 +1,5 @@
+#parameter upper95
+#/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_sz_shear_planckxdesy3_grid_v0p4_P0betaA.txt
+halo_model_parameters--a     3.5448
+theory_yx--p0-a_m0     23.0236
+theory_yx--beta-a_m0     4.87393

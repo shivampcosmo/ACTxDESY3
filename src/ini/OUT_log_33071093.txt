@@ -1,0 +1,681 @@
+Setting up python 3 environment (if you are old-fashioned and want python2, source this script with the argument '2' and delete env3 if present)
+
+CosmoSIS initialized
+
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+ MultiNest Warning: no resume file found, starting from scratch
+ *****************************************************
+ MultiNest v3.10
+ Copyright Farhan Feroz & Mike Hobson
+ Release Jul 2015
+
+ no. of live points =  128
+ dimensionality =   16
+ *****************************************************
+ Starting MultiNest
+ generating live points
+ live points generated, starting sampling
+Acceptance Rate:                        0.946809
+Replacements:                                178
+Total Samples:                               188
+Nested Sampling ln(Z):             -16840.348726
+Importance Nested Sampling ln(Z):    -339.058086 +/-  0.998045
+Acceptance Rate:                        0.838235
+Replacements:                                228
+Total Samples:                               272
+Nested Sampling ln(Z):              -3438.239841
+Importance Nested Sampling ln(Z):    -346.210150 +/-  0.999023
+Acceptance Rate:                        0.763736
+Replacements:                                278
+Total Samples:                               364
+Nested Sampling ln(Z):              -2849.595853
+Importance Nested Sampling ln(Z):    -346.301173 +/-  0.999218
+Acceptance Rate:                        0.683333
+Replacements:                                328
+Total Samples:                               480
+Nested Sampling ln(Z):              -2286.933877
+Importance Nested Sampling ln(Z):    -346.481699 +/-  0.999442
+Acceptance Rate:                        0.623762
+Replacements:                                378
+Total Samples:                               606
+Nested Sampling ln(Z):              -1796.646232
+Importance Nested Sampling ln(Z):    -346.871015 +/-  0.999609
+Acceptance Rate:                        0.586301
+Replacements:                                428
+Total Samples:                               730
+Nested Sampling ln(Z):              -1381.515560
+Importance Nested Sampling ln(Z):    -347.108118 +/-  0.999674
+Acceptance Rate:                        0.531111
+Replacements:                                478
+Total Samples:                               900
+Nested Sampling ln(Z):              -1160.021113
+Importance Nested Sampling ln(Z):    -347.284164 +/-  0.999721
+Acceptance Rate:                        0.481313
+Replacements:                                528
+Total Samples:                              1097
+Nested Sampling ln(Z):               -972.517235
+Importance Nested Sampling ln(Z):    -347.597712 +/-  0.999756
+Acceptance Rate:                        0.417932
+Replacements:                                578
+Total Samples:                              1383
+Nested Sampling ln(Z):               -839.291672
+Importance Nested Sampling ln(Z):    -348.347869 +/-  0.999805
+Acceptance Rate:                        0.381531
+Replacements:                                628
+Total Samples:                              1646
+Nested Sampling ln(Z):               -733.595541
+Importance Nested Sampling ln(Z):    -348.646833 +/-  0.999814
+Acceptance Rate:                        0.354974
+Replacements:                                678
+Total Samples:                              1910
+Nested Sampling ln(Z):               -655.366472
+Importance Nested Sampling ln(Z):    -348.792767 +/-  0.999828
+Acceptance Rate:                        0.320846
+Replacements:                                728
+Total Samples:                              2269
+Nested Sampling ln(Z):               -599.441926
+Importance Nested Sampling ln(Z):    -349.012698 +/-  0.999828
+Acceptance Rate:                        0.288576
+Replacements:                                778
+Total Samples:                              2696
+Nested Sampling ln(Z):               -547.937571
+Importance Nested Sampling ln(Z):    -349.358842 +/-  0.999836
+Acceptance Rate:                        0.269093
+Replacements:                                828
+Total Samples:                              3077
+Nested Sampling ln(Z):               -511.415427
+Importance Nested Sampling ln(Z):    -329.628176 +/-  0.809703
+Acceptance Rate:                        0.255902
+Replacements:                                878
+Total Samples:                              3431
+Nested Sampling ln(Z):               -483.546151
+Importance Nested Sampling ln(Z):    -323.080627 +/-  0.998455
+Acceptance Rate:                        0.235056
+Replacements:                                928
+Total Samples:                              3948
+Nested Sampling ln(Z):               -459.515499
+Importance Nested Sampling ln(Z):    -283.707621 +/-  0.991122
+Acceptance Rate:                        0.223492
+Replacements:                                978
+Total Samples:                              4376
+Nested Sampling ln(Z):               -435.042250
+Importance Nested Sampling ln(Z):    -284.123617 +/-  0.991042
+Acceptance Rate:                        0.221028
+Replacements:                               1028
+Total Samples:                              4651
+Nested Sampling ln(Z):               -410.400610
+Importance Nested Sampling ln(Z):    -284.335339 +/-  0.988752
+Acceptance Rate:                        0.210835
+Replacements:                               1078
+Total Samples:                              5113
+Nested Sampling ln(Z):               -388.230189
+Importance Nested Sampling ln(Z):    -258.199440 +/-  0.999930
+Acceptance Rate:                        0.205877
+Replacements:                               1128
+Total Samples:                              5479
+Nested Sampling ln(Z):               -368.782062
+Importance Nested Sampling ln(Z):    -258.199149 +/-  0.999643
+Acceptance Rate:                        0.199391
+Replacements:                               1178
+Total Samples:                              5908
+Nested Sampling ln(Z):               -354.036244
+Importance Nested Sampling ln(Z):    -258.199184 +/-  0.999681
+Acceptance Rate:                        0.194643
+Replacements:                               1228
+Total Samples:                              6309
+Nested Sampling ln(Z):               -342.250859
+Importance Nested Sampling ln(Z):    -256.636174 +/-  0.817720
+Acceptance Rate:                        0.190604
+Replacements:                               1278
+Total Samples:                              6705
+Nested Sampling ln(Z):               -326.792353
+Importance Nested Sampling ln(Z):    -237.138335 +/-  0.999945
+Acceptance Rate:                        0.185630
+Replacements:                               1328
+Total Samples:                              7154
+Nested Sampling ln(Z):               -318.384379
+Importance Nested Sampling ln(Z):    -237.572434 +/-  0.999948
+Acceptance Rate:                        0.181818
+Replacements:                               1378
+Total Samples:                              7579
+Nested Sampling ln(Z):               -310.128364
+Importance Nested Sampling ln(Z):    -237.981071 +/-  0.999951
+Acceptance Rate:                        0.175949
+Replacements:                               1428
+Total Samples:                              8116
+Nested Sampling ln(Z):               -302.404611
+Importance Nested Sampling ln(Z):    -238.363277 +/-  0.993733
+Acceptance Rate:                        0.164955
+Replacements:                               1478
+Total Samples:                              8960
+Nested Sampling ln(Z):               -294.752716
+Importance Nested Sampling ln(Z):    -238.912291 +/-  0.993810
+Acceptance Rate:                        0.159649
+Replacements:                               1528
+Total Samples:                              9571
+Nested Sampling ln(Z):               -289.023470
+Importance Nested Sampling ln(Z):    -239.188215 +/-  0.993835
+Acceptance Rate:                        0.154297
+Replacements:                               1578
+Total Samples:                             10227
+Nested Sampling ln(Z):               -283.797634
+Importance Nested Sampling ln(Z):    -236.888110 +/-  0.950075
+Acceptance Rate:                        0.151611
+Replacements:                               1628
+Total Samples:                             10738
+Nested Sampling ln(Z):               -279.163289
+Importance Nested Sampling ln(Z):    -236.892506 +/-  0.954042
+Acceptance Rate:                        0.148050
+Replacements:                               1678
+Total Samples:                             11334
+Nested Sampling ln(Z):               -273.543120
+Importance Nested Sampling ln(Z):    -236.888913 +/-  0.950628
+Acceptance Rate:                        0.144954
+Replacements:                               1728
+Total Samples:                             11921
+Nested Sampling ln(Z):               -268.699811
+Importance Nested Sampling ln(Z):    -236.884851 +/-  0.946786
+Acceptance Rate:                        0.140309
+Replacements:                               1778
+Total Samples:                             12672
+Nested Sampling ln(Z):               -264.925187
+Importance Nested Sampling ln(Z):    -234.259044 +/-  0.929627
+Acceptance Rate:                        0.136704
+Replacements:                               1828
+Total Samples:                             13372
+Nested Sampling ln(Z):               -261.560750
+Importance Nested Sampling ln(Z):    -234.535074 +/-  0.908790
+Acceptance Rate:                        0.132928
+Replacements:                               1878
+Total Samples:                             14128
+Nested Sampling ln(Z):               -256.950660
+Importance Nested Sampling ln(Z):    -234.472506 +/-  0.652851
+Acceptance Rate:                        0.130077
+Replacements:                               1928
+Total Samples:                             14822
+Nested Sampling ln(Z):               -253.984319
+Importance Nested Sampling ln(Z):    -234.787448 +/-  0.633113
+Acceptance Rate:                        0.128125
+Replacements:                               1978
+Total Samples:                             15438
+Nested Sampling ln(Z):               -251.217356
+Importance Nested Sampling ln(Z):    -235.134310 +/-  0.602706
+Acceptance Rate:                        0.124992
+Replacements:                               2028
+Total Samples:                             16225
+Nested Sampling ln(Z):               -247.881974
+Importance Nested Sampling ln(Z):    -230.977046 +/-  0.979991
+Acceptance Rate:                        0.121279
+Replacements:                               2078
+Total Samples:                             17134
+Nested Sampling ln(Z):               -245.084933
+Importance Nested Sampling ln(Z):    -231.305680 +/-  0.777730
+Acceptance Rate:                        0.118876
+Replacements:                               2128
+Total Samples:                             17901
+Nested Sampling ln(Z):               -242.752502
+Importance Nested Sampling ln(Z):    -231.614392 +/-  0.733451
+Acceptance Rate:                        0.114764
+Replacements:                               2178
+Total Samples:                             18978
+Nested Sampling ln(Z):               -240.465777
+Importance Nested Sampling ln(Z):    -229.909882 +/-  0.763198
+Acceptance Rate:                        0.112514
+Replacements:                               2228
+Total Samples:                             19802
+Nested Sampling ln(Z):               -238.405835
+Importance Nested Sampling ln(Z):    -229.922883 +/-  0.582485
+Acceptance Rate:                        0.111171
+Replacements:                               2278
+Total Samples:                             20491
+Nested Sampling ln(Z):               -236.587708
+Importance Nested Sampling ln(Z):    -230.252647 +/-  0.521825
+Acceptance Rate:                        0.107918
+Replacements:                               2328
+Total Samples:                             21572
+Nested Sampling ln(Z):               -235.172284
+Importance Nested Sampling ln(Z):    -230.330733 +/-  0.420987
+Acceptance Rate:                        0.105031
+Replacements:                               2378
+Total Samples:                             22641
+Nested Sampling ln(Z):               -233.685280
+Importance Nested Sampling ln(Z):    -228.992774 +/-  0.355888
+Acceptance Rate:                        0.102942
+Replacements:                               2428
+Total Samples:                             23586
+Nested Sampling ln(Z):               -232.245835
+Importance Nested Sampling ln(Z):    -229.216592 +/-  0.315747
+Acceptance Rate:                        0.100409
+Replacements:                               2478
+Total Samples:                             24679
+Nested Sampling ln(Z):               -231.048606
+Importance Nested Sampling ln(Z):    -228.687464 +/-  0.346182
+Acceptance Rate:                        0.099102
+Replacements:                               2528
+Total Samples:                             25509
+Nested Sampling ln(Z):               -230.002774
+Importance Nested Sampling ln(Z):    -228.668460 +/-  0.276021
+Acceptance Rate:                        0.098713
+Replacements:                               2578
+Total Samples:                             26116
+Nested Sampling ln(Z):               -229.143751
+Importance Nested Sampling ln(Z):    -228.726060 +/-  0.225070
+Acceptance Rate:                        0.097265
+Replacements:                               2628
+Total Samples:                             27019
+Nested Sampling ln(Z):               -228.186179
+Importance Nested Sampling ln(Z):    -226.341893 +/-  0.903161
+Acceptance Rate:                        0.095506
+Replacements:                               2678
+Total Samples:                             28040
+Nested Sampling ln(Z):               -227.302684
+Importance Nested Sampling ln(Z):    -226.711802 +/-  0.861714
+Acceptance Rate:                        0.094173
+Replacements:                               2728
+Total Samples:                             28968
+Nested Sampling ln(Z):               -226.489828
+Importance Nested Sampling ln(Z):    -226.753152 +/-  0.598557
+Acceptance Rate:                        0.091346
+Replacements:                               2778
+Total Samples:                             30412
+Nested Sampling ln(Z):               -225.870029
+Importance Nested Sampling ln(Z):    -226.856654 +/-  0.462453
+Acceptance Rate:                        0.089068
+Replacements:                               2828
+Total Samples:                             31751
+Nested Sampling ln(Z):               -225.356449
+Importance Nested Sampling ln(Z):    -226.816564 +/-  0.365566
+Acceptance Rate:                        0.086888
+Replacements:                               2878
+Total Samples:                             33123
+Nested Sampling ln(Z):               -224.878335
+Importance Nested Sampling ln(Z):    -226.990307 +/-  0.289964
+Acceptance Rate:                        0.084796
+Replacements:                               2928
+Total Samples:                             34530
+Nested Sampling ln(Z):               -224.454220
+Importance Nested Sampling ln(Z):    -225.194575 +/-  0.815648
+Acceptance Rate:                        0.082491
+Replacements:                               2978
+Total Samples:                             36101
+Nested Sampling ln(Z):               -224.070821
+Importance Nested Sampling ln(Z):    -225.559506 +/-  0.756621
+Acceptance Rate:                        0.081387
+Replacements:                               3028
+Total Samples:                             37205
+Nested Sampling ln(Z):               -223.736960
+Importance Nested Sampling ln(Z):    -225.583785 +/-  0.591243
+Acceptance Rate:                        0.078723
+Replacements:                               3078
+Total Samples:                             39099
+Nested Sampling ln(Z):               -223.413818
+Importance Nested Sampling ln(Z):    -225.939089 +/-  0.478917
+Acceptance Rate:                        0.076235
+Replacements:                               3128
+Total Samples:                             41031
+Nested Sampling ln(Z):               -223.096983
+Importance Nested Sampling ln(Z):    -226.313449 +/-  0.344832
+Acceptance Rate:                        0.073996
+Replacements:                               3178
+Total Samples:                             42948
+Nested Sampling ln(Z):               -222.793877
+Importance Nested Sampling ln(Z):    -226.422869 +/-  0.263824
+Acceptance Rate:                        0.070422
+Replacements:                               3228
+Total Samples:                             45838
+Nested Sampling ln(Z):               -222.498331
+Importance Nested Sampling ln(Z):    -225.769379 +/-  0.506541
+Acceptance Rate:                        0.068396
+Replacements:                               3278
+Total Samples:                             47927
+Nested Sampling ln(Z):               -222.229931
+Importance Nested Sampling ln(Z):    -225.937307 +/-  0.435968
+Acceptance Rate:                        0.065816
+Replacements:                               3328
+Total Samples:                             50565
+Nested Sampling ln(Z):               -221.993036
+Importance Nested Sampling ln(Z):    -226.106096 +/-  0.335860
+Acceptance Rate:                        0.064364
+Replacements:                               3378
+Total Samples:                             52483
+Nested Sampling ln(Z):               -221.786986
+Importance Nested Sampling ln(Z):    -226.096871 +/-  0.245338
+Acceptance Rate:                        0.061316
+Replacements:                               3428
+Total Samples:                             55907
+Nested Sampling ln(Z):               -221.574498
+Importance Nested Sampling ln(Z):    -226.285649 +/-  0.170002
+Acceptance Rate:                        0.059435
+Replacements:                               3478
+Total Samples:                             58518
+Nested Sampling ln(Z):               -221.378950
+Importance Nested Sampling ln(Z):    -226.317164 +/-  0.125321
+Acceptance Rate:                        0.056858
+Replacements:                               3528
+Total Samples:                             62049
+Nested Sampling ln(Z):               -221.206982
+Importance Nested Sampling ln(Z):    -226.317503 +/-  0.091159
+Acceptance Rate:                        0.054886
+Replacements:                               3578
+Total Samples:                             65190
+Nested Sampling ln(Z):               -221.052930
+Importance Nested Sampling ln(Z):    -226.341679 +/-  0.068850
+Acceptance Rate:                        0.053048
+Replacements:                               3628
+Total Samples:                             68391
+Nested Sampling ln(Z):               -220.926337
+Importance Nested Sampling ln(Z):    -226.356935 +/-  0.059094
+Acceptance Rate:                        0.050945
+Replacements:                               3678
+Total Samples:                             72195
+Nested Sampling ln(Z):               -220.828853
+Importance Nested Sampling ln(Z):    -226.398762 +/-  0.049076
+Acceptance Rate:                        0.049625
+Replacements:                               3728
+Total Samples:                             75123
+Nested Sampling ln(Z):               -220.744803
+Importance Nested Sampling ln(Z):    -226.397319 +/-  0.044300
+Acceptance Rate:                        0.048654
+Replacements:                               3778
+Total Samples:                             77651
+Nested Sampling ln(Z):               -220.674428
+Importance Nested Sampling ln(Z):    -226.351814 +/-  0.042659
+Acceptance Rate:                        0.047411
+Replacements:                               3828
+Total Samples:                             80740
+Nested Sampling ln(Z):               -220.614776
+Importance Nested Sampling ln(Z):    -226.325749 +/-  0.039573
+Acceptance Rate:                        0.046545
+Replacements:                               3878
+Total Samples:                             83317
+Nested Sampling ln(Z):               -220.561045
+Importance Nested Sampling ln(Z):    -226.289774 +/-  0.037712
+Acceptance Rate:                        0.045716
+Replacements:                               3928
+Total Samples:                             85922
+Nested Sampling ln(Z):               -220.510562
+Importance Nested Sampling ln(Z):    -226.222131 +/-  0.036660
+Acceptance Rate:                        0.045109
+Replacements:                               3978
+Total Samples:                             88187
+Nested Sampling ln(Z):               -220.465245
+Importance Nested Sampling ln(Z):    -226.195273 +/-  0.034794
+Acceptance Rate:                        0.044440
+Replacements:                               4028
+Total Samples:                             90640
+Nested Sampling ln(Z):               -220.423605
+Importance Nested Sampling ln(Z):    -226.183370 +/-  0.033153
+Acceptance Rate:                        0.043709
+Replacements:                               4078
+Total Samples:                             93299
+Nested Sampling ln(Z):               -220.384449
+Importance Nested Sampling ln(Z):    -226.172042 +/-  0.032172
+Acceptance Rate:                        0.042565
+Replacements:                               4128
+Total Samples:                             96981
+Nested Sampling ln(Z):               -220.348790
+Importance Nested Sampling ln(Z):    -226.180882 +/-  0.031540
+Acceptance Rate:                        0.041877
+Replacements:                               4178
+Total Samples:                             99769
+Nested Sampling ln(Z):               -220.317308
+Importance Nested Sampling ln(Z):    -226.167350 +/-  0.030953
+Acceptance Rate:                        0.041054
+Replacements:                               4228
+Total Samples:                            102986
+Nested Sampling ln(Z):               -220.290188
+Importance Nested Sampling ln(Z):    -226.157428 +/-  0.030527
+Acceptance Rate:                        0.040403
+Replacements:                               4278
+Total Samples:                            105884
+Nested Sampling ln(Z):               -220.267760
+Importance Nested Sampling ln(Z):    -226.149136 +/-  0.030122
+Acceptance Rate:                        0.039456
+Replacements:                               4328
+Total Samples:                            109691
+Nested Sampling ln(Z):               -220.249445
+Importance Nested Sampling ln(Z):    -226.137851 +/-  0.029682
+Acceptance Rate:                        0.038894
+Replacements:                               4378
+Total Samples:                            112563
+Nested Sampling ln(Z):               -220.234781
+Importance Nested Sampling ln(Z):    -226.133282 +/-  0.029495
+Acceptance Rate:                        0.037939
+Replacements:                               4428
+Total Samples:                            116713
+Nested Sampling ln(Z):               -220.222978
+Importance Nested Sampling ln(Z):    -226.131404 +/-  0.029390
+Acceptance Rate:                        0.036991
+Replacements:                               4478
+Total Samples:                            121055
+Nested Sampling ln(Z):               -220.213417
+Importance Nested Sampling ln(Z):    -226.127726 +/-  0.029259
+Acceptance Rate:                        0.036605
+Replacements:                               4493
+Total Samples:                            122742
+Nested Sampling ln(Z):               -220.210939
+Importance Nested Sampling ln(Z):    -226.127914 +/-  0.029258
+ ln(ev)=  -220.18058247766797      +/-  0.44555294753321922     
+ Total Likelihood Evaluations:       122742
+ Sampling finished. Exiting MultiNest
+Reading included ini file: `/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/scale_cuts/scales_gg_gy_1.2.ini'
+
+Parameter Priors
+----------------
+cosmological_parameters--omega_m       ~ delta(0.25)
+cosmological_parameters--h0            ~ delta(0.7)
+cosmological_parameters--omega_b       ~ delta(0.044)
+cosmological_parameters--tau           ~ delta(0.089)
+cosmological_parameters--n_s           ~ delta(0.95)
+cosmological_parameters--sigma8_input  ~ delta(0.8)
+cosmological_parameters--a_s           ~ delta(2.215e-09)
+cosmological_parameters--omega_k       ~ delta(0.0)
+cosmological_parameters--w             ~ delta(-1.0)
+cosmological_parameters--wa            ~ delta(0.0)
+intrinsic_alignment_parameters--a      ~ delta(1.0)
+intrinsic_alignment_parameters--alpha  ~ delta(0.0)
+wl_photoz_errors--bias_1               ~ delta(0.0)
+wl_photoz_errors--bias_2               ~ delta(0.0)
+wl_photoz_errors--bias_3               ~ delta(0.0)
+wl_photoz_errors--bias_4               ~ delta(0.0)
+lens_photoz_errors--bias_1             ~ delta(0.0)
+lens_photoz_errors--bias_2             ~ delta(0.0)
+lens_photoz_errors--bias_3             ~ delta(0.0)
+lens_photoz_errors--bias_4             ~ delta(0.0)
+lens_photoz_errors--bias_5             ~ delta(0.0)
+lens_photoz_errors--bias_6             ~ delta(0.0)
+theory_yx--nbar--1                     ~ delta(1770351.808)
+theory_yx--nbar--2                     ~ delta(1268982.436)
+theory_yx--nbar--3                     ~ delta(1289355.022)
+theory_yx--nbar--4                     ~ delta(1724261.2072)
+theory_yx--nbar--5                     ~ delta(1256264.334)
+theory_yx--nbar--6                     ~ delta(1185355.716)
+theory_yx--noisek--1                   ~ delta(3.597e-09)
+theory_yx--noisek--2                   ~ delta(4.543039e-09)
+theory_yx--noisek--3                   ~ delta(3.8128e-09)
+theory_yx--noisek--4                   ~ delta(8.4497651e-09)
+theory_yx--p0-a_m--0                   ~ U(10.0, 40.0)
+theory_yx--beta-a_m--0                 ~ U(3.8, 5.0)
+theory_yx--alpha_p_high--0             ~ U(-1.5, 1.5)
+theory_yx--alpha_p_low--0              ~ U(-2.0, 2.0)
+theory_yx--logmmin_z0--0               ~ U(11.5, 13.5)
+theory_yx--logmmin_alpha_z--0          ~ U(-1.0, 3.0)
+theory_yx--logmstar_z0--0              ~ U(0.1, 50.0)
+theory_yx--logmstar_alpha_z--0         ~ U(-1.0, 3.0)
+theory_yx--n_z0--0                     ~ U(0.1, 100.0)
+theory_yx--n_alpha_z--0                ~ U(-10.0, -2.0)
+theory_yx--sig_logm_z0--0              ~ U(0.1, 1.0)
+theory_yx--sig_logm_alpha_z--0         ~ U(-3.0, 3.0)
+theory_yx--logm1_z0--0                 ~ U(11.5, 13.5)
+theory_yx--logm1_alpha_z--0            ~ U(-2.0, 2.0)
+theory_yx--alpha_g_z0--0               ~ U(0.5, 1.2)
+theory_yx--alpha_g_alpha_z--0          ~ U(-1.0, 1.0)
+
+
+
+
+
+
+Loading number density data from /global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/data/Maglim_ACT_MICE_actarea_theorycov_corrnbar.fits:
+    Looking at FITS extension NZ_SOURCE:
+        Found 4 bins
+    Looking at FITS extension NZ_LENS:
+        Found 6 bins
+
+
+
+Removing wtheta bin (1,1) altogether.
+Cutting wtheta bin pair (2,2) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting wtheta bin pair (3,3) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting wtheta bin pair (4,4) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting wtheta bin pair (5,5) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting wtheta bin pair (6,6) to angle range (1.2 - 999.0): this removes 4 values out of 26
+
+Removing compton_galaxy bin (1,1) altogether.
+Cutting compton_galaxy bin pair (2,2) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting compton_galaxy bin pair (3,3) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting compton_galaxy bin pair (4,4) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting compton_galaxy bin pair (5,5) to angle range (1.2 - 999.0): this removes 4 values out of 26
+Cutting compton_galaxy bin pair (6,6) to angle range (1.2 - 999.0): this removes 4 values out of 26
+
+Found these data sets in the file:
+    - wtheta  110 data points after cuts   [using in likelihood]
+    - compton_galaxy  110 data points after cuts   [using in likelihood]
+Total data points used = 220
+Converting angle units of wtheta from arcmin -> rad (factor 0.0002908882086657216)
+Converting angle units of compton_galaxy from arcmin -> rad (factor 0.0002908882086657216)
+
+****************************
+* Running sampler 1/1: multinest
+* Saving output -> /global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_MICE_gg_gy_ACTbeam_actarea_breakmodel.txt
+****************************
+Saving 2128 samples
+Saving 4128 samples
+Saving 4493 samples
+Saving 4493 samples

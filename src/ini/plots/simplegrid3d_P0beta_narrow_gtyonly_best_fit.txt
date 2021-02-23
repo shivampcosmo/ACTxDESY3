@@ -1,0 +1,6 @@
+#parameter value
+#/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/chains/chain_sz_shear_planckxdesy3_grid_v0p4_P0beta_narrow_gtyonly.txt
+theory_yx--p0-a_m0        11.0204
+theory_yx--beta-a_m0        3.92245
+prior        -2.48491
+post        -109.253
