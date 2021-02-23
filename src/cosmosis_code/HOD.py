@@ -59,6 +59,9 @@ class HOD:
         elif self.hod_type == 'DES_MICE':
             Ncm =  0.5 * self.hod_params['fcen'] * (1. + sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM']))
 
+            saved = {'nc':Ncm[0,:],'Mval':M_val[0,:]}
+            np.savez('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/temp/Ncen_fit_hod_bin_' + str(self.binvl) + '.npz',**saved)
+
             # erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             # Ncm = self.hod_params['fmaxcen'] * (
             #         1.0 - (1.0 - self.hod_params['fmincen'] / self.hod_params['fmaxcen']) / (1.0 + 10 ** (
@@ -78,7 +81,7 @@ class HOD:
             # logmstar = np.tile(logmstar.reshape(self.nz, 1), (1, self.nm))
             # n = self.hod_params['n_z0'] * (((1. + self.z_array)/(1. + self.hod_params['zstar'] ) ** self.hod_params['n_alpha_z'])) 
             # n = np.tile(n.reshape(self.nz, 1), (1, self.nm))
-
+            import pdb; pdb.set_trace()
             logmmin = self.hod_params['logMmin_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['logMmin_alpha_z']) 
             # logmmin = np.tile(logmmin.reshape(self.nz, 1), (1, self.nm))
             siglogm = self.hod_params['sig_logM_z0'] * (((1. + self.zcen[self.binvl-1])/(1. + self.hod_params['zstar'])) ** self.hod_params['sig_logM_alpha_z']) 
@@ -96,11 +99,28 @@ class HOD:
             erfval = sp.special.erf((np.log10(M_val) - self.hod_params['logMmin']) / self.hod_params['sig_logM'])
             Ncm = self.hod_params['fcen'] * 0.5 * (1 + erfval)
         elif self.hod_type == 'EVOLVE_HOD':
+            # savefname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_measure_zfid_photoz.pk'
+            savefname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_measure_zfid.pk'
+            out_dict = dill.load(open(savefname,'rb'))
+            M_cen = (out_dict['M_mean'][self.binvl-1,:])
+            n_cen = (out_dict['nc'][self.binvl-1,:])
+            M_sat = (out_dict['M_mean'][self.binvl-1,:])
+            n_sat = (out_dict['ns'][self.binvl-1,:])
+            ind_gtzero = np.where( (M_cen > 1e11) & (n_cen > 0))[0]
+            M_cen, n_cen, M_sat, n_sat = M_cen[ind_gtzero], n_cen[ind_gtzero], M_sat[ind_gtzero], n_sat[ind_gtzero]
+            ind_gtzero = np.where( (np.isfinite(M_cen) > 0) & (np.isfinite(n_cen) > 0) & (np.isfinite(M_sat) > 0) & (np.isfinite(n_sat) > 0)  )[0]
+            M_cen, n_cen, M_sat, n_sat = M_cen[ind_gtzero], n_cen[ind_gtzero], M_sat[ind_gtzero], n_sat[ind_gtzero]
+            n_cen_interp = interpolate.interp1d(np.log(M_cen),np.log(n_cen),fill_value='extrapolate')
+            Ncm = np.exp(n_cen_interp(np.log(M_val)))
+            saved = {'nc':Ncm[0,:],'Mval':M_val[0,:]}
+            np.savez('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/temp/Ncen_evolve_hod_bin_' + str(self.binvl) + '.npz',**saved)
+
+
             # Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk','rb'))['fcen_interp']
-            Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk','rb'))['fcen_interp']
-            Ncm = np.zeros_like(M_val)
-            for j in range(len(self.z_array)):
-                Ncm[j,:] = np.exp(Ncm_interp((self.z_array[j]), np.log(M_val[j,:]),grid=False))
+            # Ncm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk','rb'))['fcen_interp']
+            # Ncm = np.zeros_like(M_val)
+            # for j in range(len(self.z_array)):
+            #     Ncm[j,:] = np.exp(Ncm_interp((self.z_array[j]), np.log(M_val[j,:]),grid=False))
         else:
             print('give correct HOD type')
             sys.exit(1)
@@ -121,6 +141,9 @@ class HOD:
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
             # removing the fcen factor from the definition of satellite galaxies
             Nsm *= Ncm/(self.hod_params['fcen'])
+
+            saved = {'ns':Nsm[0,:],'Mval':M_val[0,:]}
+            np.savez('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/temp/Nsat_fit_hod_bin_' + str(self.binvl) + '.npz',**saved)
             # import ipdb; ipdb.set_trace()
             # Nsm *= Ncm
             # Nsm = (M_val / (10 ** (self.hod_params['logM1']))) ** self.hod_params['alpha_g'])
@@ -162,11 +185,26 @@ class HOD:
             Nsm = ((M_val / M1) ** self.hod_params['alpha_g'])
 
         elif self.hod_type == 'EVOLVE_HOD':
+            # savefname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_measure_zfid_photoz.pk'
+            savefname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_measure_zfid.pk'          
+            out_dict = dill.load(open(savefname,'rb'))
+            M_cen = (out_dict['M_mean'][self.binvl-1,:])
+            n_cen = (out_dict['nc'][self.binvl-1,:])
+            M_sat = (out_dict['M_mean'][self.binvl-1,:])
+            n_sat = (out_dict['ns'][self.binvl-1,:])
+            ind_gtzero = np.where((M_sat > 1e11) & (n_sat > 0)  )[0]
+            M_cen, n_cen, M_sat, n_sat = M_cen[ind_gtzero], n_cen[ind_gtzero], M_sat[ind_gtzero], n_sat[ind_gtzero]
+            ind_gtzero = np.where( (np.isfinite(M_cen) > 0) & (np.isfinite(n_cen) > 0) & (np.isfinite(M_sat) > 0) & (np.isfinite(n_sat) > 0)  )[0]
+            M_cen, n_cen, M_sat, n_sat = M_cen[ind_gtzero], n_cen[ind_gtzero], M_sat[ind_gtzero], n_sat[ind_gtzero]
+            n_sat_interp = interpolate.interp1d(np.log(M_sat),np.log(n_sat),fill_value='extrapolate')
+            Nsm = np.exp(n_sat_interp(np.log(M_val)))
+            saved = {'ns':Nsm[0,:],'Mval':M_val[0,:]}
+            np.savez('/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/temp/Nsat_evolve_hod_bin_' + str(self.binvl) + '.npz',**saved)
             # Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_hod_zM_interp_zhres.pk', 'rb'))['fsat_interp']
-            Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk', 'rb'))['fsat_interp']
-            Nsm = np.zeros_like(M_val)
-            for j in range(len(self.z_array)):
-                Nsm[j, :] = np.exp(Nsm_interp((self.z_array[j]), np.log(M_val[j, :]), grid=False))
+            # Nsm_interp = dill.load(open('/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_redmagic_hod_zM_interp_zhres_v17Jan21.pk', 'rb'))['fsat_interp']
+            # Nsm = np.zeros_like(M_val)
+            # for j in range(len(self.z_array)):
+            #     Nsm[j, :] = np.exp(Nsm_interp((self.z_array[j]), np.log(M_val[j, :]), grid=False))
         else:
             print('give correct HOD type')
             sys.exit(1)

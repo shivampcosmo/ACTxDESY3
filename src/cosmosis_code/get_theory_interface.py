@@ -801,6 +801,9 @@ def execute(block, config):
         except:
             print(tb.format_exc())
         if save_DV:
+            if hod_params_dict_bin['hod_type'] == 'Halos':
+                save_data_fname_split = save_data_fname.split('.')
+                save_data_fname = save_data_fname_split[0] + '_M_' + str(other_params_dict['log_M_min_tracer']) + '_z_' + str(other_params_dict['zmin_tracer']) + '_' + str(other_params_dict['zmax_tracer']) + '.pk'
             with open(save_data_fname,'wb') as f:
                 dill.dump(DV,f)
             import ipdb; ipdb.set_trace() # BREAKPOINT

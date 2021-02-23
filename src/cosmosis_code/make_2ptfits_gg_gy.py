@@ -32,7 +32,8 @@ zmax_bins = np.array([0.40, 0.55, 0.70, 0.85, 0.95, 1.05 ])
 fname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_data.fits'
 df = fits.open(fname)
 zcgal_all = df[1].data['z_cgal']
-datapoint_z_all = df[1].data['z_dnf_mean_sof']
+# datapoint_z_all = df[1].data['z_dnf_mean_sof']
+datapoint_z_all = df[1].data['z_cgal']
 zc_edges_all = np.hstack((fiducial['nz_lens'].data['Z_LOW'],fiducial['nz_lens'].data['Z_HIGH'][-1]))
 Nz = []
 from scipy.interpolate import interp1d
@@ -118,7 +119,8 @@ for j in range(len(minz_all)):
     #     filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
     # else:
     #     filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns4096.pk'
-    filename = save_dir + 'dy/dy_dd_MICEy_nobeam_nside4096_mask_act__cat_maglim_z_' + str(minz) + '_' + str(maxz) + '_dojk_True_njk_500_desy3_w1_beam0_ns4096_v16Jan21.pk'
+    # filename = save_dir + 'dy/dy_dd_MICEy_nobeam_nside4096_mask_act__cat_maglim_z_' + str(minz) + '_' + str(maxz) + '_dojk_True_njk_500_desy3_w1_beam0_ns4096_v16Jan21.pk'
+    filename = save_dir + 'dy/dy_dd_MICEy_nobeam_nside4096_mask_act__cat_maglim_z_' + str(minz) + '_' + str(maxz) + '_dojk_True_njk_500_desy3_w1_beam0_ns4096_v22Feb21_truez.pk'
     filenames.append(filename)
 
 nbins = len(zmin_bins)
@@ -199,10 +201,10 @@ path_results = os.environ['COSMOSIS_SRC_DIR'] + '/ACTxDESY3/src/results/'
 
 import os
 try:
-    os.remove(path_results + 'Maglim_ACT_MICE_actarea_JKcov.fits')
+    os.remove(path_results + 'Maglim_ACT_MICE_actarea_JKcov_v22Feb21_truez.fits')
 except:
     pass
-obj.to_fits(path_results + 'Maglim_ACT_MICE_actarea_JKcov.fits') 
+obj.to_fits(path_results + 'Maglim_ACT_MICE_actarea_JKcov_v22Feb21_truez.fits') 
 
 
 

@@ -608,6 +608,10 @@ class DataVec:
                                                                      PrepDV_params['bgl_z_dict' + str(j2)],
                                                                      model_2h='nl')
                                 # Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PrepDV.l_array,
+                                #                                      PrepDV_params['bgl_z_dict' + str(j1)],
+                                #                                      PrepDV_params['bgl_z_dict' + str(j2)],
+                                #                                      model_2h='lin')                                                                     
+                                # Cl2h_j1j2 = self.CalcDV.get_Cl_AB_2h('g', 'g', PrepDV.l_array,
                                 # PrepDV_params['bgl_z_dict' + str(j1)],
                                 # PrepDV_params['bgl_z_dict' + str(j2)])
                                 Cltot_j1j2 = self.CalcDV.get_Cl_AB_tot('g', 'g', Cl1h_j1j2, Cl2h_j1j2)

@@ -335,7 +335,7 @@ class Powerspec:
         else:
             ukzm_mat = hmf.get_ukmz_g_mat(self.r_max_mat, k_array, self.halo_conc_vir, self.rsg_rs)
             val = np.sqrt(
-                (2 * self.Nc_mat * self.Ns_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
+                (2 * self.Ns_mat * self.Nc_mat * ukzm_mat + (self.Ns_mat ** 2) * (ukzm_mat ** 2)))
 
         coeff_mat = np.tile(
             (self.ng_array / ((self.chi_array ** 2) * self.dchi_dz_array * self.nbar)).reshape(self.nz, 1),

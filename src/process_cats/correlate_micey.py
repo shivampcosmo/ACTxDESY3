@@ -79,7 +79,7 @@ if __name__ == "__main__":
         njk = 500
 
     if mask_type == 'oct':
-        njk = 300
+        njk = 1000
 
     if mask_type == 'diff':
         njk = 300
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     save_dir = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/results/'
     #     save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '.pk'
-    save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '_mask_' + str(mask_type) + '_v16Jan21.pk'
+    save_filename_jk_obj = 'jkobj_MICE_' + '_' + '_njk_' + str(njk) + '_mask_' + str(mask_type) + '_v22Feb21.pk'
 
     ydir = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/'
     if beam == 0:
@@ -196,7 +196,8 @@ if __name__ == "__main__":
     if cat_tocorr == 'maglim':
         fname = '/global/cfs/cdirs/des/shivamp/ACTxDESY3_data/MICE_data/mice_maglim_data.fits'
         df = fits.open(fname)
-        datapoint_z_all = df[1].data['z_dnf_mean_sof']
+        # datapoint_z_all = df[1].data['z_dnf_mean_sof']
+        datapoint_z_all = df[1].data['z_cgal']
         datapoint_ra_all = df[1].data['ra_gal']
         datapoint_dec_all = df[1].data['dec_gal']
 
@@ -236,6 +237,7 @@ if __name__ == "__main__":
 
     rand_theta_all, rand_phi_all = eq2ang(rand_ra_all, rand_dec_all)
     ind_rand = hp.ang2pix(nside, rand_theta_all, rand_phi_all)
+    del rand_theta_all, rand_phi_all
     int_ind_rand = np.in1d(ind_rand, ind_masked)
     selection_mask_rand = np.where(int_ind_rand == False)[0]
 
@@ -252,9 +254,9 @@ if __name__ == "__main__":
             file_suffix_save += '_logMmin_' + str(logMmin) + '_' + str(logMmax)
 
         if do_gg:
-            filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '_v16Jan21.pk'
+            filename = save_dir + 'dy/dy_dd_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '_v22Feb21_truez.pk'
         else:
-            filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '_v16Jan21.pk'
+            filename = save_dir + 'dy/dy_' + 'MICEy'  + '_' + 'nobeam' + '_nside' + str(nside_ymap) + '_mask_' + str(mask_type) + '_' + file_suffix_save + '_ns' + str(nside) + '_v22Feb21_truez.pk'
 
         if not os.path.isfile(filename):
 
@@ -282,6 +284,8 @@ if __name__ == "__main__":
 
             zmean_j = (minz + maxz)/2.
 
+            tmp_dir = '/global/cfs/cdirs/des/shivamp/nl_cosmosis/cosmosis/ACTxDESY3/src/process_cats/tmp_dir/'
+
             if os.path.isfile(save_dir + save_filename_jk_obj):
                 datapoint_cat = treecorr.Catalog(ra=datapoint_ra, dec=datapoint_dec, w=np.ones_like(datapoint_ra), ra_units='degrees',
                                             dec_units='degrees', patch_centers=save_dir + save_filename_jk_obj)           
@@ -290,7 +294,7 @@ if __name__ == "__main__":
                 datapoint_cat = treecorr.Catalog(ra=datapoint_ra, dec=datapoint_dec, w=np.ones_like(datapoint_ra), ra_units='degrees',
                                                 dec_units='degrees', npatch=njk)
                 datapoint_cat.write_patch_centers(save_dir + save_filename_jk_obj)
-            rand_cat = treecorr.Catalog(ra=rand_ra, dec=rand_dec, w=rand_w, ra_units='degrees', dec_units='degrees', patch_centers=save_dir + save_filename_jk_obj)
+            rand_cat = treecorr.Catalog(ra=rand_ra, dec=rand_dec, w=rand_w, ra_units='degrees', dec_units='degrees', patch_centers=save_dir + save_filename_jk_obj,save_patch_dir=tmp_dir)
 
 
 
@@ -304,7 +308,7 @@ if __name__ == "__main__":
             dytruth.process(datapoint_cat, ytruth_cat)
 
             print('doing auto randomxy calculation')
-            randytruth.process(rand_cat, ytruth_cat)
+            randytruth.process(rand_cat, ytruth_cat, low_mem=True)
             dytruth.calculateXi(rk=randytruth)
 
             xi_dy_full = dytruth.xi
@@ -326,10 +330,10 @@ if __name__ == "__main__":
             g_g.process(datapoint_cat, datapoint_cat)
 
             print('doing auto randomsxrandoms calculation')
-            rg_rg.process(rand_cat, rand_cat)
+            rg_rg.process(rand_cat, rand_cat, low_mem=True)
 
             print('doing auto dataxrandoms calculation')
-            g_rg.process(datapoint_cat, rand_cat)
+            g_rg.process(datapoint_cat, rand_cat, low_mem=True)
 
             g_g.calculateXi(rr=rg_rg, dr=g_rg)
             xi_gg_full = g_g.xi
@@ -341,14 +345,20 @@ if __name__ == "__main__":
 
             cov_total = treecorr.estimate_multi_cov([g_g,dytruth], 'jackknife')   
 
+            # save_data = {
+            #             'dytruth': dytruth,'randytruth': randytruth,
+            #             'xi_dy': xi_dy_full,'r_dy': r_dy, 'cov_dy': cov_dy, 'g_g':g_g, 
+            #             'rg_rg':rg_rg, 'g_rg':g_rg, 'xi_gg':xi_gg_full, 'r_gg':r_gg, 'cov_gg':cov_gg,
+            #             'cov_total':cov_total,
+            #             'do_jk': do_jk, 'njk': njk, 'ndatapoint': len(datapoint_ra),
+            #             'nrand': len(rand_ra)
+            #             }
             save_data = {
-                        'dytruth': dytruth,'randytruth': randytruth,
-                        'xi_dy': xi_dy_full,'r_dy': r_dy, 'cov_dy': cov_dy, 'g_g':g_g, 
-                        'rg_rg':rg_rg, 'g_rg':g_rg, 'xi_gg':xi_gg_full, 'r_gg':r_gg, 'cov_gg':cov_gg,
+                        'xi_dy': xi_dy_full,'r_dy': r_dy, 'cov_dy': cov_dy, 'xi_gg':xi_gg_full, 'r_gg':r_gg, 'cov_gg':cov_gg,
                         'cov_total':cov_total,
                         'do_jk': do_jk, 'njk': njk, 'ndatapoint': len(datapoint_ra),
                         'nrand': len(rand_ra)
-                        }
+                        }                        
 
             pk.dump(save_data, open(filename, "wb"), protocol = 2)
 
